@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
-namespace Treesearch
+namespace TreesearchLib
 {
     public struct Quality : IComparable<Quality>
     {
@@ -20,6 +19,7 @@ namespace Treesearch
 
         public override string ToString() => $"Quality( {value} )";
     }
+
     public enum ChoiceType
     {
         Construct, Change
@@ -35,7 +35,7 @@ namespace Treesearch
         void Apply(Choice choice);
         ChoiceType ConstructOrChange();
     }
-    
+
     public interface ISearchableReversible<Choice> : ISearchable<Choice>
     {
         int ChoicesMade { get; }

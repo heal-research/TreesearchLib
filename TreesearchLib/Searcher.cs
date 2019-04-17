@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Treesearch
+namespace TreesearchLib
 {
-
     public class Searcher
     {
         public static void Search<T, C>(ISearchState<T> searchState, ref T bestSolution, SearchLimits limits)
