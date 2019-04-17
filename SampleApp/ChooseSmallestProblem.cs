@@ -38,24 +38,21 @@ namespace SampleApp
             return clone;
         }
 
-        public ChoiceType ConstructOrChange() => ChoiceType.Construct;
-
-        public void FillChoices(List<int> choices)
+        public IEnumerable<int> GetChoices()
         {
-            choices.Clear();
+            if (this.choicesMade.Count >= size)
+            {
+                yield break;
+            }
             var current = 0;
             if (this.choicesMade.Count > 0)
             {
                 current = this.choicesMade.Peek();
             }
-            if (this.choicesMade.Count > size)
-            {
-                return;
-            }
             var rng = new Random(current);
             for (int i = 0; i < rng.Next(minChoices, maxChoices); i++)
             {
-                choices.Add(rng.Next(current + 1, current + maxDistance));
+                yield return rng.Next(current + 1, current + maxDistance);
             }
 
         }

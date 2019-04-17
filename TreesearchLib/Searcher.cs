@@ -1,78 +1,54 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace TreesearchLib
 {
     public class Searcher
     {
-        public static void Search<T, C>(ISearchState<T> searchState, ref T bestSolution, SearchLimits limits)
+        public static void Search<T, C>(ISearchState<T> searchState, ref T bestState, SearchLimits limits)
         where T : class, ISearchable<C>, ICloneable
         {
-            var choices = new List<C>();
             limits.ResetVisitedNodes(searchState.Nodes());
-            while (true)
+            while (searchState.TryGetNext(out var currentState) && !limits.ShouldStop(searchState.SearchType))
             {
-                if (!searchState.TryGetNext(out var currentState)) break;
-                if (limits.ShouldStop(searchState.SearchType))
-                {
-                    break;
-                }
-                var noChoice = true;
-                currentState.FillChoices(choices);
 
-                foreach (var choice in choices.Take(Math.Min(choices.Count, limits.BeamWidth)))
+                foreach (var choice in currentState.GetChoices().Take(limits.BeamWidth))
                 {
                     var next = (T)currentState.Clone();
                     next.Apply(choice);
                     limits.VisitNode();
-                    noChoice = false;
                     var lb = next.LowerBound;
+                    var qual = next.Quality;
 
-                    if (lb.IsWorseOrEqual(limits.UpperBound) && bestSolution != null)
+                    if (lb.IsWorseOrEqual(limits.UpperBound) && (bestState != null || !qual.HasValue))
                     {
                         continue;
                     }
-                    var qual = next.Quality;
-                    if (qual.HasValue)
+                    if (qual.HasValue && (qual.Value.IsBetter(limits.UpperBound) || bestState == null))
                     {
-                        if (qual.Value.IsBetter(limits.UpperBound) || bestSolution == null)
-                        {
-                            limits.FoundSolution(qual.Value);
-                            bestSolution = next;
-                        }
-                        if (next.ConstructOrChange() == ChoiceType.Construct)
-                        {
-                            continue;
-                        }
+                        limits.FoundSolution(qual.Value);
+                        bestState = next;
                     }
 
                     searchState.Store(next);
                 }
-                if (noChoice)
-                {
-                    Console.WriteLine($"no_choice after: {searchState.Nodes()}");
-                }
             }
         }
 
-        public static void SearchReversible<T, C>(T state, ref T bestSolution, SearchLimits limits)
+        public static void SearchReversible<T, C>(T state, ref T bestState, SearchLimits limits)
         where T : ISearchableReversible<C>, ICloneable
         {
             var searchState = new DFSState<Tuple<int, C>>();
-            var choices = new List<C>();
-            state.FillChoices(choices);
             var initialDepth = state.ChoicesMade;
-            foreach (var entry in choices.Take(Math.Min(choices.Count, limits.BeamWidth)).Select(choice => Tuple.Create(initialDepth, choice)))
+            foreach (var entry in state.GetChoices().Take(limits.BeamWidth).Select(choice => Tuple.Create(initialDepth, choice)))
             {
                 searchState.Store(entry);
             }
 
             limits.ResetVisitedNodes(0);
-            while (searchState.TryGetNext(out var next))
+            while (searchState.TryGetNext(out var next) && !limits.ShouldStop(SearchType.Depth))
             {
                 var (depth, choice) = next;
-                if (limits.ShouldStop(SearchType.Depth)) break;
                 while (next.Item1 < state.ChoicesMade)
                 {
                     state.UndoLast();
@@ -80,24 +56,21 @@ namespace TreesearchLib
                 state.Apply(choice);
                 limits.VisitNode();
                 var lb = state.LowerBound;
-                if (lb.IsWorseOrEqual(limits.UpperBound) && bestSolution != null)
+                var qual = state.Quality;
+
+                if (lb.IsWorseOrEqual(limits.UpperBound) && (bestState != null || !qual.HasValue))
                 {
-                    state.UndoLast();
+                    state.UndoLast(); // should be unnecessary here as this will be handled in the 2nd while loop
                     continue;
                 }
-                var qual = state.Quality;
-                if (qual.HasValue)
+                if (qual.HasValue && (qual.Value.IsBetter(limits.UpperBound) || bestState == null))
                 {
-                    if (qual.Value.IsBetter(limits.UpperBound) || bestSolution == null)
-                    {
-                        limits.FoundSolution(qual.Value);
-                        bestSolution = (T)state.Clone();
-                        state.UndoLast();
-                    }
+                    limits.FoundSolution(qual.Value);
+                    bestState = (T)state.Clone();
+                    state.UndoLast();
                 }
                 depth = state.ChoicesMade;
-                state.FillChoices(choices);
-                foreach (var entry in choices.Take(Math.Min(choices.Count, limits.BeamWidth)).Select(ch => Tuple.Create(depth, ch)))
+                foreach (var entry in state.GetChoices().Take(limits.BeamWidth).Select(ch => Tuple.Create(depth, ch)))
                 {
                     searchState.Store(entry);
                 }

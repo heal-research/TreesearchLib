@@ -7,7 +7,7 @@ namespace SampleApp
     {
         static void Main(string[] args)
         {
-            var size = 35;
+            var size = 10;
 
             ChooseSmallestProblem best = null;
             var limits = new SearchLimits();

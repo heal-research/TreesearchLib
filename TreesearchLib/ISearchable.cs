@@ -20,20 +20,13 @@ namespace TreesearchLib
         public override string ToString() => $"Quality( {value} )";
     }
 
-    public enum ChoiceType
-    {
-        Construct, Change
-    }
-
     public interface ISearchable<Choice>
     {
-        bool IsSolved { get; }
         Quality LowerBound { get; }
         Quality? Quality { get; }
 
-        void FillChoices(List<Choice> choices);
+        IEnumerable<Choice> GetChoices();
         void Apply(Choice choice);
-        ChoiceType ConstructOrChange();
     }
 
     public interface ISearchableReversible<Choice> : ISearchable<Choice>
