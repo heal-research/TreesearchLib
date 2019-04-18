@@ -70,7 +70,7 @@ namespace TreesearchLib
             DepthLimit = int.MaxValue;
             BreadthLimit = int.MaxValue;
             BeamWidth = int.MaxValue;
-            UpperBound = new Quality(int.MaxValue);
+            UpperBound = new Quality(int.MaxValue); // TODO: assumes maximization
             nodesVisited = 0;
             totalNodesVisited = 0;
         }

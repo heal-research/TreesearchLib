@@ -67,7 +67,7 @@ namespace TreesearchLib
                 {
                     limits.FoundSolution(qual.Value);
                     bestState = (T)state.Clone();
-                    state.UndoLast();
+                    state.UndoLast(); // I don't understand this
                 }
                 depth = state.ChoicesMade;
                 foreach (var entry in state.GetChoices().Take(limits.BeamWidth).Select(ch => Tuple.Create(depth, ch)))
