@@ -5,7 +5,7 @@ using TreesearchLib;
 
 namespace SampleApp
 {
-    class ChooseSmallestProblem : ISearchableReversible<int>, ICloneable
+    class ChooseSmallestProblem : IMinimizableWithUndo<int>, ICloneable
     {
         public const int minChoices = 2;
         public const int maxChoices = 10;
@@ -21,9 +21,9 @@ namespace SampleApp
 
         public bool IsSolved => choicesMade.Count == size;
 
-        public Quality LowerBound => new Quality(choicesMade.Peek() + (size - choicesMade.Count));
+        public Minimize LowerBound => new Minimize(choicesMade.Peek() + (size - choicesMade.Count));
 
-        public Quality? Quality => IsSolved ? new Quality(choicesMade.Peek()) : new Quality?();
+        public Minimize? Quality => IsSolved ? new Minimize(choicesMade.Peek()) : new Minimize?();
 
         public void Apply(int choice)
         {
@@ -40,14 +40,14 @@ namespace SampleApp
 
         public IEnumerable<int> GetChoices()
         {
-            if (this.choicesMade.Count >= size)
+            if (choicesMade.Count >= size)
             {
                 yield break;
             }
             var current = 0;
-            if (this.choicesMade.Count > 0)
+            if (choicesMade.Count > 0)
             {
-                current = this.choicesMade.Peek();
+                current = choicesMade.Peek();
             }
             var rng = new Random(current);
             for (int i = 0; i < rng.Next(minChoices, maxChoices); i++)

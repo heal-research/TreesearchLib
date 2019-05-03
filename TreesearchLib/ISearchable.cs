@@ -1,37 +1,70 @@
-using System;
 using System.Collections.Generic;
 
 namespace TreesearchLib
 {
-    public struct Quality : IComparable<Quality>
+    public interface IQuality<T>
+    {
+        bool IsBetter(T other);
+    }
+
+    public struct Minimize : IQuality<Minimize>
     {
         int value;
-        public Quality(int value)
+        public Minimize(int value)
         {
             this.value = value;
         }
 
-        public int CompareTo(Quality other) => -value.CompareTo(other);
-
-        public bool IsBetter(Quality other) => value < other.value;
-
-        public bool IsWorseOrEqual(Quality other) => value >= other.value;
+        public bool IsBetter(Minimize other) => value < other.value;        
 
         public override string ToString() => $"Quality( {value} )";
     }
 
-    public interface ISearchable<Choice>
+    public struct Maximize : IQuality<Maximize>
     {
-        Quality LowerBound { get; }
-        Quality? Quality { get; }
+        int value;
+        public Maximize(int value)
+        {
+            this.value = value;
+        }
 
-        IEnumerable<Choice> GetChoices();
-        void Apply(Choice choice);
+        public bool IsBetter(Maximize other) => value > other.value;
+
+        public override string ToString() => $"Quality( {value} )";
     }
 
-    public interface ISearchableReversible<Choice> : ISearchable<Choice>
+    public interface ISearchable<TChoice, TQuality> where TQuality : struct, IQuality<TQuality>
+    {
+        TQuality LowerBound { get; }
+        TQuality? Quality { get; }
+
+        IEnumerable<TChoice> GetChoices();
+        void Apply(TChoice choice);
+    }
+
+    public interface ISearchableWithUndo<Choice, TQuality> : ISearchable<Choice, TQuality> where TQuality : struct, IQuality<TQuality>
     {
         int ChoicesMade { get; }
         void UndoLast();
+    }
+
+    public interface IMinimizable<TChoice> : ISearchable<TChoice, Minimize>
+    {
+
+    }
+
+    public interface IMinimizableWithUndo<TChoice> : ISearchableWithUndo<TChoice, Minimize>
+    {
+
+    }
+
+    public interface IMaximizable<TChoice> : ISearchable<TChoice, Maximize>
+    {
+
+    }
+
+    public interface IMaximizableWithUndo<TChoice> : ISearchableWithUndo<TChoice, Maximize>
+    {
+
     }
 }

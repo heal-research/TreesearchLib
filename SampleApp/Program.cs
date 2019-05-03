@@ -10,14 +10,12 @@ namespace SampleApp
             var size = 10;
 
             ChooseSmallestProblem best = null;
-            var limits = new SearchLimits();
-            Searcher.SearchReversible<ChooseSmallestProblem, int>(new ChooseSmallestProblem(size), ref best, limits);
+            SearchLimits<Minimize>.WithUpperBound(new Minimize(int.MaxValue))
+                .SearchWithUndo<ChooseSmallestProblem, int>(new ChooseSmallestProblem(size), ref best);
             Console.WriteLine($"SearchReversible {best} {best.Quality}");
             best = null;
-            var state = new DFSState<ChooseSmallestProblem>();
-            state.Store(new ChooseSmallestProblem(size));
-            limits = new SearchLimits();
-            Searcher.Search<ChooseSmallestProblem, int>(state, ref best, limits);
+            SearchLimits<Minimize>.WithUpperBound(new Minimize(int.MaxValue))
+                .SearchDepthFirst<ChooseSmallestProblem, int>(new ChooseSmallestProblem(size), ref best);
             Console.WriteLine($"Search {best} {best.Quality}");
         }
     }

@@ -20,6 +20,16 @@ namespace TreesearchLib
     {
         private Stack<T> states = new Stack<T>();
 
+        public DFSState()
+        {
+
+        }
+
+        public DFSState(T initial)
+        {
+            Store(initial);
+        }
+
         public bool TryGetNext(out T next)
         {
             if (states.Count == 0)
@@ -42,6 +52,16 @@ namespace TreesearchLib
     {
         private Queue<T> states = new Queue<T>();
 
+        public BFSState()
+        {
+
+        }
+
+        public BFSState(T initial)
+        {
+            Store(initial);
+        }
+
         public bool TryGetNext(out T next)
         {
             if (states.Count == 0)
@@ -61,25 +81,25 @@ namespace TreesearchLib
     }
 
 
-    public class SearchLimits
+    public class SearchLimits<TQuality> where TQuality : struct, IQuality<TQuality> // TODO: cancelationtoken
     {
-        public SearchLimits()
+        private SearchLimits(TQuality upperBound)
         {
             Started = DateTime.Now;
             Deadline = DateTime.MaxValue;
             DepthLimit = int.MaxValue;
             BreadthLimit = int.MaxValue;
             BeamWidth = int.MaxValue;
-            UpperBound = new Quality(int.MaxValue); // TODO: assumes maximization
+            UpperBound = upperBound;
             nodesVisited = 0;
             totalNodesVisited = 0;
         }
-        public SearchLimits(TimeSpan maxRuntime) : this()
+        public SearchLimits(TQuality upperBound, TimeSpan maxRuntime) : this(upperBound)
         {
             Deadline = Started + maxRuntime;
 
         }
-        public SearchLimits(int depthLimit, int breadthLimit) : this()
+        public SearchLimits(TQuality upperBound, int depthLimit, int breadthLimit) : this(upperBound)
         {
             DepthLimit = depthLimit;
             BreadthLimit = breadthLimit;
@@ -90,9 +110,10 @@ namespace TreesearchLib
         public int DepthLimit { get; set; }
         public int BreadthLimit { get; set; }
         public int BeamWidth { get; set; }
-        public Quality UpperBound { get; set; }
+        public TQuality UpperBound { get; set; }
         int nodesVisited;
         int totalNodesVisited;
+
         public void ResetVisitedNodes(int initial)
         {
             totalNodesVisited += nodesVisited;
@@ -104,10 +125,10 @@ namespace TreesearchLib
             nodesVisited += 1;
         }
 
-        public bool ShouldStop(SearchType ty)
+        public bool ShouldStop(SearchType searchType)
         {
             var limit = 0;
-            switch (ty)
+            switch (searchType)
             {
                 case SearchType.Depth:
                     limit = DepthLimit;
@@ -129,7 +150,7 @@ namespace TreesearchLib
             return false;
         }
 
-        public void FoundSolution(Quality quality)
+        public void FoundSolution(TQuality quality)
         {
             if (quality.IsBetter(UpperBound))
             {
@@ -137,5 +158,49 @@ namespace TreesearchLib
                 Console.WriteLine($"Found new best solution with {quality} after {DateTime.Now - Started}");
             }
         }
+
+        public static SearchLimits<TQuality> WithUpperBound(TQuality upperBound)
+        {
+            return new SearchLimits<TQuality>(upperBound);
+        }
+
+        public SearchLimits<TQuality> SearchDepthFirst<T, TChoice>(T state, ref T bestState)
+        where T : class, ISearchable<TChoice, TQuality>, ICloneable
+        {
+            var searchState = new DFSState<T>(state);
+            Searcher.Search<T, TChoice, TQuality>(searchState, ref bestState, this);
+            return this;
+        }
+
+        public SearchLimits<TQuality> SearchBreadthFirst<T, TChoice>(T state, ref T bestState)
+        where T : class, ISearchable<TChoice, TQuality>, ICloneable
+        {
+            var searchState = new BFSState<T>(state);
+            Searcher.Search<T, TChoice, TQuality>(searchState, ref bestState, this);
+            return this;
+        }
+
+        public SearchLimits<TQuality> SearchWithUndo<T, TChoice>(T state, ref T bestState)
+        where T : class, ISearchableWithUndo<TChoice, TQuality>, ICloneable
+        {
+            Searcher.SearchWithUndo<T, TChoice, TQuality>(state, ref bestState, this);
+            return this;
+        }
+
+        //public SearchLimits<TQuality> SearchBreadthFirstThenDepth<T, TChoice>(T state, ref T bestState, int depthLimit, int breadthLimit)
+        //where T : class, ISearchable<TChoice, TQuality>, ICloneable
+        //{
+
+        //    var searchState = new BFSState<T>(state);
+        //    breadthLimit = breadthLimit;
+        //    Searcher.Search<T, TChoice, TQuality>(searchState, ref bestState, this);
+
+        //    while (searchState.TryGetNext(out var next))
+        //    {
+        //        var dfsState = new DFSState<T>(state);
+        //        Searcher.Search<T, TChoice, TQuality>(dfsState, ref bestState, this);
+        //    }
+        //    return this;
+        //}
     }
 }
