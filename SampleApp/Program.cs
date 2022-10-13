@@ -10,13 +10,15 @@ namespace SampleApp
             var size = 10;
 
             ChooseSmallestProblem best = null;
-            SearchLimits<Minimize>.WithUpperBound(new Minimize(int.MaxValue))
-                .SearchWithUndo<ChooseSmallestProblem, int>(new ChooseSmallestProblem(size), ref best);
-            Console.WriteLine($"SearchReversible {best} {best.Quality}");
-            best = null;
-            SearchLimits<Minimize>.WithUpperBound(new Minimize(int.MaxValue))
+            var control = SearchControl<Minimize>.Start().WithUpperBound(new Minimize(int.MaxValue))
+                .WithImprovementCallback((ctrl, quality) => Console.WriteLine($"Found new best solution with {quality} after {ctrl.Elapsed}"))
                 .SearchDepthFirst<ChooseSmallestProblem, int>(new ChooseSmallestProblem(size), ref best);
-            Console.WriteLine($"Search {best} {best.Quality}");
+            Console.WriteLine($"SearchReversible {best} {best.Quality} {control.TotalNodesVisited}");
+            best = null;
+            SearchControl<Minimize>.Start().WithUpperBound(new Minimize(int.MaxValue))
+                .WithImprovementCallback((ctrl, quality) => Console.WriteLine($"Found new best solution with {quality} after {ctrl.Elapsed}"))
+                .SearchDepthFirst<ChooseSmallestProblem, int>(new ChooseSmallestProblem(size), ref best, utilizeUndo: false);
+            Console.WriteLine($"Search {best} {best.Quality} {control.TotalNodesVisited}");
         }
     }
 }

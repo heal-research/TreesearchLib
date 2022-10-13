@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
 
 namespace TreesearchLib
 {
@@ -80,53 +82,65 @@ namespace TreesearchLib
         public void Store(T state) => states.Enqueue(state);
     }
 
+    public delegate void QualityCallback<TQuality>(SearchControl<TQuality> control, TQuality quality) where TQuality : struct, IQuality<TQuality>;
 
-    public class SearchLimits<TQuality> where TQuality : struct, IQuality<TQuality> // TODO: cancelationtoken
+    public class SearchControl<TQuality> where TQuality : struct, IQuality<TQuality>
     {
-        private SearchLimits(TQuality upperBound)
+        private SearchControl()
         {
-            Started = DateTime.Now;
-            Deadline = DateTime.MaxValue;
+            stopwatch = Stopwatch.StartNew();
             DepthLimit = int.MaxValue;
             BreadthLimit = int.MaxValue;
             BeamWidth = int.MaxValue;
-            UpperBound = upperBound;
+            UpperBound = null;
+            Cancellation = CancellationToken.None;
+            Runtime = TimeSpan.MaxValue;
             nodesVisited = 0;
-            totalNodesVisited = 0;
+            TotalNodesVisited = 0;
         }
-        public SearchLimits(TQuality upperBound, TimeSpan maxRuntime) : this(upperBound)
-        {
-            Deadline = Started + maxRuntime;
 
-        }
-        public SearchLimits(TQuality upperBound, int depthLimit, int breadthLimit) : this(upperBound)
-        {
-            DepthLimit = depthLimit;
-            BreadthLimit = breadthLimit;
-        }
-        public DateTime Started { get; }
+        private int nodesVisited;
+        private Stopwatch stopwatch;
+        
+        public QualityCallback<TQuality> ImprovementCallback { get; set; }
 
-        public DateTime Deadline { get; }
+        public TimeSpan Elapsed => stopwatch.Elapsed;
+        public TimeSpan Runtime { get; set; }
         public int DepthLimit { get; set; }
         public int BreadthLimit { get; set; }
         public int BeamWidth { get; set; }
-        public TQuality UpperBound { get; set; }
-        int nodesVisited;
-        int totalNodesVisited;
+        public TQuality? UpperBound { get; set; }
+        public int TotalNodesVisited { get; private set; }
+        public CancellationToken Cancellation { get; set; }
 
-        public void ResetVisitedNodes(int initial)
-        {
-            totalNodesVisited += nodesVisited;
-            nodesVisited = initial;
-        }
+        public bool IsFinished => !stopwatch.IsRunning;
 
         public void VisitNode()
         {
-            nodesVisited += 1;
+            nodesVisited++;
+        }
+
+        public SearchControl<TQuality> WithNodeCount(int initialVisitedNodes = 0)
+        {
+            TotalNodesVisited += nodesVisited;
+            nodesVisited = initialVisitedNodes;
+            return this;
+        }
+
+        public SearchControl<TQuality> Finish()
+        {
+            stopwatch.Stop();
+            TotalNodesVisited += nodesVisited;
+            return this;
         }
 
         public bool ShouldStop(SearchType searchType)
         {
+            if (IsFinished || Cancellation.IsCancellationRequested || stopwatch.Elapsed > Runtime)
+            {
+                return true;
+            }
+
             var limit = 0;
             switch (searchType)
             {
@@ -143,10 +157,6 @@ namespace TreesearchLib
                 return true;
             }
 
-            if (DateTime.Now > Deadline)
-            {
-                return true;
-            }
             return false;
         }
 
@@ -155,52 +165,251 @@ namespace TreesearchLib
             if (quality.IsBetter(UpperBound))
             {
                 UpperBound = quality;
-                Console.WriteLine($"Found new best solution with {quality} after {DateTime.Now - Started}");
+                ImprovementCallback?.Invoke(this, quality);
             }
         }
 
-        public static SearchLimits<TQuality> WithUpperBound(TQuality upperBound)
+        public static SearchControl<TQuality> Start()
         {
-            return new SearchLimits<TQuality>(upperBound);
+            return new SearchControl<TQuality>();
+        }
+    }
+
+    public static class SearchControlExtensions
+    {
+        public static SearchControl<TQuality> WithImprovementCallback<TQuality>(this SearchControl<TQuality> control, QualityCallback<TQuality> callback)
+            where TQuality : struct, IQuality<TQuality>
+        {
+            control.ImprovementCallback = callback;
+            return control;
         }
 
-        public SearchLimits<TQuality> SearchDepthFirst<T, TChoice>(T state, ref T bestState)
-        where T : class, ISearchable<TChoice, TQuality>, ICloneable
+        public static SearchControl<TQuality> WithCancellationToken<TQuality>(this SearchControl<TQuality> control, CancellationToken token)
+            where TQuality : struct, IQuality<TQuality>
         {
-            var searchState = new DFSState<T>(state);
-            Searcher.Search<T, TChoice, TQuality>(searchState, ref bestState, this);
-            return this;
+            control.Cancellation = token;
+            return control;
         }
 
-        public SearchLimits<TQuality> SearchBreadthFirst<T, TChoice>(T state, ref T bestState)
-        where T : class, ISearchable<TChoice, TQuality>, ICloneable
+        public static SearchControl<TQuality> WithUpperBound<TQuality>(this SearchControl<TQuality> control, TQuality upperBound)
+            where TQuality : struct, IQuality<TQuality>
         {
-            var searchState = new BFSState<T>(state);
-            Searcher.Search<T, TChoice, TQuality>(searchState, ref bestState, this);
-            return this;
+            control.UpperBound = upperBound;
+            return control;
         }
 
-        public SearchLimits<TQuality> SearchWithUndo<T, TChoice>(T state, ref T bestState)
-        where T : class, ISearchableWithUndo<TChoice, TQuality>, ICloneable
+        public static SearchControl<TQuality> WithRuntimeLimit<TQuality>(this SearchControl<TQuality> control, TimeSpan runtime)
+            where TQuality : struct, IQuality<TQuality>
         {
-            Searcher.SearchWithUndo<T, TChoice, TQuality>(state, ref bestState, this);
-            return this;
+            control.Runtime = runtime;
+            return control;
         }
 
-        //public SearchLimits<TQuality> SearchBreadthFirstThenDepth<T, TChoice>(T state, ref T bestState, int depthLimit, int breadthLimit)
-        //where T : class, ISearchable<TChoice, TQuality>, ICloneable
-        //{
+        public static SearchControl<TQuality> WithBreadthLimit<TQuality>(this SearchControl<TQuality> control, int breadthLimit)
+            where TQuality : struct, IQuality<TQuality>
+        {
+            control.BreadthLimit = breadthLimit;
+            return control;
+        }
 
-        //    var searchState = new BFSState<T>(state);
-        //    breadthLimit = breadthLimit;
-        //    Searcher.Search<T, TChoice, TQuality>(searchState, ref bestState, this);
+        public static SearchControl<TQuality> WithDepthLimit<TQuality>(this SearchControl<TQuality> control, int depthLimit)
+            where TQuality : struct, IQuality<TQuality>
+        {
+            control.DepthLimit = depthLimit;
+            return control;
+        }
 
-        //    while (searchState.TryGetNext(out var next))
-        //    {
-        //        var dfsState = new DFSState<T>(state);
-        //        Searcher.Search<T, TChoice, TQuality>(dfsState, ref bestState, this);
-        //    }
-        //    return this;
-        //}
+        public static SearchControl<TQuality> WithBeamWidth<TQuality>(this SearchControl<TQuality> control, int beamWidth)
+            where TQuality : struct, IQuality<TQuality>
+        {
+            control.BeamWidth = beamWidth;
+            return control;
+        }
+
+        private static SearchControl<TQuality> DoSearchDepthFirst<TSearchable, TChoice, TQuality>(SearchControl<TQuality> control, TSearchable state, ref TSearchable bestState)
+            where TQuality : struct, IQuality<TQuality>
+            where TSearchable : class, ISearchable<TChoice, TQuality>
+        {
+            if (state is ISearchableWithUndo<TChoice, TQuality> stateWithUndo)
+            {
+                var bestStateWithUndo = (ISearchableWithUndo<TChoice, TQuality>)bestState;
+                Searcher.SearchWithUndo<ISearchableWithUndo<TChoice, TQuality>, TChoice, TQuality>(stateWithUndo, ref bestStateWithUndo, control);
+                bestState = (TSearchable)bestStateWithUndo;
+            } else
+            {
+                var searchState = new DFSState<TSearchable>(state);
+                Searcher.Search<TSearchable, TChoice, TQuality>(searchState, ref bestState, control);
+            }
+            return control;
+        }
+
+        public static SearchControl<TQuality> SearchDepthFirstAndContinue<TSearchable, TChoice, TQuality>(this SearchControl<TQuality> control, TSearchable state, ref TSearchable bestState)
+            where TQuality : struct, IQuality<TQuality>
+            where TSearchable : class, ISearchable<TChoice, TQuality>
+        {
+            return DoSearchDepthFirst<TSearchable, TChoice, TQuality>(control, state, ref bestState);
+        }
+
+        public static SearchControl<TQuality> SearchDepthFirst<TSearchable, TChoice, TQuality>(this SearchControl<TQuality> control, TSearchable state, ref TSearchable bestState)
+            where TQuality : struct, IQuality<TQuality>
+            where TSearchable : class, ISearchable<TChoice, TQuality>
+        {
+            return SearchDepthFirstAndContinue<TSearchable, TChoice, TQuality>(control, state, ref bestState).Finish();
+        }
+
+        public static SearchControl<TQuality> SearchDepthFirstAndContinue<TSearchable, TChoice, TQuality>(this SearchControl<TQuality> control, TSearchable state, ref TSearchable bestState, bool utilizeUndo = true)
+            where TQuality : struct, IQuality<TQuality>
+            where TSearchable : class, ISearchableWithUndo<TChoice, TQuality>
+        {
+            if (!utilizeUndo)
+            {
+                var searchState = new DFSState<TSearchable>(state);
+                Searcher.Search<TSearchable, TChoice, TQuality>(searchState, ref bestState, control);
+            } else
+            {
+                Searcher.SearchWithUndo<TSearchable, TChoice, TQuality>(state, ref bestState, control);
+            }
+            return control;
+        }
+
+        public static SearchControl<TQuality> SearchDepthFirst<TSearchable, TChoice, TQuality>(this SearchControl<TQuality> control, TSearchable state, ref TSearchable bestState, bool utilizeUndo = true)
+            where TQuality : struct, IQuality<TQuality>
+            where TSearchable : class, ISearchableWithUndo<TChoice, TQuality>
+        {
+            return SearchDepthFirstAndContinue<TSearchable, TChoice, TQuality>(control, state, ref bestState, utilizeUndo).Finish();
+        }
+
+        public static SearchControl<Minimize> SearchDepthFirstAndContinue<TSearchable, TChoice>(this SearchControl<Minimize> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, Minimize>
+        {
+            return SearchDepthFirstAndContinue<TSearchable, TChoice, Minimize>(control, state, ref bestState);
+        }
+
+        public static SearchControl<Minimize> SearchDepthFirstAndContinue<TSearchable, TChoice>(this SearchControl<Minimize> control, TSearchable state, ref TSearchable bestState, bool utilizeUndo = true)
+            where TSearchable : class, ISearchableWithUndo<TChoice, Minimize>
+        {
+            return SearchDepthFirstAndContinue<TSearchable, TChoice, Minimize>(control, state, ref bestState, utilizeUndo);
+        }
+
+        public static SearchControl<Minimize> SearchDepthFirst<TSearchable, TChoice>(this SearchControl<Minimize> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, Minimize>
+        {
+            return SearchDepthFirst<TSearchable, TChoice, Minimize>(control, state, ref bestState);
+        }
+
+        public static SearchControl<Minimize> SearchDepthFirst<TSearchable, TChoice>(this SearchControl<Minimize> control, TSearchable state, ref TSearchable bestState, bool utilizeUndo = true)
+            where TSearchable : class, ISearchableWithUndo<TChoice, Minimize>
+        {
+            return SearchDepthFirst<TSearchable, TChoice, Minimize>(control, state, ref bestState, utilizeUndo);
+        }
+
+        public static SearchControl<Maximize> SearchDepthFirstAndContinue<TSearchable, TChoice>(this SearchControl<Maximize> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, Maximize>
+        {
+            return SearchDepthFirstAndContinue<TSearchable, TChoice, Maximize>(control, state, ref bestState);
+        }
+
+        public static SearchControl<Maximize> SearchDepthFirstAndContinue<TSearchable, TChoice>(this SearchControl<Maximize> control, TSearchable state, ref TSearchable bestState, bool utilizeUndo = true)
+            where TSearchable : class, ISearchableWithUndo<TChoice, Maximize>
+        {
+            return SearchDepthFirstAndContinue<TSearchable, TChoice, Maximize>(control, state, ref bestState, utilizeUndo);
+        }
+
+        public static SearchControl<Maximize> SearchDepthFirst<TSearchable, TChoice>(this SearchControl<Maximize> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, Maximize>
+        {
+            return SearchDepthFirst<TSearchable, TChoice, Maximize>(control, state, ref bestState);
+        }
+
+        public static SearchControl<Maximize> SearchDepthFirst<TSearchable, TChoice>(this SearchControl<Maximize> control, TSearchable state, ref TSearchable bestState, bool utilizeUndo = true)
+            where TSearchable : class, ISearchableWithUndo<TChoice, Maximize>
+        {
+            return SearchDepthFirst<TSearchable, TChoice, Maximize>(control, state, ref bestState, utilizeUndo);
+        }
+
+        public static SearchControl<TQuality> SearchBreadthFirstAndContinue<TSearchable, TChoice, TQuality>(this SearchControl<TQuality> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            var searchState = new BFSState<TSearchable>(state);
+            Searcher.Search<TSearchable, TChoice, TQuality>(searchState, ref bestState, control);
+            return control;
+        }
+
+        public static SearchControl<TQuality> SearchBreadthFirst<TSearchable, TChoice, TQuality>(this SearchControl<TQuality> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            return SearchBreadthFirstAndContinue<TSearchable, TChoice, TQuality>(control, state, ref bestState).Finish();
+        }
+
+        public static SearchControl<Minimize> SearchBreadthFirstAndContinue<TSearchable, TChoice>(this SearchControl<Minimize> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, Minimize>
+        {
+            return SearchBreadthFirstAndContinue<TSearchable, TChoice, Minimize>(control, state, ref bestState);
+        }
+
+        public static SearchControl<Minimize> SearchBreadthFirst<TSearchable, TChoice>(this SearchControl<Minimize> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, Minimize>
+        {
+            return SearchBreadthFirst<TSearchable, TChoice, Minimize>(control, state, ref bestState);
+        }
+
+        public static SearchControl<Maximize> SearchBreadthFirstAndContinue<TSearchable, TChoice>(this SearchControl<Maximize> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, Maximize>
+        {
+            return SearchBreadthFirstAndContinue<TSearchable, TChoice, Maximize>(control, state, ref bestState);
+        }
+
+        public static SearchControl<Maximize> SearchBreadthFirst<TSearchable, TChoice>(this SearchControl<Maximize> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, Maximize>
+        {
+            return SearchBreadthFirst<TSearchable, TChoice, Maximize>(control, state, ref bestState);
+        }
+
+        public static SearchControl<TQuality> SearchBreadthFirstThenDepthAndContinue<TSearchable, TChoice, TQuality>(this SearchControl<TQuality> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            var searchState = new BFSState<TSearchable>(state);
+            Searcher.Search<TSearchable, TChoice, TQuality>(searchState, ref bestState, control);
+            while (searchState.TryGetNext(out var next))
+            {
+                control.WithNodeCount(0);
+                DoSearchDepthFirst<TSearchable, TChoice, TQuality>(control, next, ref bestState);
+            }
+            return control;
+        }
+
+        public static SearchControl<TQuality> SearchBreadthFirstThenDepth<TSearchable, TChoice, TQuality>(this SearchControl<TQuality> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            return SearchBreadthFirstThenDepthAndContinue<TSearchable, TChoice, TQuality>(control, state, ref bestState).Finish();
+        }
+
+        public static SearchControl<Minimize> SearchBreadthFirstThenDepthAndContinue<TSearchable, TChoice>(this SearchControl<Minimize> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, Minimize>
+        {
+            return SearchBreadthFirstThenDepthAndContinue<TSearchable, TChoice, Minimize>(control, state, ref bestState);
+        }
+
+        public static SearchControl<Minimize> SearchBreadthFirstThenDepth<TSearchable, TChoice>(this SearchControl<Minimize> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, Minimize>
+        {
+            return SearchBreadthFirstThenDepth<TSearchable, TChoice, Minimize>(control, state, ref bestState);
+        }
+
+        public static SearchControl<Maximize> SearchBreadthFirstThenDepthAndContinue<TSearchable, TChoice>(this SearchControl<Maximize> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, Maximize>
+        {
+            return SearchBreadthFirstThenDepthAndContinue<TSearchable, TChoice, Maximize>(control, state, ref bestState);
+        }
+
+        public static SearchControl<Maximize> SearchBreadthFirstThenDepth<TSearchable, TChoice>(this SearchControl<Maximize> control, TSearchable state, ref TSearchable bestState)
+            where TSearchable : class, ISearchable<TChoice, Maximize>
+        {
+            return SearchBreadthFirstThenDepth<TSearchable, TChoice, Maximize>(control, state, ref bestState);
+        }
     }
 }

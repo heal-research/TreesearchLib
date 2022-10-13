@@ -5,7 +5,7 @@ using TreesearchLib;
 
 namespace SampleApp
 {
-    class ChooseSmallestProblem : IMinimizableWithUndo<int>, ICloneable
+    class ChooseSmallestProblem : IMinimizableWithUndo<int>
     {
         public const int minChoices = 2;
         public const int maxChoices = 10;

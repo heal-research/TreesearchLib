@@ -1,10 +1,11 @@
+using System;
 using System.Collections.Generic;
 
 namespace TreesearchLib
 {
-    public interface IQuality<T>
+    public interface IQuality<T> where T : struct
     {
-        bool IsBetter(T other);
+        bool IsBetter(T? other);
     }
 
     public struct Minimize : IQuality<Minimize>
@@ -15,7 +16,7 @@ namespace TreesearchLib
             this.value = value;
         }
 
-        public bool IsBetter(Minimize other) => value < other.value;        
+        public bool IsBetter(Minimize? other) => !other.HasValue || value < other.Value.value;
 
         public override string ToString() => $"Quality( {value} )";
     }
@@ -28,12 +29,13 @@ namespace TreesearchLib
             this.value = value;
         }
 
-        public bool IsBetter(Maximize other) => value > other.value;
+        public bool IsBetter(Maximize? other) => !other.HasValue || value > other.Value.value;
 
         public override string ToString() => $"Quality( {value} )";
     }
 
-    public interface ISearchable<TChoice, TQuality> where TQuality : struct, IQuality<TQuality>
+    public interface ISearchable<TChoice, TQuality> : ICloneable
+        where TQuality : struct, IQuality<TQuality>
     {
         TQuality LowerBound { get; }
         TQuality? Quality { get; }
