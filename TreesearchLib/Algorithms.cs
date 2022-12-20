@@ -51,7 +51,7 @@ namespace TreesearchLib
             var state = (T)control.InitialState.Clone();
             var searchState = new LIFOCollection<Tuple<int, C>>();
             var stateDepth = 0;
-            foreach (var entry in state.GetChoices().Take(beamWidth).Select(choice => Tuple.Create(stateDepth, choice)))
+            foreach (var entry in state.GetChoices().Take(beamWidth).Reverse().Select(choice => Tuple.Create(stateDepth, choice)))
             {
                 searchState.Store(entry);
             }
@@ -74,7 +74,7 @@ namespace TreesearchLib
                 }
 
 
-                foreach (var entry in state.GetChoices().Take(beamWidth).Select(ch => Tuple.Create(stateDepth, ch)))
+                foreach (var entry in state.GetChoices().Take(beamWidth).Reverse().Select(ch => Tuple.Create(stateDepth, ch)))
                 {
                     searchState.Store(entry);
                 }
