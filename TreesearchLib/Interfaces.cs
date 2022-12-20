@@ -46,9 +46,9 @@ namespace TreesearchLib
             where TState : class, IState<TState, Maximize> {
             return SearchControl<TState, Maximize>.Start(state);
         }
-        public static SearchControlUndo<TState, TChoice, Maximize> Start<TState, TChoice>(TState state)
+        public static SearchControlUndo<TState, TChoice, Maximize> Start<TState, TChoice>(IUndoState<TState, TChoice, Maximize> state)
             where TState : class, IUndoState<TState, TChoice, Maximize> {
-            return SearchControlUndo<TState, TChoice, Maximize>.Start(state);
+            return SearchControlUndo<TState, TChoice, Maximize>.Start((TState)state);
         }
     }
 

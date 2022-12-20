@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace TreesearchLib {
 
     public static class UndoStateExtension {
-        public static UndoWrapper<TUndoState, TChoice, TQuality> Wrap<TUndoState, TChoice, TQuality>(this IUndoState<TUndoState, TChoice, TQuality> undoState)
+        public static UndoWrapper<TUndoState, TChoice, TQuality> NoUndo<TUndoState, TChoice, TQuality>(this IUndoState<TUndoState, TChoice, TQuality> undoState)
         where TUndoState : class, IUndoState<TUndoState, TChoice, TQuality>
         where TQuality : struct, IQuality<TQuality> {
             return new UndoWrapper<TUndoState, TChoice, TQuality>((TUndoState)undoState);

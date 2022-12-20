@@ -66,7 +66,7 @@ namespace TreesearchLib
                 }
                 state.Apply(choice);
                 control.VisitNode(state);
-                depth++;
+                stateDepth++;
                 
                 if (!state.Bound.IsBetter(control.BestQuality))
                 {
@@ -74,7 +74,7 @@ namespace TreesearchLib
                 }
 
 
-                foreach (var entry in state.GetChoices().Take(beamWidth).Select(ch => Tuple.Create(depth, ch)))
+                foreach (var entry in state.GetChoices().Take(beamWidth).Select(ch => Tuple.Create(stateDepth, ch)))
                 {
                     searchState.Store(entry);
                 }
