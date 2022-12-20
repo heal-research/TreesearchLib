@@ -5,7 +5,7 @@ using TreesearchLib;
 
 namespace SampleApp
 {
-    class ChooseSmallestProblem : IMinimizableWithUndo<int>
+    class ChooseSmallestProblem : IUndoState<ChooseSmallestProblem, int, Minimize>
     {
         public const int minChoices = 2;
         public const int maxChoices = 10;
@@ -21,7 +21,7 @@ namespace SampleApp
 
         public bool IsSolved => choicesMade.Count == size;
 
-        public Minimize LowerBound => new Minimize(choicesMade.Peek() + (size - choicesMade.Count));
+        public Minimize Bound => new Minimize(choicesMade.Peek() + (size - choicesMade.Count));
 
         public Minimize? Quality => IsSolved ? new Minimize(choicesMade.Peek()) : new Minimize?();
 
@@ -56,8 +56,6 @@ namespace SampleApp
             }
 
         }
-
-        public int ChoicesMade => choicesMade.Count;
 
         public void UndoLast()
         {
