@@ -115,6 +115,7 @@ namespace TreesearchLib
             BestQualityState = null;
             Cancellation = CancellationToken.None;
             Runtime = TimeSpan.MaxValue;
+            NodeLimit = long.MaxValue;
             VisitedNodes = 0;
         }
 

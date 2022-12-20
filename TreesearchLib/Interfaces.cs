@@ -8,7 +8,7 @@ namespace TreesearchLib
         bool IsBetter(T? other);
     }
 
-    public struct Minimize : IQuality<Minimize>
+    public struct Minimize : IQuality<Minimize>, IComparable<Minimize>
     {
         int value;
         public Minimize(int value)
@@ -28,9 +28,14 @@ namespace TreesearchLib
             where TState : class, IUndoState<TState, TChoice, Minimize> {
             return SearchControlUndo<TState, TChoice, Minimize>.Start((TState)state);
         }
+
+        public int CompareTo(Minimize other)
+        {
+            return value.CompareTo(other.value);
+        }
     }
 
-    public struct Maximize : IQuality<Maximize>
+    public struct Maximize : IQuality<Maximize>, IComparable<Maximize>
     {
         int value;
         public Maximize(int value)
@@ -49,6 +54,11 @@ namespace TreesearchLib
         public static SearchControlUndo<TState, TChoice, Maximize> Start<TState, TChoice>(IUndoState<TState, TChoice, Maximize> state)
             where TState : class, IUndoState<TState, TChoice, Maximize> {
             return SearchControlUndo<TState, TChoice, Maximize>.Start((TState)state);
+        }
+
+        public int CompareTo(Maximize other)
+        {
+            return other.value.CompareTo(value);
         }
     }
 

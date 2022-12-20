@@ -38,5 +38,9 @@ namespace TreesearchLib {
         {
             return new UndoWrapper<TUndoState, TChoice, TQuality>((TUndoState)undoState.Clone());
         }
+
+        public override string ToString() => undoState.ToString();
+        public override int GetHashCode() => undoState.GetHashCode();
+        public override bool Equals(object obj) => undoState.Equals(obj);
     }
 }

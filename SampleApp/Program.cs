@@ -14,7 +14,7 @@ namespace SampleApp
                 .WithImprovementCallback((ctrl, state, quality) => Console.WriteLine($"Found new best solution with {quality} after {ctrl.Elapsed}"))
                 .DepthFirst();
             Console.WriteLine($"SearchReversible {control.BestQualityState} {control.BestQuality} {control.VisitedNodes}");
-            var control2 = Minimize.Start(new ChooseSmallestProblem(size).Wrap()).WithUpperBound(new Minimize(int.MaxValue))
+            var control2 = Minimize.Start(new ChooseSmallestProblem(size).NoUndo()).WithUpperBound(new Minimize(int.MaxValue))
                 .WithImprovementCallback((ctrl, state, quality) => Console.WriteLine($"Found new best solution with {quality} after {ctrl.Elapsed}"))
                 .DepthFirst();
             Console.WriteLine($"Search {control.BestQualityState} {control.BestQuality} {control.VisitedNodes}");
@@ -32,8 +32,12 @@ namespace SampleApp
                 Capacity = capacity
             };
 
-            var result = Maximize.Start(knapsack).WithImprovementCallback((ctrl, state, quality) => Console.WriteLine($"Found solution with {quality} after {ctrl.Elapsed}"))
-                .DepthFirst();
+            var result = Maximize.Start(knapsack.NoUndo()).WithImprovementCallback((ctrl, state, quality) => Console.WriteLine($"Found solution with {quality} after {ctrl.Elapsed}"))
+                .BeamSearch(100);
+            Console.WriteLine($"Search {result.BestQualityState} {result.BestQuality} {result.VisitedNodes}");
+
+            result = Maximize.Start(knapsack.NoUndo()).WithImprovementCallback((ctrl, state, quality) => Console.WriteLine($"Found solution with {quality} after {ctrl.Elapsed}"))
+                .RakeAndBeamSearch(100, 100);
             Console.WriteLine($"Search {result.BestQualityState} {result.BestQuality} {result.VisitedNodes}");
         }
     }

@@ -7,19 +7,27 @@ namespace TreesearchLib
 {
     public static class Heuristics
     {
-        public static Task<SearchControl<T, Q>> BeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth, IComparer<T> rank)
+        public static Task<SearchControl<T, Q>> BeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth, IComparer<T> rank = null)
             where T : class, IState<T, Q>
             where Q : struct, IQuality<Q>, IComparable<Q>
         {
             return Task.Run(() => BeamSearch(control, beamWidth, rank), control.Cancellation);
         }
 
-        public static SearchControl<T, Q> BeamSearch<T, Q>(this SearchControl<T, Q> control, int beamWidth, IComparer<T> rank)
+        public static SearchControl<T, Q> BeamSearch<T, Q>(this SearchControl<T, Q> control, int beamWidth, IComparer<T> rank = null)
             where T : class, IState<T, Q>
             where Q : struct, IQuality<Q>, IComparable<Q>
         {
             if (beamWidth <= 0) throw new ArgumentException("A beam width of 0 or less is not possible");
-            var searchState = new FIFOCollection<T>(control.InitialState);
+            if (rank == null) rank = new BoundComparer<T, Q>();
+            return DoBeamSearch(control, control.InitialState, beamWidth, rank);
+        }
+
+        private static SearchControl<T, Q> DoBeamSearch<T, Q>(SearchControl<T, Q> control, T state, int beamWidth, IComparer<T> rank)
+            where T : class, IState<T, Q>
+            where Q : struct, IQuality<Q>, IComparable<Q>
+        {
+            var searchState = new FIFOCollection<T>(state);
             var nextlayer = new List<T>();
             while (!control.ShouldStop())
             {
@@ -38,7 +46,8 @@ namespace TreesearchLib
                         if (!next.Quality.HasValue)
                             nextlayer.Add(next);
                     }
-                    if (control.ShouldStop()) {
+                    if (control.ShouldStop())
+                    {
                         searchState.Clear();
                         break;
                     }
@@ -55,6 +64,55 @@ namespace TreesearchLib
                 }
             }
             return control;
+        }
+
+        public static Task<SearchControl<T, Q>> RakeSearchAsync<T, Q>(this SearchControl<T, Q> control, int rakeWidth)
+            where T : class, IState<T, Q>
+            where Q : struct, IQuality<Q>, IComparable<Q>
+        {
+            return Task.Run(() => RakeSearch(control, rakeWidth), control.Cancellation);
+        }
+
+        public static SearchControl<T, Q> RakeSearch<T, Q>(this SearchControl<T, Q> control, int rakeWidth)
+            where T : class, IState<T, Q>
+            where Q : struct, IQuality<Q>, IComparable<Q>
+        {
+            var rake = Algorithms.DoSearch(control, control.InitialState, false, int.MaxValue, int.MaxValue, rakeWidth);
+            while (rake.TryGetNext(out var next) && !control.ShouldStop())
+            {
+                Algorithms.DoSearch(control, next.Item2, true, 1, int.MaxValue, int.MaxValue);
+            }
+            return control;
+        }
+
+        public static Task<SearchControl<T, Q>> RakeAndBeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, IComparer<T> rank = null)
+            where T : class, IState<T, Q>
+            where Q : struct, IQuality<Q>, IComparable<Q>
+        {
+            return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, rank), control.Cancellation);
+        }
+
+        public static SearchControl<T, Q> RakeAndBeamSearch<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, IComparer<T> rank = null)
+            where T : class, IState<T, Q>
+            where Q : struct, IQuality<Q>, IComparable<Q>
+        {
+            if (rank == null) rank = new BoundComparer<T, Q>();
+            var rake = Algorithms.DoSearch(control, control.InitialState, false, int.MaxValue, int.MaxValue, rakeWidth);
+            while (rake.TryGetNext(out var next) && !control.ShouldStop())
+            {
+                DoBeamSearch(control, next.Item2, beamWidth, rank);
+            }
+            return control;
+        }
+    }
+
+    public class BoundComparer<T, Q> : IComparer<T>
+        where T : class, IState<T, Q>
+        where Q : struct, IQuality<Q>, IComparable<Q>
+    {
+        public int Compare(T x, T y)
+        {
+            return x.Bound.CompareTo(y.Bound);
         }
     }
 }
