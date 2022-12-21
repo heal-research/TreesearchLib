@@ -25,11 +25,17 @@ namespace TreesearchLib
         void VisitNode(TState state);
     }
 
-    public class SearchControlUndo<TState, TChoice, TQuality> : ISearchControl<TState, TQuality>
-        where TState : class, IUndoState<TState, TChoice, TQuality>
+    /// <summary>
+    /// Search control class for mutable (reversible) states with a separate choice type
+    /// </summary>
+    /// <typeparam name="TState">The type that represents the state</typeparam>
+    /// <typeparam name="TChoice">The type that represents the choice (each choice leads to a branch)</typeparam>
+    /// <typeparam name="TQuality">The type that represents the quality</typeparam>
+    public class SearchControl<TState, TChoice, TQuality> : ISearchControl<TState, TQuality>
+        where TState : class, IMutableState<TState, TChoice, TQuality>
         where TQuality : struct, IQuality<TQuality> 
     {
-        private SearchControlUndo(TState state)
+        private SearchControl(TState state)
         {
             stopwatch = Stopwatch.StartNew();
             InitialState = state;
@@ -57,7 +63,7 @@ namespace TreesearchLib
 
         public bool IsFinished => !stopwatch.IsRunning;
 
-        public SearchControlUndo<TState, TChoice, TQuality> Finish()
+        public SearchControl<TState, TChoice, TQuality> Finish()
         {
             stopwatch.Stop();
             return this;
@@ -96,12 +102,17 @@ namespace TreesearchLib
             }
         }
 
-        public static SearchControlUndo<TState, TChoice, TQuality> Start(IUndoState<TState, TChoice, TQuality> state)
+        public static SearchControl<TState, TChoice, TQuality> Start(IMutableState<TState, TChoice, TQuality> state)
         {
-            return new SearchControlUndo<TState, TChoice, TQuality>((TState)state);
+            return new SearchControl<TState, TChoice, TQuality>((TState)state);
         }
     }
 
+    /// <summary>
+    /// Search control class for irreversible states
+    /// </summary>
+    /// <typeparam name="TState">The type that represents the state</typeparam>
+    /// <typeparam name="TQuality">The type that represents the quality</typeparam>
     public class SearchControl<TState, TQuality> : ISearchControl<TState, TQuality>
         where TState : IState<TState, TQuality>
         where TQuality : struct, IQuality<TQuality>
@@ -188,8 +199,8 @@ namespace TreesearchLib
             control.ImprovementCallback = callback;
             return control;
         }
-        public static SearchControlUndo<TState, TChoice, TQuality> WithImprovementCallback<TState, TChoice, TQuality>(this SearchControlUndo<TState, TChoice, TQuality> control, QualityCallback<TState, TQuality> callback)
-            where TState : class, IUndoState<TState, TChoice, TQuality>
+        public static SearchControl<TState, TChoice, TQuality> WithImprovementCallback<TState, TChoice, TQuality>(this SearchControl<TState, TChoice, TQuality> control, QualityCallback<TState, TQuality> callback)
+            where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             control.ImprovementCallback = callback;
@@ -204,8 +215,8 @@ namespace TreesearchLib
             return control;
         }
 
-        public static SearchControlUndo<TState, TChoice, TQuality> WithCancellationToken<TState, TChoice, TQuality>(this SearchControlUndo<TState, TChoice, TQuality> control, CancellationToken token)
-            where TState : class, IUndoState<TState, TChoice, TQuality>
+        public static SearchControl<TState, TChoice, TQuality> WithCancellationToken<TState, TChoice, TQuality>(this SearchControl<TState, TChoice, TQuality> control, CancellationToken token)
+            where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             control.Cancellation = token;
@@ -220,8 +231,8 @@ namespace TreesearchLib
             return control;
         }
 
-        public static SearchControlUndo<TState, TChoice, TQuality> WithUpperBound<TState, TChoice, TQuality>(this SearchControlUndo<TState, TChoice, TQuality> control, TQuality upperBound)
-            where TState : class, IUndoState<TState, TChoice, TQuality>
+        public static SearchControl<TState, TChoice, TQuality> WithUpperBound<TState, TChoice, TQuality>(this SearchControl<TState, TChoice, TQuality> control, TQuality upperBound)
+            where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             control.BestQuality = upperBound;
@@ -236,8 +247,8 @@ namespace TreesearchLib
             return control;
         }
 
-        public static SearchControlUndo<TState, TChoice, TQuality> WithRuntimeLimit<TState, TChoice, TQuality>(this SearchControlUndo<TState, TChoice, TQuality> control, TimeSpan runtime)
-            where TState : class, IUndoState<TState, TChoice, TQuality>
+        public static SearchControl<TState, TChoice, TQuality> WithRuntimeLimit<TState, TChoice, TQuality>(this SearchControl<TState, TChoice, TQuality> control, TimeSpan runtime)
+            where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             control.Runtime = runtime;

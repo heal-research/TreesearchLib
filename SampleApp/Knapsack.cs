@@ -5,7 +5,7 @@ using TreesearchLib;
 
 namespace SampleApp
 {
-    public class Knapsack : IUndoState<Knapsack, bool, Maximize>
+    public class Knapsack : IMutableState<Knapsack, bool, Maximize>
     {
         public IReadOnlyList<int> Profits { get; set; }
         public IReadOnlyList<int> Weights { get; set; }

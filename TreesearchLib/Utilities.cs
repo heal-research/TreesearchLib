@@ -4,20 +4,20 @@ using System.Collections.Generic;
 namespace TreesearchLib {
 
     public static class UndoStateExtension {
-        public static UndoWrapper<TUndoState, TChoice, TQuality> NoUndo<TUndoState, TChoice, TQuality>(this IUndoState<TUndoState, TChoice, TQuality> undoState)
-        where TUndoState : class, IUndoState<TUndoState, TChoice, TQuality>
+        public static UndoWrapper<TState, TChoice, TQuality> NoUndo<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state)
+        where TState : class, IMutableState<TState, TChoice, TQuality>
         where TQuality : struct, IQuality<TQuality> {
-            return new UndoWrapper<TUndoState, TChoice, TQuality>((TUndoState)undoState);
+            return new UndoWrapper<TState, TChoice, TQuality>((TState)state);
         }
     }
 
-    public class UndoWrapper<TUndoState, TChoice, TQuality> : IState<UndoWrapper<TUndoState, TChoice, TQuality>, TQuality>
-        where TUndoState : class, IUndoState<TUndoState, TChoice, TQuality>
+    public class UndoWrapper<TState, TChoice, TQuality> : IState<UndoWrapper<TState, TChoice, TQuality>, TQuality>
+        where TState : class, IMutableState<TState, TChoice, TQuality>
         where TQuality : struct, IQuality<TQuality> {
 
-        private TUndoState undoState;
+        private TState undoState;
 
-        internal UndoWrapper(TUndoState undoState) {
+        internal UndoWrapper(TState undoState) {
             if (undoState == null) throw new ArgumentNullException(nameof(undoState));
             this.undoState = undoState;
         }
@@ -25,18 +25,18 @@ namespace TreesearchLib {
         public TQuality Bound => undoState.Bound;
         public TQuality? Quality => undoState.Quality;
 
-        public IEnumerable<UndoWrapper<TUndoState, TChoice, TQuality>> GetBranches()
+        public IEnumerable<UndoWrapper<TState, TChoice, TQuality>> GetBranches()
         {
             foreach (var choice in undoState.GetChoices()) {
-                var clone = (TUndoState)undoState.Clone();
+                var clone = (TState)undoState.Clone();
                 clone.Apply(choice);
-                yield return new UndoWrapper<TUndoState, TChoice, TQuality>(clone);
+                yield return new UndoWrapper<TState, TChoice, TQuality>(clone);
             }
         }
 
         public object Clone()
         {
-            return new UndoWrapper<TUndoState, TChoice, TQuality>((TUndoState)undoState.Clone());
+            return new UndoWrapper<TState, TChoice, TQuality>((TState)undoState.Clone());
         }
 
         public override string ToString() => undoState.ToString();

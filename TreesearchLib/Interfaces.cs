@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace TreesearchLib
 {
-    public interface IQuality<T> where T : struct
+    public interface IQuality<T> : IComparable<T> where T : struct
     {
         bool IsBetter(T? other);
     }
@@ -24,9 +24,9 @@ namespace TreesearchLib
             where TState : IState<TState, Minimize> {
             return SearchControl<TState, Minimize>.Start(state);
         }
-        public static SearchControlUndo<TState, TChoice, Minimize> Start<TState, TChoice>(IUndoState<TState, TChoice, Minimize> state)
-            where TState : class, IUndoState<TState, TChoice, Minimize> {
-            return SearchControlUndo<TState, TChoice, Minimize>.Start((TState)state);
+        public static SearchControl<TState, TChoice, Minimize> Start<TState, TChoice>(IMutableState<TState, TChoice, Minimize> state)
+            where TState : class, IMutableState<TState, TChoice, Minimize> {
+            return SearchControl<TState, TChoice, Minimize>.Start((TState)state);
         }
 
         public int CompareTo(Minimize other)
@@ -51,9 +51,9 @@ namespace TreesearchLib
             where TState : IState<TState, Maximize> {
             return SearchControl<TState, Maximize>.Start(state);
         }
-        public static SearchControlUndo<TState, TChoice, Maximize> Start<TState, TChoice>(IUndoState<TState, TChoice, Maximize> state)
-            where TState : class, IUndoState<TState, TChoice, Maximize> {
-            return SearchControlUndo<TState, TChoice, Maximize>.Start((TState)state);
+        public static SearchControl<TState, TChoice, Maximize> Start<TState, TChoice>(IMutableState<TState, TChoice, Maximize> state)
+            where TState : class, IMutableState<TState, TChoice, Maximize> {
+            return SearchControl<TState, TChoice, Maximize>.Start((TState)state);
         }
 
         public int CompareTo(Maximize other)
@@ -76,8 +76,8 @@ namespace TreesearchLib
         IEnumerable<TState> GetBranches();
     }
 
-    public interface IUndoState<TState, TChoice, TQuality> : IQualifiable<TQuality>
-        where TState : class, IUndoState<TState, TChoice, TQuality>
+    public interface IMutableState<TState, TChoice, TQuality> : IQualifiable<TQuality>
+        where TState : class, IMutableState<TState, TChoice, TQuality>
         where TQuality : struct, IQuality<TQuality>
     {
         IEnumerable<TChoice> GetChoices();
