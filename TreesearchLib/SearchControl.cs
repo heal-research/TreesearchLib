@@ -1,16 +1,15 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 
 namespace TreesearchLib
 {
     public delegate void QualityCallback<TState, TQuality>(ISearchControl<TState, TQuality> control, TState state, TQuality quality)
-        where TState : class, IQualifiable<TQuality>
+        where TState : IQualifiable<TQuality>
         where TQuality : struct, IQuality<TQuality>;
 
     public interface ISearchControl<TState, TQuality>
-        where TState : class, IQualifiable<TQuality> 
+        where TState : IQualifiable<TQuality> 
         where TQuality : struct, IQuality<TQuality> {
         TState InitialState { get; }
         TQuality? BestQuality { get; }
@@ -104,7 +103,7 @@ namespace TreesearchLib
     }
 
     public class SearchControl<TState, TQuality> : ISearchControl<TState, TQuality>
-        where TState : class, IState<TState, TQuality>
+        where TState : IState<TState, TQuality>
         where TQuality : struct, IQuality<TQuality>
     {
         private SearchControl(TState state)
@@ -112,7 +111,7 @@ namespace TreesearchLib
             stopwatch = Stopwatch.StartNew();
             InitialState = state;
             BestQuality = null;
-            BestQualityState = null;
+            BestQualityState = default(TState);
             Cancellation = CancellationToken.None;
             Runtime = TimeSpan.MaxValue;
             NodeLimit = long.MaxValue;
@@ -183,7 +182,7 @@ namespace TreesearchLib
     public static class SearchControlExtensions
     {
         public static SearchControl<TState, TQuality> WithImprovementCallback<TState, TQuality>(this SearchControl<TState, TQuality> control, QualityCallback<TState, TQuality> callback)
-            where TState : class, IState<TState, TQuality>
+            where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             control.ImprovementCallback = callback;
@@ -198,7 +197,7 @@ namespace TreesearchLib
         }
 
         public static SearchControl<TState, TQuality> WithCancellationToken<TState, TQuality>(this SearchControl<TState, TQuality> control, CancellationToken token)
-            where TState : class, IState<TState, TQuality>
+            where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             control.Cancellation = token;
@@ -214,7 +213,7 @@ namespace TreesearchLib
         }
 
         public static SearchControl<TState, TQuality> WithUpperBound<TState, TQuality>(this SearchControl<TState, TQuality> control, TQuality upperBound)
-            where TState : class, IState<TState, TQuality>
+            where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             control.BestQuality = upperBound;
@@ -230,7 +229,7 @@ namespace TreesearchLib
         }
 
         public static SearchControl<TState, TQuality> WithRuntimeLimit<TState, TQuality>(this SearchControl<TState, TQuality> control, TimeSpan runtime)
-            where TState : class, IState<TState, TQuality>
+            where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             control.Runtime = runtime;

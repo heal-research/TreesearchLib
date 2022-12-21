@@ -11,42 +11,59 @@ namespace SampleApp
         public IReadOnlyList<int> Weights { get; set; }
         public int Capacity { get; set; }
 
-        public Stack<int> Selected { get; private set; } = new();
-        public Stack<bool> Decision { get; private set; } = new();
+        public int Item = 0;
+
+        public bool[] Decision { get; private set; }
 
         public int TotalWeight { get; set; }
         public int TotalProfit { get; set; }
 
-        public Knapsack() { }
+        public Knapsack(IReadOnlyList<int> profits, IReadOnlyList<int> weights, int capcity) {
+            Profits = profits;
+            Weights = weights;
+            Capacity = capcity;
+            Decision = new bool[Profits.Count];
+        }
         public Knapsack(Knapsack other)
         {
             Profits = other.Profits;
             Weights = other.Weights;
             Capacity = other.Capacity;
-            Selected = new Stack<int>(other.Selected.Reverse());
-            Decision = new Stack<bool>(other.Decision.Reverse());
+            Item = other.Item;
+            Decision = new bool[other.Decision.Length];
+            Array.Copy(other.Decision, Decision, other.Decision.Length);
             TotalWeight = other.TotalWeight;
             TotalProfit = other.TotalProfit;
         }
 
+        private Maximize? cachedbound;
         public Maximize Bound {
             get {
-                if (TotalWeight > Capacity) return new Maximize(Capacity - TotalWeight);
-                var profit = TotalProfit;
-                for (var i = Decision.Count; i < Profits.Count; i++)
+                if (!cachedbound.HasValue)
                 {
-                    if (TotalWeight + Weights[i] <= Capacity)
+                    if (TotalWeight > Capacity)
                     {
-                        profit += Profits[i];
+                        cachedbound = new Maximize(Capacity - TotalWeight);
+                    } else
+                    {
+                        var profit = TotalProfit;
+                        for (var i = Item; i < Profits.Count; i++)
+                        {
+                            if (TotalWeight + Weights[i] <= Capacity)
+                            {
+                                profit += Profits[i];
+                            }
+                        }
+                        cachedbound = new Maximize(profit);
                     }
                 }
-                return new Maximize(profit);
+                return cachedbound.Value;
             }
         }
 
         public Maximize? Quality {
             get {
-                if (Decision.Count < Profits.Count) return null;
+                if (Item < Profits.Count) return null;
                 if (TotalWeight > Capacity) return new Maximize(Capacity - TotalWeight);
                 return new Maximize(TotalProfit);
             }
@@ -54,14 +71,14 @@ namespace SampleApp
 
         public void Apply(bool choice)
         {
+            cachedbound = null;
             if (choice)
             {
-                var item = Decision.Count;
-                Selected.Push(item);
-                TotalWeight += Weights[item];
-                TotalProfit += Profits[item];
+                TotalWeight += Weights[Item];
+                TotalProfit += Profits[Item];
             }
-            Decision.Push(choice);
+            Decision[Item] = choice;
+            Item++;
         }
 
         public object Clone()
@@ -71,28 +88,133 @@ namespace SampleApp
 
         public IEnumerable<bool> GetChoices()
         {
-            var item = Decision.Count;
-            if (item == Profits.Count) yield break;
-            if (Weights[item] + TotalWeight <= Capacity)
+            if (Item == Profits.Count) yield break;
+            if (Weights[Item] + TotalWeight <= Capacity)
                 yield return true;
             yield return false;
         }
 
         public void UndoLast()
         {
-            var choice = Decision.Pop();
+            cachedbound = null;
+            Item--;
+            var choice = Decision[Item];
             if (choice)
             {
-                var item = Decision.Count;
-                if (item != Selected.Pop()) throw new InvalidOperationException("Item is unexpected");
-                TotalWeight -= Weights[item];
-                TotalProfit -= Profits[item];
+                TotalWeight -= Weights[Item];
+                TotalProfit -= Profits[Item];
             }
         }
 
         public override string ToString()
         {
-            return $"Items: {string.Join(", ", Selected)}";
+            return $"Items: {string.Join(", ", Decision.Select((v, i) => (i, v)).Where(x => x.v).Select(x => x.i))}";
+        }
+    }
+
+    public class KnapsackNoUndo : IState<KnapsackNoUndo, Maximize>
+    {
+        public IReadOnlyList<int> Profits { get; private set; }
+        public IReadOnlyList<int> Weights { get; private set; }
+        public int Capacity { get; private set; }
+
+        public bool[] Decision { get; private set; }
+
+        public int TotalWeight { get; private set; }
+        public int TotalProfit { get; private set; }
+
+        public KnapsackNoUndo(IReadOnlyList<int> profits, IReadOnlyList<int> weights, int capacity)
+        {
+            Profits = profits;
+            Weights = weights;
+            Capacity = capacity;
+            Decision = new bool[0];
+            TotalWeight = 0;
+            TotalProfit = 0;
+            cachedbound = null;
+        }
+        public KnapsackNoUndo(KnapsackNoUndo other)
+        {
+            Profits = other.Profits;
+            Weights = other.Weights;
+            Capacity = other.Capacity;
+            Decision = other.Decision; // is considered immutable
+            TotalWeight = other.TotalWeight;
+            TotalProfit = other.TotalProfit;
+            cachedbound = other.cachedbound;
+        }
+        public KnapsackNoUndo(KnapsackNoUndo other, bool choice) : this(other)
+        {
+            if (choice)
+            {
+                var item = Decision.Length;
+                TotalWeight += Weights[item];
+                TotalProfit += Profits[item];
+            }
+            var decision = new bool[other.Decision.Length + 1];
+            Array.Copy(other.Decision, decision, other.Decision.Length);
+            decision[other.Decision.Length] = choice;
+            Decision = decision;
+            cachedbound = null;
+        }
+
+
+        private Maximize? cachedbound;
+        public Maximize Bound
+        {
+            get
+            {
+                if (!cachedbound.HasValue)
+                {
+                    if (TotalWeight > Capacity)
+                    {
+                        cachedbound = new Maximize(Capacity - TotalWeight);
+                    } else
+                    {
+                        var profit = TotalProfit;
+                        for (var i = Decision.Length; i < Profits.Count; i++)
+                        {
+                            if (TotalWeight + Weights[i] <= Capacity)
+                            {
+                                profit += Profits[i];
+                            }
+                        }
+                        cachedbound = new Maximize(profit);
+                    }
+                }
+                return cachedbound.Value;
+            }
+        }
+
+        public Maximize? Quality
+        {
+            get
+            {
+                if (Decision.Length < Profits.Count) return null;
+                if (TotalWeight > Capacity) return new Maximize(Capacity - TotalWeight);
+                return new Maximize(TotalProfit);
+            }
+        }
+
+        public object Clone()
+        {
+            return new KnapsackNoUndo(this);
+        }
+
+        public IEnumerable<KnapsackNoUndo> GetBranches()
+        {
+            var item = Decision.Length;
+            if (item == Profits.Count) yield break;
+            if (Weights[item] + TotalWeight <= Capacity)
+            {
+                yield return new KnapsackNoUndo(this, true);
+            }
+            yield return new KnapsackNoUndo(this, false);
+        }
+
+        public override string ToString()
+        {
+            return $"Items: {string.Join(", ", Decision.Select((v, i) => (i, v)).Where(x => x.v).Select(x => x.i))}";
         }
     }
 }

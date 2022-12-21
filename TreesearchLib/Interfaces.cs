@@ -21,7 +21,7 @@ namespace TreesearchLib
         public override string ToString() => $"min( {value} )";
 
         public static SearchControl<TState, Minimize> Start<TState>(TState state)
-            where TState : class, IState<TState, Minimize> {
+            where TState : IState<TState, Minimize> {
             return SearchControl<TState, Minimize>.Start(state);
         }
         public static SearchControlUndo<TState, TChoice, Minimize> Start<TState, TChoice>(IUndoState<TState, TChoice, Minimize> state)
@@ -48,7 +48,7 @@ namespace TreesearchLib
         public override string ToString() => $"max( {value} )";
 
         public static SearchControl<TState, Maximize> Start<TState>(TState state)
-            where TState : class, IState<TState, Maximize> {
+            where TState : IState<TState, Maximize> {
             return SearchControl<TState, Maximize>.Start(state);
         }
         public static SearchControlUndo<TState, TChoice, Maximize> Start<TState, TChoice>(IUndoState<TState, TChoice, Maximize> state)

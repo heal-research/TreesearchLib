@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace TreesearchLib
@@ -8,14 +7,14 @@ namespace TreesearchLib
     public static class Algorithms
     {
         public static Task<SearchControl<T, Q>> DepthFirstAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth = int.MaxValue)
-            where T : class, IState<T, Q>
+            where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             return Task.Run(() => DepthFirst(control, beamWidth: beamWidth), control.Cancellation);
         }
 
         public static SearchControl<T, Q> DepthFirst<T, Q>(this SearchControl<T, Q> control, int beamWidth = int.MaxValue)
-            where T : class, IState<T, Q>
+            where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             DoSearch<T, Q>(control, control.InitialState, true, beamWidth, int.MaxValue, int.MaxValue);
@@ -23,14 +22,14 @@ namespace TreesearchLib
         }
 
         public static Task<SearchControl<T, Q>> BreadthFirstAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth = int.MaxValue, int depthLimit = int.MaxValue)
-            where T : class, IState<T, Q>
+            where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             return Task.Run(() => BreadthFirst(control, beamWidth, depthLimit), control.Cancellation);
         }
 
         public static SearchControl<T, Q> BreadthFirst<T, Q>(this SearchControl<T, Q> control, int beamWidth = int.MaxValue, int depthLimit = int.MaxValue)
-            where T : class, IState<T, Q>
+            where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             DoSearch<T, Q>(control, control.InitialState, false, beamWidth, depthLimit, int.MaxValue);
@@ -120,7 +119,7 @@ namespace TreesearchLib
         }
 
         internal static IStateCollection<(int, T)> DoSearch<T, Q>(SearchControl<T, Q> control, T state, bool depthFirst, int beamWidth, int depthLimit, int nodesReached)
-            where T : class, IState<T, Q>
+            where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             var searchState = depthFirst ? (IStateCollection<(int, T)>)new LIFOCollection<(int, T)>() : new FIFOCollection<(int, T)>();
@@ -131,8 +130,9 @@ namespace TreesearchLib
             while (searchState.TryGetNext(out var tup) && !control.ShouldStop())
             {
                 var (depth, currentState) = tup;
-
-                foreach (var next in currentState.GetBranches().Take(beamWidth))
+                var branches = currentState.GetBranches();
+                if (depthFirst) branches = branches.Reverse(); // the first choices are supposed to be preferable
+                foreach (var next in branches.Take(beamWidth))
                 {
                     control.VisitNode(next);
 

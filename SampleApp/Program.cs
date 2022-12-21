@@ -19,7 +19,7 @@ namespace SampleApp
                 .DepthFirst();
             Console.WriteLine($"Search {control.BestQualityState} {control.BestQuality} {control.VisitedNodes}");
 
-            size = 40;
+            size = 45;
             var random = new Random(13);
             var profits = Enumerable.Range(0, size).Select(x => random.Next(1, 100)).ToArray();
             var weights = Enumerable.Range(0, size).Select(x => random.Next(1, 100)).ToArray();
@@ -33,24 +33,26 @@ namespace SampleApp
             Array.Sort(sortKey.ToArray(), profits);
             Array.Sort(sortKey.ToArray(), weights);
 
-            var knapsack = new Knapsack()
-            {
-                Profits = profits,
-                Weights = weights,
-                Capacity = capacity
-            };
-            
-            var result = Maximize.Start(knapsack).WithImprovementCallback((ctrl, state, quality) => Console.WriteLine($"Found solution with {quality} after {ctrl.Elapsed}"))
-                .DepthFirst();
-            Console.WriteLine($"DFSearch {result.BestQualityState} {result.BestQuality} {result.VisitedNodes} ({(result.VisitedNodes / result.Elapsed.TotalSeconds):F2} nodes/sec)");
+            var knapsack = new Knapsack(profits, weights, capacity);
+            var knapsackNoUndo = new KnapsackNoUndo(profits, weights, capacity);
 
-            var result2 = Maximize.Start(knapsack.NoUndo()).WithImprovementCallback((ctrl, state, quality) => Console.WriteLine($"Found solution with {quality} after {ctrl.Elapsed}"))
-                .BeamSearch(100);
-            Console.WriteLine($"BeamSearch {result2.BestQualityState} {result2.BestQuality} {result2.VisitedNodes} ({(result2.VisitedNodes / result2.Elapsed.TotalSeconds):F2} nodes/sec)");
+            var resultDFS1 = Maximize.Start(knapsack).DepthFirst();
+            Console.WriteLine($"DFSearch reversible {resultDFS1.BestQuality} {resultDFS1.VisitedNodes} ({(resultDFS1.VisitedNodes / resultDFS1.Elapsed.TotalSeconds):F2} nodes/sec)");
 
-            var result3 = Maximize.Start(knapsack.NoUndo()).WithImprovementCallback((ctrl, state, quality) => Console.WriteLine($"Found solution with {quality} after {ctrl.Elapsed}"))
-                .RakeAndBeamSearch(100, 100);
-            Console.WriteLine($"RakeAndBeamSearch {result3.BestQualityState} {result3.BestQuality} {result3.VisitedNodes} ({(result3.VisitedNodes / result3.Elapsed.TotalSeconds):F2} nodes/sec)");
+            var resultDFS2 = Maximize.Start(knapsackNoUndo).DepthFirst();
+            Console.WriteLine($"DFSearch non-reversible {resultDFS2.BestQuality} {resultDFS2.VisitedNodes} ({(resultDFS2.VisitedNodes / resultDFS2.Elapsed.TotalSeconds):F2} nodes/sec)");
+
+            var resultBS1 = Maximize.Start(knapsack.NoUndo()).BeamSearch(100);
+            Console.WriteLine($"BeamSearch wrapped {resultBS1.BestQuality} {resultBS1.VisitedNodes} ({(resultBS1.VisitedNodes / resultBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
+
+            var resultBS2 = Maximize.Start(knapsackNoUndo).BeamSearch(100);
+            Console.WriteLine($"BeamSearch non-reversible {resultBS2.BestQuality} {resultBS2.VisitedNodes} ({(resultBS2.VisitedNodes / resultBS2.Elapsed.TotalSeconds):F2} nodes/sec)");
+
+            var resultRBS1 = Maximize.Start(knapsack.NoUndo()).RakeAndBeamSearch(100, 100);
+            Console.WriteLine($"RakeAndBeamSearch wrapped {resultRBS1.BestQuality} {resultRBS1.VisitedNodes} ({(resultRBS1.VisitedNodes / resultRBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
+
+            var resultRBS2 = Maximize.Start(knapsackNoUndo).RakeAndBeamSearch(100, 100);
+            Console.WriteLine($"RakeAndBeamSearch non-reversible {resultRBS2.BestQuality} {resultRBS2.VisitedNodes} ({(resultRBS2.VisitedNodes / resultRBS2.Elapsed.TotalSeconds):F2} nodes/sec)");
         }
     }
 }
