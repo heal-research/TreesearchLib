@@ -7,12 +7,15 @@ namespace SampleApp
 {
     public class Knapsack : IUndoState<Knapsack, bool, Maximize>
     {
-        public int[] Profits { get; set; }
-        public int[] Weights { get; set; }
+        public IReadOnlyList<int> Profits { get; set; }
+        public IReadOnlyList<int> Weights { get; set; }
         public int Capacity { get; set; }
 
         public Stack<int> Selected { get; private set; } = new();
         public Stack<bool> Decision { get; private set; } = new();
+
+        public int TotalWeight { get; set; }
+        public int TotalProfit { get; set; }
 
         public Knapsack() { }
         public Knapsack(Knapsack other)
@@ -22,39 +25,30 @@ namespace SampleApp
             Capacity = other.Capacity;
             Selected = new Stack<int>(other.Selected.Reverse());
             Decision = new Stack<bool>(other.Decision.Reverse());
+            TotalWeight = other.TotalWeight;
+            TotalProfit = other.TotalProfit;
         }
 
         public Maximize Bound {
             get {
-                int totalWeight = 0, totalProfit = 0;
-                foreach (var item in Selected)
+                if (TotalWeight > Capacity) return new Maximize(Capacity - TotalWeight);
+                var profit = TotalProfit;
+                for (var i = Decision.Count; i < Profits.Count; i++)
                 {
-                    totalWeight += Weights[item];
-                    totalProfit += Profits[item];
-                }
-                if (totalWeight > Capacity) return new Maximize(Capacity - totalWeight);
-                for (var i = Decision.Count; i < Profits.Length; i++)
-                {
-                    if (totalWeight + Weights[i] <= Capacity)
+                    if (TotalWeight + Weights[i] <= Capacity)
                     {
-                        totalProfit += Profits[i];
+                        profit += Profits[i];
                     }
                 }
-                return new Maximize(totalProfit);
+                return new Maximize(profit);
             }
         }
 
         public Maximize? Quality {
             get {
-                if (Decision.Count < Profits.Length) return null;
-                int totalWeight = 0, totalProfit = 0;
-                foreach (var item in Selected)
-                {
-                    totalWeight += Weights[item];
-                    totalProfit += Profits[item];
-                }
-                if (totalWeight > Capacity) return new Maximize(Capacity - totalWeight);
-                return new Maximize(totalProfit);
+                if (Decision.Count < Profits.Count) return null;
+                if (TotalWeight > Capacity) return new Maximize(Capacity - TotalWeight);
+                return new Maximize(TotalProfit);
             }
         }
 
@@ -62,7 +56,10 @@ namespace SampleApp
         {
             if (choice)
             {
-                Selected.Push(Decision.Count);
+                var item = Decision.Count;
+                Selected.Push(item);
+                TotalWeight += Weights[item];
+                TotalProfit += Profits[item];
             }
             Decision.Push(choice);
         }
@@ -74,8 +71,10 @@ namespace SampleApp
 
         public IEnumerable<bool> GetChoices()
         {
-            if (Decision.Count == Profits.Length) yield break;
-            yield return true;
+            var item = Decision.Count;
+            if (item == Profits.Count) yield break;
+            if (Weights[item] + TotalWeight <= Capacity)
+                yield return true;
             yield return false;
         }
 
@@ -84,7 +83,10 @@ namespace SampleApp
             var choice = Decision.Pop();
             if (choice)
             {
-                Selected.Pop();
+                var item = Decision.Count;
+                if (item != Selected.Pop()) throw new InvalidOperationException("Item is unexpected");
+                TotalWeight -= Weights[item];
+                TotalProfit -= Profits[item];
             }
         }
 

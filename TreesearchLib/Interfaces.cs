@@ -18,7 +18,7 @@ namespace TreesearchLib
 
         public bool IsBetter(Minimize? other) => !other.HasValue || value < other.Value.value;
 
-        public override string ToString() => $"Minimize( {value} )";
+        public override string ToString() => $"min( {value} )";
 
         public static SearchControl<TState, Minimize> Start<TState>(TState state)
             where TState : class, IState<TState, Minimize> {
@@ -45,7 +45,7 @@ namespace TreesearchLib
 
         public bool IsBetter(Maximize? other) => !other.HasValue || value > other.Value.value;
 
-        public override string ToString() => $"Maximize( {value} )";
+        public override string ToString() => $"max( {value} )";
 
         public static SearchControl<TState, Maximize> Start<TState>(TState state)
             where TState : class, IState<TState, Maximize> {
