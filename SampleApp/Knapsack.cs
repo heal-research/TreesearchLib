@@ -62,8 +62,8 @@ namespace SampleApp
         }
 
         public Maximize? Quality {
-            get {
-                if (Item < Profits.Count) return null;
+            get
+            {
                 if (TotalWeight > Capacity) return new Maximize(Capacity - TotalWeight);
                 return new Maximize(TotalProfit);
             }
@@ -190,7 +190,6 @@ namespace SampleApp
         {
             get
             {
-                if (Decision.Length < Profits.Count) return null;
                 if (TotalWeight > Capacity) return new Maximize(Capacity - TotalWeight);
                 return new Maximize(TotalProfit);
             }

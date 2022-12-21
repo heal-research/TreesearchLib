@@ -60,8 +60,7 @@ namespace TreesearchLib
                             continue;
                         }
 
-                        if (!next.Quality.HasValue)
-                            nextlayer.Add(next);
+                        nextlayer.Add(next);
                     }
                     if (control.ShouldStop())
                     {
@@ -105,8 +104,7 @@ namespace TreesearchLib
                             continue;
                         }
 
-                        if (!next.Quality.HasValue)
-                            nextlayer.Add(next);
+                        nextlayer.Add(next);
                     }
                     if (control.ShouldStop())
                     {
@@ -204,6 +202,72 @@ namespace TreesearchLib
                 DoBeamSearch(control, next.Item2, beamWidth, rank);
             }
             return control;
+        }
+
+        public static Task<SearchControl<T, Q>> PilotMethodAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth = int.MaxValue)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            return Task.Run(() => PilotMethod(control, beamWidth), control.Cancellation);
+        }
+
+        public static SearchControl<T, Q> PilotMethod<T, Q>(this SearchControl<T, Q> control, int beamWidth = 1)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            var state = control.InitialState;
+            while (true)
+            {
+                T bestBranch = default(T);
+                Q? bestBranchQuality = null;
+                foreach (var next in state.GetBranches())
+                {
+                    Algorithms.DoSearch(control, next, depthFirst: true, beamWidth: beamWidth, depthLimit: int.MaxValue, nodesReached: int.MaxValue);
+                    var quality = next.Quality;
+                    if (!quality.HasValue) continue; // no solution achieved
+                    if (!bestBranchQuality.HasValue || quality.Value.IsBetter(bestBranchQuality.Value))
+                    {
+                        bestBranch = next;
+                        bestBranchQuality = quality;
+                    }
+                }
+                if (!bestBranchQuality.HasValue) return control;
+                state = bestBranch;
+            }
+        }
+
+        public static Task<SearchControl<T, C, Q>> PilotMethodAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = int.MaxValue)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            return Task.Run(() => PilotMethod(control, beamWidth), control.Cancellation);
+        }
+
+        public static SearchControl<T, C, Q> PilotMethod<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = 1)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            var state = control.InitialState;
+            while (true)
+            {
+                C bestBranch = default(C);
+                Q? bestBranchQuality = null;
+                foreach (var choice in state.GetChoices())
+                {
+                    var next = (T)state.Clone();
+                    next.Apply(choice);
+                    Algorithms.DoDepthSearch(control, next, beamWidth: beamWidth);
+                    var quality = next.Quality;
+                    if (!quality.HasValue) continue; // no solution achieved
+                    if (!bestBranchQuality.HasValue || quality.Value.IsBetter(bestBranchQuality.Value))
+                    {
+                        bestBranch = choice;
+                        bestBranchQuality = quality;
+                    }
+                }
+                if (!bestBranchQuality.HasValue) return control;
+                state.Apply(bestBranch);
+            }
         }
     }
 

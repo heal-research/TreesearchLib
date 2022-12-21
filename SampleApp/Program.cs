@@ -68,6 +68,10 @@ namespace SampleApp
 
             var resultRBS2 = Maximize.Start(knapsackNoUndo).RakeAndBeamSearch(100, 100);
             Console.WriteLine($"RakeAndBeamSearch non-reversible {resultRBS2.BestQuality} {resultRBS2.VisitedNodes} ({(resultRBS2.VisitedNodes / resultRBS2.Elapsed.TotalSeconds):F2} nodes/sec)");
+
+            var resultPM = Maximize.Start(knapsack).PilotMethod();
+            Console.WriteLine($"Pilot Method reversible {resultPM.BestQuality} {resultPM.VisitedNodes} ({(resultPM.VisitedNodes / resultPM.Elapsed.TotalSeconds):F2} nodes/sec)");
+
         }
     }
 }

@@ -84,21 +84,15 @@ namespace TreesearchLib
         {
             VisitedNodes++;
 
-            if (state.Quality.HasValue)
+            var quality = state.Quality;
+            if (quality.HasValue)
             {
-                FoundSolution(state);
-            }
-        }
-
-        private void FoundSolution(TState state)
-        {
-            if (!state.Quality.HasValue) throw new ArgumentException("state is not a full solution, quality is null");
-            var quality = state.Quality.Value;
-            if (quality.IsBetter(BestQuality))
-            {
-                BestQuality = quality;
-                BestQualityState = (TState)state.Clone();
-                ImprovementCallback?.Invoke(this, state, quality);
+                if (quality.Value.IsBetter(BestQuality))
+                {
+                    BestQuality = quality;
+                    BestQualityState = (TState)state.Clone();
+                    ImprovementCallback?.Invoke(this, state, quality.Value);
+                }
             }
         }
 
@@ -166,21 +160,15 @@ namespace TreesearchLib
         {
             VisitedNodes++;
 
-            if (state.Quality.HasValue)
+            var quality = state.Quality;
+            if (quality.HasValue)
             {
-                FoundSolution(state);
-            }
-        }
-
-        private void FoundSolution(TState state)
-        {
-            if (!state.Quality.HasValue) throw new ArgumentException("state is not a full solution, quality is null");
-            var quality = state.Quality.Value;
-            if (quality.IsBetter(BestQuality))
-            {
-                BestQuality = quality;
-                BestQualityState = (TState)state.Clone();
-                ImprovementCallback?.Invoke(this, state, quality);
+                if (quality.Value.IsBetter(BestQuality))
+                {
+                    BestQuality = quality;
+                    BestQualityState = (TState)state.Clone();
+                    ImprovementCallback?.Invoke(this, state, quality.Value);
+                }
             }
         }
 

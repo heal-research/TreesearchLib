@@ -69,7 +69,7 @@ namespace TreesearchLib
             return control;
         }
 
-        internal static IStateCollection<(int, T)> DoSearch<T, Q>(SearchControl<T, Q> control, T state, bool depthFirst, int beamWidth, int depthLimit, int nodesReached)
+        public static IStateCollection<(int, T)> DoSearch<T, Q>(SearchControl<T, Q> control, T state, bool depthFirst, int beamWidth, int depthLimit, int nodesReached)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -92,8 +92,7 @@ namespace TreesearchLib
                         continue;
                     }
 
-                    if (!next.Quality.HasValue)
-                        searchState.Store((depth + 1, next));
+                    searchState.Store((depth + 1, next));
                 }
                 if (searchState.Nodes >= nodesReached)
                     return searchState;
@@ -101,7 +100,7 @@ namespace TreesearchLib
             return searchState;
         }
 
-        internal static void DoDepthSearch<T, C, Q>(this SearchControl<T, C, Q> control, T state, int beamWidth = int.MaxValue)
+        public static void DoDepthSearch<T, C, Q>(this SearchControl<T, C, Q> control, T state, int beamWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -137,7 +136,7 @@ namespace TreesearchLib
             }
         }
 
-        internal static IStateCollection<(int, T)> DoBreadthSearch<T, C, Q>(SearchControl<T, C, Q> control, T state, int beamWidth, int depthLimit, int nodesReached)
+        public static IStateCollection<(int, T)> DoBreadthSearch<T, C, Q>(SearchControl<T, C, Q> control, T state, int beamWidth, int depthLimit, int nodesReached)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -161,8 +160,7 @@ namespace TreesearchLib
                         continue;
                     }
 
-                    if (!clone.Quality.HasValue)
-                        searchState.Store((depth + 1, clone));
+                    searchState.Store((depth + 1, clone));
                 }
                 if (searchState.Nodes >= nodesReached)
                     return searchState;
