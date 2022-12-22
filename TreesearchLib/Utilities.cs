@@ -21,7 +21,8 @@ namespace TreesearchLib {
             if (undoState == null) throw new ArgumentNullException(nameof(undoState));
             this.undoState = undoState;
         }
-        
+
+        public bool IsTerminal => undoState.IsTerminal;
         public TQuality Bound => undoState.Bound;
         public TQuality? Quality => undoState.Quality;
 

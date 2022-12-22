@@ -8,17 +8,17 @@ namespace TreesearchLib
         bool IsBetter(T? other);
     }
 
-    public struct Minimize : IQuality<Minimize>, IComparable<Minimize>
+    public struct Minimize : IQuality<Minimize>
     {
-        int value;
+        public int Value { get; private set; }
         public Minimize(int value)
         {
-            this.value = value;
+            Value = value;
         }
 
-        public bool IsBetter(Minimize? other) => !other.HasValue || value < other.Value.value;
+        public bool IsBetter(Minimize? other) => !other.HasValue || Value < other.Value.Value;
 
-        public override string ToString() => $"min( {value} )";
+        public override string ToString() => $"min( {Value} )";
 
         public static SearchControl<TState, Minimize> Start<TState>(TState state)
             where TState : IState<TState, Minimize> {
@@ -31,21 +31,21 @@ namespace TreesearchLib
 
         public int CompareTo(Minimize other)
         {
-            return value.CompareTo(other.value);
+            return Value.CompareTo(other.Value);
         }
     }
 
-    public struct Maximize : IQuality<Maximize>, IComparable<Maximize>
+    public struct Maximize : IQuality<Maximize>
     {
-        int value;
+        public int Value { get; private set; }
         public Maximize(int value)
         {
-            this.value = value;
+            Value = value;
         }
 
-        public bool IsBetter(Maximize? other) => !other.HasValue || value > other.Value.value;
+        public bool IsBetter(Maximize? other) => !other.HasValue || Value > other.Value.Value;
 
-        public override string ToString() => $"max( {value} )";
+        public override string ToString() => $"max( {Value} )";
 
         public static SearchControl<TState, Maximize> Start<TState>(TState state)
             where TState : IState<TState, Maximize> {
@@ -58,13 +58,14 @@ namespace TreesearchLib
 
         public int CompareTo(Maximize other)
         {
-            return other.value.CompareTo(value);
+            return other.Value.CompareTo(Value);
         }
     }
 
     public interface IQualifiable<TQuality> : ICloneable
         where TQuality : struct, IQuality<TQuality>
     {
+        bool IsTerminal { get; }
         TQuality Bound { get; }
         TQuality? Quality { get; }
     }

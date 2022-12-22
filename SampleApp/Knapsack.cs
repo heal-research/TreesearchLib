@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using TreesearchLib;
 
@@ -35,6 +36,8 @@ namespace SampleApp
             TotalWeight = other.TotalWeight;
             TotalProfit = other.TotalProfit;
         }
+
+        public bool IsTerminal => Item == Profits.Count;
 
         private Maximize? cachedbound;
         public Maximize Bound {
@@ -88,7 +91,7 @@ namespace SampleApp
 
         public IEnumerable<bool> GetChoices()
         {
-            if (Item == Profits.Count) yield break;
+            if (IsTerminal) yield break;
             if (Weights[Item] + TotalWeight <= Capacity)
                 yield return true;
             yield return false;
@@ -158,6 +161,7 @@ namespace SampleApp
             cachedbound = null;
         }
 
+        public bool IsTerminal => Decision.Length == Profits.Count;
 
         private Maximize? cachedbound;
         public Maximize Bound
@@ -202,8 +206,8 @@ namespace SampleApp
 
         public IEnumerable<KnapsackNoUndo> GetBranches()
         {
+            if (IsTerminal) yield break;
             var item = Decision.Length;
-            if (item == Profits.Count) yield break;
             if (Weights[item] + TotalWeight <= Capacity)
             {
                 yield return new KnapsackNoUndo(this, true);

@@ -12,7 +12,7 @@ namespace TreesearchLib
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => BeamSearch(control, beamWidth, rank), control.Cancellation);
+            return Task.Run(() => BeamSearch(control, beamWidth, rank));
         }
 
         public static SearchControl<T, Q> BeamSearch<T, Q>(this SearchControl<T, Q> control, int beamWidth, IComparer<T> rank = null)
@@ -28,7 +28,7 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => BeamSearch(control, beamWidth, rank), control.Cancellation);
+            return Task.Run(() => BeamSearch(control, beamWidth, rank));
         }
 
         public static SearchControl<T, C, Q> BeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, IComparer<T> rank = null)
@@ -130,7 +130,7 @@ namespace TreesearchLib
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => RakeSearch(control, rakeWidth), control.Cancellation);
+            return Task.Run(() => RakeSearch(control, rakeWidth));
         }
 
         public static SearchControl<T, Q> RakeSearch<T, Q>(this SearchControl<T, Q> control, int rakeWidth)
@@ -149,7 +149,7 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => RakeSearch(control, rakeWidth), control.Cancellation);
+            return Task.Run(() => RakeSearch(control, rakeWidth));
         }
 
         public static SearchControl<T, C, Q> RakeSearch<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth)
@@ -168,7 +168,7 @@ namespace TreesearchLib
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, rank), control.Cancellation);
+            return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, rank));
         }
 
         public static SearchControl<T, Q> RakeAndBeamSearch<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, IComparer<T> rank = null)
@@ -188,7 +188,7 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, rank), control.Cancellation);
+            return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, rank));
         }
 
         public static SearchControl<T, C, Q> RakeAndBeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth, IComparer<T> rank = null)
@@ -204,11 +204,11 @@ namespace TreesearchLib
             return control;
         }
 
-        public static Task<SearchControl<T, Q>> PilotMethodAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth = int.MaxValue)
+        public static Task<SearchControl<T, Q>> PilotMethodAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth = 1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => PilotMethod(control, beamWidth), control.Cancellation);
+            return Task.Run(() => PilotMethod(control, beamWidth));
         }
 
         public static SearchControl<T, Q> PilotMethod<T, Q>(this SearchControl<T, Q> control, int beamWidth = 1)
@@ -236,11 +236,11 @@ namespace TreesearchLib
             }
         }
 
-        public static Task<SearchControl<T, C, Q>> PilotMethodAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = int.MaxValue)
+        public static Task<SearchControl<T, C, Q>> PilotMethodAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = 1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => PilotMethod(control, beamWidth), control.Cancellation);
+            return Task.Run(() => PilotMethod(control, beamWidth));
         }
 
         public static SearchControl<T, C, Q> PilotMethod<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = 1)
@@ -268,6 +268,32 @@ namespace TreesearchLib
                 if (!bestBranchQuality.HasValue) return control;
                 state.Apply(bestBranch);
             }
+        }
+
+        public static Task<T> MCTSAsync<T>(this SearchControl<T, Maximize> control)
+            where T : IState<T, Maximize>
+        {
+            return Task.Run(() => MCTS(control));
+        }
+
+        public static T MCTS<T>(this SearchControl<T, Maximize> control, int? seed = null)
+            where T : IState<T, Maximize>
+        {
+            Action<MCTSNode<T, Maximize>, T> updateNodeScore = (node, state) => node.Score += state.Quality.Value.Value;
+            return MCTS<T, Maximize>.Search(control, updateNodeScore, seed).State;
+        }
+
+        public static Task<T> MCTSAsync<T>(this SearchControl<T, Minimize> control)
+            where T : IState<T, Minimize>
+        {
+            return Task.Run(() => MCTS(control));
+        }
+
+        public static T MCTS<T>(this SearchControl<T, Minimize> control, int? seed = null)
+            where T : IState<T, Minimize>
+        {
+            Action<MCTSNode<T, Minimize>, T> updateNodeScore = (node, state) => node.Score -= state.Quality.Value.Value;
+            return MCTS<T, Minimize>.Search(control, updateNodeScore, seed).State;
         }
     }
 

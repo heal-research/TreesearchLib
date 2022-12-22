@@ -19,11 +19,11 @@ namespace SampleApp
             choicesMade = new Stack<int>();
         }
 
-        public bool IsSolved => choicesMade.Count == size;
+        public bool IsTerminal => choicesMade.Count == size;
 
         public Minimize Bound => new Minimize(choicesMade.Peek() + (size - choicesMade.Count));
 
-        public Minimize? Quality => IsSolved ? new Minimize(choicesMade.Peek()) : new Minimize?();
+        public Minimize? Quality => IsTerminal ? new Minimize(choicesMade.Peek()) : null;
 
         public void Apply(int choice)
         {
