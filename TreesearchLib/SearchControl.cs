@@ -242,5 +242,21 @@ namespace TreesearchLib
             control.Runtime = runtime;
             return control;
         }
+
+        public static SearchControl<TState, TQuality> WithNodeLimit<TState, TQuality>(this SearchControl<TState, TQuality> control, long nodelimit)
+            where TState : IState<TState, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            control.NodeLimit = nodelimit;
+            return control;
+        }
+
+        public static SearchControl<TState, TChoice, TQuality> WithNodeLimit<TState, TChoice, TQuality>(this SearchControl<TState, TChoice, TQuality> control, long nodelimit)
+            where TState : class, IMutableState<TState, TChoice, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            control.NodeLimit = nodelimit;
+            return control;
+        }
     }
 }

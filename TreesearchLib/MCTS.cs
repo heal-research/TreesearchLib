@@ -24,12 +24,12 @@ namespace TreesearchLib
         }
     }
 
-    public class MCTS<TState, TQuality>
+    public class MonteCarloTreeSearch<TState, TQuality>
         where TState : IState<TState, TQuality>
         where TQuality : struct, IQuality<TQuality>
     {
         // Perform one iteration of Monte Carlo tree search
-        public static MCTSNode<TState, TQuality> Search(SearchControl<TState, TQuality> control, Action<MCTSNode<TState, TQuality>, TState> updateNodeScore, int? seed = null)
+        public static MCTSNode<TState, TQuality> Search(SearchControl<TState, TQuality> control, Action<MCTSNode<TState, TQuality>, TState> updateNodeScore, double confidence = 1.414213562373095, bool adaptiveConfidence = true, int? seed = null)
         {
             var rng = seed.HasValue ? new Random(seed.Value) : new Random();
             
@@ -40,25 +40,26 @@ namespace TreesearchLib
                 var node = root;
                 while (!node.State.IsTerminal && node.Children.Count > 0)
                 {
-                    node = SelectChild(node);
+                    node = SelectChild(node, confidence);
                 }
 
                 // Expansion
                 if (!node.State.IsTerminal)
                 {
                     node = ExpandNode(control, node, rng);
-                }
 
-                // Simulation
-                var result = Simulate(control, node.State, rng);
+                    // Simulation
+                    var result = Simulate(control, node.State, rng);
 
-                // Backpropagation
-                while (node != null)
-                {
-                    node.Visits++;
-                    updateNodeScore(node, result);
-                    node = node.Parent;
-                }
+                    // Backpropagation
+                    while (node != null)
+                    {
+                        node.Visits++;
+                        updateNodeScore(node, result);
+                        node = node.Parent;
+                    }
+                    if (adaptiveConfidence) confidence *= 0.903602;
+                } else if (adaptiveConfidence) confidence *= 1.5;
             }
 
             // Return the child with the highest win rate
@@ -66,17 +67,20 @@ namespace TreesearchLib
         }
 
         // Select the child with the highest Upper Confidence Bound (UCB) score
-        private static MCTSNode<TState, TQuality> SelectChild(MCTSNode<TState, TQuality> node)
+        private static MCTSNode<TState, TQuality> SelectChild(MCTSNode<TState, TQuality> node, double confidence)
         {
+            if (node.Children.Count == 1) return node.Children[0];
+
             MCTSNode<TState, TQuality> selected = null;
             var bestScore = double.MinValue;
 
+            var parentlog = Math.Log(node.Visits);
             foreach (var child in node.Children)
             {
                 if (child.Visits == 0) return child;
 
                 var score = child.Score / (double)child.Visits +
-                    Math.Sqrt(2 * Math.Log(node.Visits) / (double)child.Visits);
+                    confidence * Math.Sqrt(parentlog / child.Visits);
                 if (score > bestScore)
                 {
                     selected = child;
@@ -145,6 +149,171 @@ namespace TreesearchLib
         private static MCTSNode<TState, TQuality> GetBestChild(MCTSNode<TState, TQuality> node)
         {
             MCTSNode<TState, TQuality> best = null;
+            var bestScore = double.MinValue;
+            foreach (var child in node.Children)
+            {
+                if (child.Visits == 0) continue;
+                var score = child.Score / (double)child.Visits;
+                if (score > bestScore)
+                {
+                    best = child;
+                    bestScore = score;
+                }
+            }
+            return best ?? node;
+        }
+    }
+    // A node in the Monte Carlo tree
+    public class MCTSNode<TState, TChoice, TQuality>
+        where TState : class, IMutableState<TState, TChoice, TQuality>
+        where TQuality : struct, IQuality<TQuality>
+    {
+        public TState State { get; set; }
+        public MCTSNode<TState, TChoice, TQuality> Parent { get; set; }
+        public List<MCTSNode<TState, TChoice, TQuality>> Children { get; set; }
+        public int Visits { get; set; }
+        public int Score { get; set; }
+
+        public MCTSNode(TState state, MCTSNode<TState, TChoice, TQuality> parent)
+        {
+            State = state;
+            Parent = parent;
+            Children = new List<MCTSNode<TState, TChoice, TQuality>>();
+            Visits = 0;
+            Score = 0;
+        }
+    }
+
+    public class MonteCarloTreeSearch<TState, TChoice, TQuality>
+        where TState : class, IMutableState<TState, TChoice, TQuality>
+        where TQuality : struct, IQuality<TQuality>
+    {
+        // Perform one iteration of Monte Carlo tree search
+        public static MCTSNode<TState, TChoice, TQuality> Search(SearchControl<TState, TChoice, TQuality> control, Action<MCTSNode<TState, TChoice, TQuality>, TState> updateNodeScore, double confidence = 1.414213562373095, bool adaptiveConfidence = true, int? seed = null)
+        {
+            var rng = seed.HasValue ? new Random(seed.Value) : new Random();
+
+            var root = new MCTSNode<TState, TChoice, TQuality>(control.InitialState, null);
+            if (root.State.IsTerminal) return root;
+
+            while (!control.ShouldStop())
+            {
+                // Selection
+                var node = root;
+                while (!node.State.IsTerminal && node.Children.Count > 0)
+                {
+                    node = SelectChild(node, confidence);
+                }
+
+                if (!node.State.IsTerminal)
+                {
+                    // Expansion
+                    node = ExpandNode(control, node, rng);
+
+                    // Simulation
+                    var result = Simulate(control, node.State, rng);
+
+                    // Backpropagation
+                    while (node != null)
+                    {
+                        node.Visits++;
+                        updateNodeScore(node, result);
+                        node = node.Parent;
+                    }
+                    if (adaptiveConfidence) confidence *= 0.903602;
+                } else if(adaptiveConfidence) confidence *= 1.5;
+            }
+
+            // Return the child with the highest win rate
+            return GetBestChild(root);
+        }
+
+        // Select the child with the highest Upper Confidence Bound (UCB) score
+        private static MCTSNode<TState, TChoice, TQuality> SelectChild(MCTSNode<TState, TChoice, TQuality> node, double confidence)
+        {
+            if (node.Children.Count == 1) return node.Children[0];
+
+            MCTSNode<TState, TChoice, TQuality> selected = null;
+            var bestScore = double.MinValue;
+
+            var parentlog = Math.Log(node.Visits);
+            foreach (var child in node.Children)
+            {
+                if (child.Visits == 0) return child;
+
+                var score = child.Score / (double)child.Visits +
+                    confidence * Math.Sqrt(parentlog / child.Visits);
+                if (score > bestScore)
+                {
+                    selected = child;
+                    bestScore = score;
+                }
+            }
+
+            return selected;
+        }
+
+        // Expand the node by adding one of its untried children
+        private static MCTSNode<TState, TChoice, TQuality> ExpandNode(SearchControl<TState, TChoice, TQuality> control, MCTSNode<TState, TChoice, TQuality> node, Random rng)
+        {
+            // Add a child node for each untried child state
+            foreach (var choice in node.State.GetChoices())
+            {
+                var next = (TState)node.State.Clone();
+                next.Apply(choice);
+                control.VisitNode(next);
+                var child = new MCTSNode<TState, TChoice, TQuality>(next, node);
+                node.Children.Add(child);
+                if (next.IsTerminal)
+                {
+                    return child;
+                }
+            }
+
+            // sanity check, when IsTerminal would be false, but still no new node
+            if (node.Children.Count > 0)
+            {
+                // Return a randomly selected child
+                return node.Children[rng.Next(node.Children.Count)];
+            } else
+            {
+                // reset the score to 0 as this node is awkward (should be terminal, but isn't)
+                return node;
+            }
+        }
+
+        // Simulate the outcome of a game by randomly selecting moves until the game is over
+        private static TState Simulate(SearchControl<TState, TChoice, TQuality> control, TState state, Random rng)
+        {
+            state = (TState)state.Clone(); // since state is mutated, make a clone first
+            while (!state.IsTerminal)
+            {
+                MakeRandomMove(state, rng);
+                control.VisitNode(state);
+            }
+            return state;
+        }
+
+        // Make a random move in the given state
+        private static void MakeRandomMove(TState state, Random rng)
+        {
+            TChoice sel = default(TChoice);
+            int total = 0;
+            foreach (var next in state.GetChoices())
+            {
+                total++;
+                if (rng.NextDouble() * total < 1.0)
+                {
+                    sel = next;
+                }
+            }
+            state.Apply(sel);
+        }
+
+        // Get the child with the highest win rate
+        private static MCTSNode<TState, TChoice, TQuality> GetBestChild(MCTSNode<TState, TChoice, TQuality> node)
+        {
+            MCTSNode<TState, TChoice, TQuality> best = null;
             var bestScore = double.MinValue;
             foreach (var child in node.Children)
             {

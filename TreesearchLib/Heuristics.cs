@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -247,7 +248,7 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            var state = control.InitialState;
+            var state = (T)control.InitialState.Clone();
             while (true)
             {
                 C bestBranch = default(C);
@@ -268,32 +269,6 @@ namespace TreesearchLib
                 if (!bestBranchQuality.HasValue) return control;
                 state.Apply(bestBranch);
             }
-        }
-
-        public static Task<T> MCTSAsync<T>(this SearchControl<T, Maximize> control)
-            where T : IState<T, Maximize>
-        {
-            return Task.Run(() => MCTS(control));
-        }
-
-        public static T MCTS<T>(this SearchControl<T, Maximize> control, int? seed = null)
-            where T : IState<T, Maximize>
-        {
-            Action<MCTSNode<T, Maximize>, T> updateNodeScore = (node, state) => node.Score += state.Quality.Value.Value;
-            return MCTS<T, Maximize>.Search(control, updateNodeScore, seed).State;
-        }
-
-        public static Task<T> MCTSAsync<T>(this SearchControl<T, Minimize> control)
-            where T : IState<T, Minimize>
-        {
-            return Task.Run(() => MCTS(control));
-        }
-
-        public static T MCTS<T>(this SearchControl<T, Minimize> control, int? seed = null)
-            where T : IState<T, Minimize>
-        {
-            Action<MCTSNode<T, Minimize>, T> updateNodeScore = (node, state) => node.Score -= state.Quality.Value.Value;
-            return MCTS<T, Minimize>.Search(control, updateNodeScore, seed).State;
         }
     }
 
@@ -320,128 +295,258 @@ namespace TreesearchLib
     public static class HeuristicStateExtensions
     {
         public static Task<TState> BeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, int beamWidth = int.MaxValue,
-                IComparer<TState> rank = null, TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null,
+                IComparer<TState> rank = null, TimeSpan? runtime = null,
+                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => BeamSearch((TState)state, beamWidth, rank, runtime, callback, token));
+            return Task.Run(() => BeamSearch((TState)state, beamWidth, rank, runtime, nodelimit, callback, token));
         }
         public static TState BeamSearch<TState, TQuality>(this IState<TState, TQuality> state, int beamWidth = int.MaxValue,
-                IComparer<TState> rank = null, TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null,
+                IComparer<TState> rank = null, TimeSpan? runtime = null,
+                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.BeamSearch(beamWidth, rank).BestQualityState;
         }
 
         public static Task<TState> BeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int beamWidth = int.MaxValue,
-                IComparer<TState> rank = null, TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null,
+                IComparer<TState> rank = null, TimeSpan? runtime = null,
+                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => BeamSearch<TState, TChoice, TQuality>((TState)state, beamWidth, rank, runtime, callback, token));
+            return Task.Run(() => BeamSearch<TState, TChoice, TQuality>((TState)state, beamWidth, rank, runtime, nodelimit, callback, token));
         }
 
         public static TState BeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int beamWidth = int.MaxValue,
-                IComparer<TState> rank = null, TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null,
+                IComparer<TState> rank = null, TimeSpan? runtime = null,
+                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.BeamSearch(beamWidth, rank).BestQualityState;
         }
 
         public static Task<TState> RakeSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, int rakeWidth = 100,
-                TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null,
+                TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => RakeSearch((TState)state, rakeWidth, runtime, callback, token));
+            return Task.Run(() => RakeSearch((TState)state, rakeWidth, runtime, nodelimit, callback, token));
         }
 
         public static TState RakeSearch<TState, TQuality>(this IState<TState, TQuality> state, int rakeWidth = 100,
-                TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null,
+                TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.RakeSearch(rakeWidth).BestQualityState;
         }
 
         public static Task<TState> RakeSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int rakeWidth = int.MaxValue,
-                TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null,
+                TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => RakeSearch<TState, TChoice, TQuality>((TState)state, rakeWidth, runtime, callback, token));
+            return Task.Run(() => RakeSearch<TState, TChoice, TQuality>((TState)state, rakeWidth, runtime, nodelimit, callback, token));
         }
 
         public static TState RakeSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int rakeWidth = int.MaxValue,
-                TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null,
+                TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.RakeSearch(rakeWidth).BestQualityState;
         }
 
         public static Task<TState> RakeAndBeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, int rakeWidth = 100,
-                int beamWidth = int.MaxValue, IComparer<TState> rank = null, TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null,
+                int beamWidth = int.MaxValue, IComparer<TState> rank = null,
+                TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => RakeAndBeamSearch((TState)state, rakeWidth, beamWidth, rank, runtime, callback, token));
+            return Task.Run(() => RakeAndBeamSearch((TState)state, rakeWidth, beamWidth, rank, runtime, nodelimit, callback, token));
         }
 
         public static TState RakeAndBeamSearch<TState, TQuality>(this IState<TState, TQuality> state, int rakeWidth = 100,
-                int beamWidth = int.MaxValue, IComparer<TState> rank = null, TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null,
+                int beamWidth = int.MaxValue, IComparer<TState> rank = null,
+                TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.RakeAndBeamSearch(rakeWidth, beamWidth, rank).BestQualityState;
         }
 
         public static Task<TState> RakeAndBeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int rakeWidth = int.MaxValue,
-                int beamWidth = int.MaxValue, IComparer<TState> rank = null, TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null,
+                int beamWidth = int.MaxValue, IComparer<TState> rank = null,
+                TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => RakeAndBeamSearch<TState, TChoice, TQuality>((TState)state, rakeWidth, beamWidth, rank, runtime, callback, token));
+            return Task.Run(() => RakeAndBeamSearch<TState, TChoice, TQuality>((TState)state, rakeWidth, beamWidth, rank, runtime, nodelimit, callback, token));
         }
 
         public static TState RakeAndBeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int rakeWidth = int.MaxValue,
-                int beamWidth = int.MaxValue, IComparer<TState> rank = null, TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null,
+                int beamWidth = int.MaxValue, IComparer<TState> rank = null,
+                TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
             var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.RakeAndBeamSearch(rakeWidth, beamWidth, rank).BestQualityState;
+        }
+
+        public static Task<TState> MCTSAsync<TState>(this IState<TState, Maximize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true,
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Maximize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : IState<TState, Maximize>
+        {
+            return Task.Run(() => MCTS(state, confidence, adaptiveConfidence, seed, runtime, nodelimit, callback, token));
+        }
+
+        public static TState MCTS<TState>(this IState<TState, Maximize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true,
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Maximize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : IState<TState, Maximize>
+        {
+            if (!runtime.HasValue && !nodelimit.HasValue && (token == default(CancellationToken) || token == CancellationToken.None))
+                throw new ArgumentException("No termination condition provided for MCTS");
+            var control = SearchControl<TState, Maximize>.Start((TState)state).WithCancellationToken(token);
+            if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
+            if (callback != null) control = control.WithImprovementCallback(callback);
+            Action<MCTSNode<TState, Maximize>, TState> updateNodeScore = (node, s) => node.Score += s.Quality.Value.Value;
+            return MonteCarloTreeSearch<TState, Maximize>.Search(control, updateNodeScore, confidence, adaptiveConfidence, seed).State;
+        }
+
+        public static Task<TState> MCTSAsync<TState>(this IState<TState, Minimize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true,
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Minimize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : IState<TState, Minimize>
+        {
+            return Task.Run(() => MCTS(state, confidence, adaptiveConfidence, seed, runtime, nodelimit, callback, token));
+        }
+
+        public static TState MCTS<TState>(this IState<TState, Minimize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true,
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Minimize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : IState<TState, Minimize>
+        {
+            if (!runtime.HasValue && !nodelimit.HasValue && (token == default(CancellationToken) || token == CancellationToken.None))
+                throw new ArgumentException("No termination condition provided for MCTS");
+            var control = SearchControl<TState, Minimize>.Start((TState)state).WithCancellationToken(token);
+            if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
+            if (callback != null) control = control.WithImprovementCallback(callback);
+            Action<MCTSNode<TState, Minimize>, TState> updateNodeScore = (node, s) => node.Score -= s.Quality.Value.Value;
+            return MonteCarloTreeSearch<TState, Minimize>.Search(control, updateNodeScore, confidence, adaptiveConfidence, seed).State;
+        }
+
+        public static Task<TState> MCTSAsync<TState, TChoice>(this IMutableState<TState, TChoice, Maximize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true, 
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Maximize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : class, IMutableState<TState, TChoice, Maximize>
+        {
+            return Task.Run(() => MCTS(state, confidence, adaptiveConfidence, seed, runtime, nodelimit, callback, token));
+        }
+
+        public static TState MCTS<TState, TChoice>(this IMutableState<TState, TChoice, Maximize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true,
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Maximize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : class, IMutableState<TState, TChoice, Maximize>
+        {
+            if (!runtime.HasValue && !nodelimit.HasValue && (token == default(CancellationToken) || token == CancellationToken.None))
+                throw new ArgumentException("No termination condition provided for MCTS");
+            var control = SearchControl<TState, TChoice, Maximize>.Start((TState)state).WithCancellationToken(token);
+            if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
+            if (callback != null) control = control.WithImprovementCallback(callback);
+            Action<MCTSNode<TState, TChoice, Maximize>, TState> updateNodeScore = (node, s) => node.Score += s.Quality.Value.Value;
+            return MonteCarloTreeSearch<TState, TChoice, Maximize>.Search(control, updateNodeScore, confidence, adaptiveConfidence, seed).State;
+        }
+
+        public static Task<TState> MCTSAsync<TState, TChoice>(this IMutableState<TState, TChoice, Minimize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true, 
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Minimize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : class, IMutableState<TState, TChoice, Minimize>
+        {
+            return Task.Run(() => MCTS(state, confidence, adaptiveConfidence, seed, runtime, nodelimit, callback, token));
+        }
+
+        public static TState MCTS<TState, TChoice>(this IMutableState<TState, TChoice, Minimize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true, 
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Minimize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : class, IMutableState<TState, TChoice, Minimize>
+        {
+            if (!runtime.HasValue && !nodelimit.HasValue && (token == default(CancellationToken) || token == CancellationToken.None))
+                throw new ArgumentException("No termination condition provided for MCTS");
+            var control = SearchControl<TState, TChoice, Minimize>.Start((TState)state).WithCancellationToken(token);
+            if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
+            if (callback != null) control = control.WithImprovementCallback(callback);
+            Action<MCTSNode<TState, TChoice, Minimize>, TState> updateNodeScore = (node, s) => node.Score -= s.Quality.Value.Value;
+            return MonteCarloTreeSearch<TState, TChoice, Minimize>.Search(control, updateNodeScore, confidence, adaptiveConfidence, seed).State;
         }
     }
 }

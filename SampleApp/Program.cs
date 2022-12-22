@@ -34,10 +34,13 @@ namespace SampleApp
         private static void KnapsackProblem()
         {
             var size = 45;
+            var pmax = 100;
+            var pmin = 1;
+            var capfactor = 0.5;
             var random = new Random(13);
-            var profits = Enumerable.Range(0, size).Select(x => random.Next(1, 100)).ToArray();
+            var profits = Enumerable.Range(0, size).Select(x => random.Next(pmin, pmax)).ToArray();
             var weights = Enumerable.Range(0, size).Select(x => random.Next(1, 100)).ToArray();
-            var capacity = (int)Math.Round(weights.Sum() / 2.0);
+            var capacity = (int)Math.Round(weights.Sum() * capfactor);
             // sort items by how desirable they are in terms of profit / weight ratio
             var profitability = Enumerable.Range(0, size).Select(x => (item: x, ratio: profits[x] / (double)weights[x]))
                 .OrderByDescending(x => x.ratio).ToArray();
@@ -53,7 +56,7 @@ namespace SampleApp
 
             var resultDFS1 = Maximize.Start(knapsack).DepthFirst();
             Console.WriteLine($"DFSearch reversible {resultDFS1.BestQuality} {resultDFS1.VisitedNodes} ({(resultDFS1.VisitedNodes / resultDFS1.Elapsed.TotalSeconds):F2} nodes/sec)");
-
+            
             var resultDFS2 = Maximize.Start(knapsackNoUndo).DepthFirst();
             Console.WriteLine($"DFSearch non-reversible {resultDFS2.BestQuality} {resultDFS2.VisitedNodes} ({(resultDFS2.VisitedNodes / resultDFS2.Elapsed.TotalSeconds):F2} nodes/sec)");
 
@@ -71,6 +74,11 @@ namespace SampleApp
 
             var resultPM = Maximize.Start(knapsack).PilotMethod();
             Console.WriteLine($"Pilot Method reversible {resultPM.BestQuality} {resultPM.VisitedNodes} ({(resultPM.VisitedNodes / resultPM.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
+            var resultMCTS = Maximize.Start(knapsack).WithNodeLimit(resultDFS1.VisitedNodes)
+                .WithRuntimeLimit(resultDFS1.Elapsed);
+            MonteCarloTreeSearch<Knapsack, bool, Maximize>.Search(resultMCTS, (node, state) => node.Score += state.Quality.Value.Value);
+            Console.WriteLine($"MCTS reversible with {resultMCTS.VisitedNodes} nodes {resultMCTS.BestQuality} {resultMCTS.VisitedNodes} ({(resultMCTS.VisitedNodes / resultMCTS.Elapsed.TotalSeconds):F2} nodes/sec)");
 
         }
     }
