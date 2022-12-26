@@ -54,32 +54,37 @@ namespace SampleApp
             var knapsack = new Knapsack(profits, weights, capacity);
             var knapsackNoUndo = new KnapsackNoUndo(profits, weights, capacity);
 
+            var resultBS1 = Maximize.Start(knapsack).BeamSearch(10);
+            Console.WriteLine($"BeamSearch(10) {resultBS1.BestQuality} {resultBS1.VisitedNodes} ({(resultBS1.VisitedNodes / resultBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
+            var resultBS10 = Maximize.Start(knapsack).BeamSearch(100);
+            Console.WriteLine($"BeamSearch(100) {resultBS10.BestQuality} {resultBS10.VisitedNodes} ({(resultBS10.VisitedNodes / resultBS10.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
+            var resultRS1 = Maximize.Start(knapsack).RakeSearch(10);
+            Console.WriteLine($"RakeSearch(10) {resultRS1.BestQuality} {resultRS1.VisitedNodes} ({(resultRS1.VisitedNodes / resultRS1.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
+            var resultRS10 = Maximize.Start(knapsack).RakeSearch(100);
+            Console.WriteLine($"RakeSearch(100) {resultRS10.BestQuality} {resultRS10.VisitedNodes} ({(resultRS10.VisitedNodes / resultRS10.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
+            var resultRBS1 = Maximize.Start(knapsack).RakeAndBeamSearch(10, 10);
+            Console.WriteLine($"RakeAndBeamSearch(10,10) {resultRBS1.BestQuality} {resultRBS1.VisitedNodes} ({(resultRBS1.VisitedNodes / resultRBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
+
+            var resultRBS10 = Maximize.Start(knapsack).RakeAndBeamSearch(100, 100);
+            Console.WriteLine($"RakeAndBeamSearch(100,100) {resultRBS10.BestQuality} {resultRBS10.VisitedNodes} ({(resultRBS10.VisitedNodes / resultRBS10.Elapsed.TotalSeconds):F2} nodes/sec)");
+
+            var resultPM = Maximize.Start(knapsack).PilotMethod();
+            Console.WriteLine($"Pilot Method {resultPM.BestQuality} {resultPM.VisitedNodes} ({(resultPM.VisitedNodes / resultPM.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
             var resultDFS1 = Maximize.Start(knapsack).DepthFirst();
             Console.WriteLine($"DFSearch reversible {resultDFS1.BestQuality} {resultDFS1.VisitedNodes} ({(resultDFS1.VisitedNodes / resultDFS1.Elapsed.TotalSeconds):F2} nodes/sec)");
             
             var resultDFS2 = Maximize.Start(knapsackNoUndo).DepthFirst();
             Console.WriteLine($"DFSearch non-reversible {resultDFS2.BestQuality} {resultDFS2.VisitedNodes} ({(resultDFS2.VisitedNodes / resultDFS2.Elapsed.TotalSeconds):F2} nodes/sec)");
 
-            var resultBS1 = Maximize.Start(knapsack).BeamSearch(100);
-            Console.WriteLine($"BeamSearch wrapped {resultBS1.BestQuality} {resultBS1.VisitedNodes} ({(resultBS1.VisitedNodes / resultBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
-
-            var resultBS2 = Maximize.Start(knapsackNoUndo).BeamSearch(100);
-            Console.WriteLine($"BeamSearch non-reversible {resultBS2.BestQuality} {resultBS2.VisitedNodes} ({(resultBS2.VisitedNodes / resultBS2.Elapsed.TotalSeconds):F2} nodes/sec)");
-
-            var resultRBS1 = Maximize.Start(knapsack).RakeAndBeamSearch(100, 100);
-            Console.WriteLine($"RakeAndBeamSearch wrapped {resultRBS1.BestQuality} {resultRBS1.VisitedNodes} ({(resultRBS1.VisitedNodes / resultRBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
-
-            var resultRBS2 = Maximize.Start(knapsackNoUndo).RakeAndBeamSearch(100, 100);
-            Console.WriteLine($"RakeAndBeamSearch non-reversible {resultRBS2.BestQuality} {resultRBS2.VisitedNodes} ({(resultRBS2.VisitedNodes / resultRBS2.Elapsed.TotalSeconds):F2} nodes/sec)");
-
-            var resultPM = Maximize.Start(knapsack).PilotMethod();
-            Console.WriteLine($"Pilot Method reversible {resultPM.BestQuality} {resultPM.VisitedNodes} ({(resultPM.VisitedNodes / resultPM.Elapsed.TotalSeconds):F2} nodes/sec)");
-            
             var resultMCTS = Maximize.Start(knapsack).WithNodeLimit(resultDFS1.VisitedNodes)
                 .WithRuntimeLimit(resultDFS1.Elapsed);
             MonteCarloTreeSearch<Knapsack, bool, Maximize>.Search(resultMCTS, (node, state) => node.Score += state.Quality.Value.Value);
             Console.WriteLine($"MCTS reversible with {resultMCTS.VisitedNodes} nodes {resultMCTS.BestQuality} {resultMCTS.VisitedNodes} ({(resultMCTS.VisitedNodes / resultMCTS.Elapsed.TotalSeconds):F2} nodes/sec)");
-
         }
     }
 }

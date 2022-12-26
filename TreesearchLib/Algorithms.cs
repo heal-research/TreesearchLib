@@ -85,9 +85,11 @@ namespace TreesearchLib
                 if (depthFirst) branches = branches.Reverse(); // the first choices are supposed to be preferable
                 foreach (var next in branches.Take(beamWidth))
                 {
+                    
+                    var prune = !next.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
                     control.VisitNode(next);
 
-                    if (!next.Bound.IsBetter(control.BestQuality) || depth + 1 >= depthLimit)
+                    if (prune || depth + 1 >= depthLimit)
                     {
                         continue;
                     }
@@ -120,10 +122,11 @@ namespace TreesearchLib
                     stateDepth--;
                 }
                 state.Apply(choice);
+                var prune = !state.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
                 control.VisitNode(state);
                 stateDepth++;
 
-                if (!state.Bound.IsBetter(control.BestQuality))
+                if (prune)
                 {
                     continue;
                 }
@@ -153,9 +156,10 @@ namespace TreesearchLib
                 {
                     var clone = (T)currentState.Clone();
                     clone.Apply(next);
+                    var prune = !clone.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
                     control.VisitNode(clone);
 
-                    if (!clone.Bound.IsBetter(control.BestQuality) || depth + 1 >= depthLimit)
+                    if (prune || depth + 1 >= depthLimit)
                     {
                         continue;
                     }

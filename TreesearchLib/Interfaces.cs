@@ -58,7 +58,7 @@ namespace TreesearchLib
 
         public int CompareTo(Maximize other)
         {
-            return other.Value.CompareTo(Value);
+            return -Value.CompareTo(other.Value);
         }
     }
 
