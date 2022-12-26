@@ -636,6 +636,125 @@ namespace TreesearchLib
                 state.Apply(bestBranch);
             }
         }
+
+        public static Task<SearchControl<T, Q>> NaiveLDSearchAsync<T, Q>(this SearchControl<T, Q> control, int maxDiscrepancy)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            return Task.Run(() => NaiveLDSearch(control, maxDiscrepancy));
+        }
+
+        public static SearchControl<T, Q> NaiveLDSearch<T, Q>(this SearchControl<T, Q> control, int maxDiscrepancy)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            var state = (T)control.InitialState.Clone();
+            DoNaiveLDSearch(control, state, maxDiscrepancy);
+            return control;
+        }
+
+        public static SearchControl<T, Q> DoNaiveLDSearch<T, Q>(this SearchControl<T, Q> control, T state, int maxDiscrepancy)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            var searchState = new LIFOCollection<(T, int)>();
+            searchState.Store((state, 0));
+            
+            var branches = new Stack<(T, int)>();
+            while (searchState.TryGetNext(out var tup) && !control.ShouldStop())
+            {
+                var (currentState, discrepancy) = tup;
+                foreach (var next in currentState.GetBranches())
+                {
+                    if (discrepancy > maxDiscrepancy) break;
+                    var prune = !next.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
+                    control.VisitNode(next);
+
+                    if (prune)
+                    {
+                        discrepancy++;
+                        continue;
+                    }
+
+                    branches.Push((next, discrepancy));
+                    discrepancy++; // 2nd and further branches have a penalty
+                }
+                foreach (var b in branches)
+                {
+                    searchState.Store(b);
+                }
+                branches.Clear();
+            }
+            return control;
+        }
+        
+        public static Task<SearchControl<T, C, Q>> NaiveLDSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int maxDiscrepancy)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            return Task.Run(() => NaiveLDSearch(control, maxDiscrepancy));
+        }
+
+        public static SearchControl<T, C, Q> NaiveLDSearch<T, C, Q>(this SearchControl<T, C, Q> control, int maxDiscrepancy)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            var state = (T)control.InitialState.Clone();
+            DoNaiveLDSearch(control, state, maxDiscrepancy);
+            return control;
+        }
+
+        public static SearchControl<T, C, Q> DoNaiveLDSearch<T, C, Q>(this SearchControl<T, C, Q> control, T state, int maxDiscrepancy)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            if (maxDiscrepancy <= 0) throw new ArgumentException(nameof(maxDiscrepancy), $"{maxDiscrepancy} must be > 0");
+            var searchState = new LIFOCollection<(int depth, C choice, int discrepancy)>();
+            var stateDepth = 0;
+
+            var branches = new Stack<(int depth, C choice, int discrepancy)>();
+            foreach (var entry in state.GetChoices().Select((choice, i) => (stateDepth, choice, i)))
+            {
+                if (entry.i > maxDiscrepancy) break;
+                branches.Push(entry);
+            }
+            foreach (var b in branches)
+            {
+                searchState.Store(b);
+            }
+            branches.Clear();
+            
+            while (searchState.TryGetNext(out var next) && !control.ShouldStop())
+            {
+                var (depth, choice, discrepancy) = next;
+                while (depth < stateDepth)
+                {
+                    state.UndoLast();
+                    stateDepth--;
+                }
+                state.Apply(choice);
+                var prune = !state.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
+                control.VisitNode(state);
+                stateDepth++;
+
+                if (prune)
+                {
+                    continue;
+                }
+
+                foreach (var entry in state.GetChoices().Select((ch, i) => (depth: stateDepth, choice: ch, discrepancy: discrepancy + i)))
+                {
+                    if (entry.discrepancy > maxDiscrepancy) break;
+                    branches.Push(entry);
+                }
+                foreach (var b in branches)
+                {
+                    searchState.Store(b);
+                }
+                branches.Clear();
+            }
+            return control;
+        }
     }
 
     public class BoundComparer<T, Q> : IComparer<T>
