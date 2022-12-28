@@ -57,7 +57,8 @@ namespace TreesearchLib
             where Q : struct, IQuality<Q>
         {
             if (beamWidth <= 0) throw new ArgumentException("A beam width of 0 or less is not possible");
-            return DoBeamSearch(control, control.InitialState, beamWidth);
+            DoBeamSearch(control, control.InitialState, beamWidth);
+            return control;
         }
 
         /// <summary>
@@ -76,7 +77,8 @@ namespace TreesearchLib
         {
             if (beamWidth <= 0) throw new ArgumentException("A beam width of 0 or less is not possible");
             if (rank == null) throw new ArgumentNullException(nameof(rank));
-            return DoBeamSearch(control, control.InitialState, beamWidth, rank);
+            DoBeamSearch(control, control.InitialState, beamWidth, rank);
+            return control;
         }
 
         /// <summary>
@@ -129,7 +131,8 @@ namespace TreesearchLib
             where Q : struct, IQuality<Q>
         {
             if (beamWidth <= 0) throw new ArgumentException("A beam width of 0 or less is not possible");
-            return DoBeamSearch(control, control.InitialState, beamWidth);
+            DoBeamSearch<T, C, Q>(control, control.InitialState, beamWidth);
+            return control;
         }
 
         /// <summary>
@@ -148,10 +151,11 @@ namespace TreesearchLib
         {
             if (beamWidth <= 0) throw new ArgumentException("A beam width of 0 or less is not possible");
             if (rank == null) throw new ArgumentNullException(nameof(rank));
-            return DoBeamSearch(control, control.InitialState, beamWidth, rank);
+            DoBeamSearch<T, C, Q>(control, control.InitialState, beamWidth, rank);
+            return control;
         }
 
-        private static SearchControl<T, Q> DoBeamSearch<T, Q>(SearchControl<T, Q> control, T state, int beamWidth)
+        public static void DoBeamSearch<T, Q>(ISearchControl<T, Q> control, T state, int beamWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -231,10 +235,9 @@ namespace TreesearchLib
                     }
                 } // else nextlayer has been emptied in the previous loop
             }
-            return control;
         }
 
-        private static SearchControl<T, Q> DoBeamSearch<T,Q>(SearchControl<T, Q> control, T state, int beamWidth, IComparer<T> rank)
+        public static void DoBeamSearch<T,Q>(ISearchControl<T, Q> control, T state, int beamWidth, IComparer<T> rank)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -279,10 +282,9 @@ namespace TreesearchLib
                     currentLayer.Enqueue(nextState);
                 }
             }
-            return control;
         }
 
-        private static SearchControl<T, C, Q> DoBeamSearch<T, C, Q>(SearchControl<T, C, Q> control, T state, int beamWidth)
+        public static void DoBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -363,10 +365,9 @@ namespace TreesearchLib
                     }
                 } // else nextlayer has been emptied in the previous loop
             }
-            return control;
         }
 
-        private static SearchControl<T, C, Q> DoBeamSearch<T, C, Q>(SearchControl<T, C, Q> control, T state, int beamWidth, IComparer<T> rank)
+        public static void DoBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, IComparer<T> rank)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -413,7 +414,6 @@ namespace TreesearchLib
                     currentLayer.Enqueue(nextState);
                 }
             }
-            return control;
         }
 
         public static Task<SearchControl<T, Q>> RakeSearchAsync<T, Q>(this SearchControl<T, Q> control, int rakeWidth)
@@ -446,10 +446,10 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            var rake = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
+            var rake = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             while (rake.TryGetNext(out var next) && !control.ShouldStop())
             {
-                Algorithms.DoDepthSearch(control, next.Item2, beamWidth: 1);
+                Algorithms.DoDepthSearch<T, C, Q>(control, next.Item2, beamWidth: 1);
             }
             return control;
         }
@@ -485,11 +485,11 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            var rake = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
+            var rake = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             while (rake.TryGetNext(out var next) && !control.ShouldStop())
             {
-                if (rank != null) DoBeamSearch(control, next.Item2, beamWidth, rank);
-                else DoBeamSearch(control, next.Item2, beamWidth);
+                if (rank != null) DoBeamSearch<T, C, Q>(control, next.Item2, beamWidth, rank);
+                else DoBeamSearch<T, C, Q>(control, next.Item2, beamWidth);
             }
             return control;
         }
@@ -536,8 +536,16 @@ namespace TreesearchLib
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            if (beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1", nameof(beamWidth));
             var state = control.InitialState;
+            DoPilotMethod<T, Q>(control, state, beamWidth, rank);
+            return control;
+        }
+
+        private static void DoPilotMethod<T, Q>(ISearchControl<T, Q> control, T state, int beamWidth, IComparer<T> rank)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            if (beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1", nameof(beamWidth));
             while (true)
             {
                 T bestBranch = default(T);
@@ -559,7 +567,7 @@ namespace TreesearchLib
                         bestBranchQuality = quality;
                     }
                 }
-                if (!bestBranchQuality.HasValue) return control;
+                if (!bestBranchQuality.HasValue) return;
                 state = bestBranch;
             }
         }
@@ -607,8 +615,16 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            if (beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1", nameof(beamWidth));
             var state = (T)control.InitialState.Clone();
+            DoPilotMethod<T, C, Q>(control, state, beamWidth, rank);
+            return control;
+        }
+
+        public static void DoPilotMethod<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, IComparer<T> rank)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            if (beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1", nameof(beamWidth));
             while (true)
             {
                 C bestBranch = default(C);
@@ -619,10 +635,10 @@ namespace TreesearchLib
                     next.Apply(choice);
                     if (rank == null && beamWidth == 1)
                     {
-                        Algorithms.DoDepthSearch(control, next, beamWidth: beamWidth);
+                        Algorithms.DoDepthSearch<T, C, Q>(control, next, beamWidth: beamWidth);
                     } else
                     {
-                        DoBeamSearch(control, next, beamWidth: beamWidth, rank: rank);
+                        DoBeamSearch<T, C, Q>(control, next, beamWidth: beamWidth, rank: rank);
                     }
                     var quality = next.Quality;
                     if (!quality.HasValue) continue; // no solution achieved
@@ -632,11 +648,31 @@ namespace TreesearchLib
                         bestBranchQuality = quality;
                     }
                 }
-                if (!bestBranchQuality.HasValue) return control;
+                if (!bestBranchQuality.HasValue) return;
                 state.Apply(bestBranch);
             }
         }
 
+        /// <summary>
+        /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
+        /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
+        /// (N+1)th branch in a certain node. This penalty accumulates along the search path and the parameter
+        /// <paramref name="maxDiscrepancy"/> limits this accumulated penalty. The search thus visits only part of a tree.
+        /// 
+        /// For instance, a maxDiscrepancy of 2 allows any leaf to be reachable where always the first branch has been picked,
+        /// where at most 2 times the second branch has been picked or where at most once the third branch was picked. While this
+        /// reduces the size of the search tree, it still grows quickly with increasing values of maxDiscrepancy.
+        /// 
+        /// The naive implementation will not progress to visit nodes with lower discrepancy before visiting those with higher
+        /// discrepancies. For instance, a node with discrepancy 2 might be visited before a node with discrepancy 1. Consider
+        /// the "anytime" implementation of LD search if you want to interrupt the search, before it is completed and want to
+        /// ensure that all nodes with lower discrepancies are considered before those with higher ones.
+        /// </summary>
+        /// <param name="control">The instance that performs the runtim control and tracking</param>
+        /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns>The instance that performs the runtim control and tracking</returns>
         public static Task<SearchControl<T, Q>> NaiveLDSearchAsync<T, Q>(this SearchControl<T, Q> control, int maxDiscrepancy)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
@@ -644,6 +680,27 @@ namespace TreesearchLib
             return Task.Run(() => NaiveLDSearch(control, maxDiscrepancy));
         }
 
+
+        /// <summary>
+        /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
+        /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
+        /// (N+1)th branch in a certain node. This penalty accumulates along the search path and the parameter
+        /// <paramref name="maxDiscrepancy"/> limits this accumulated penalty. The search thus visits only part of a tree.
+        /// 
+        /// For instance, a maxDiscrepancy of 2 allows any leaf to be reachable where always the first branch has been picked,
+        /// where at most 2 times the second branch has been picked or where at most once the third branch was picked. While this
+        /// reduces the size of the search tree, it still grows quickly with increasing values of maxDiscrepancy.
+        /// 
+        /// The naive implementation will not progress to visit nodes with lower discrepancy before visiting those with higher
+        /// discrepancies. For instance, a node with discrepancy 2 might be visited before a node with discrepancy 1. Consider
+        /// the "anytime" implementation of LD search if you want to interrupt the search, before it is completed and want to
+        /// ensure that all nodes with lower discrepancies are considered before those with higher ones.
+        /// </summary>
+        /// <param name="control">The instance that performs the runtim control and tracking</param>
+        /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns>The instance that performs the runtim control and tracking</returns>
         public static SearchControl<T, Q> NaiveLDSearch<T, Q>(this SearchControl<T, Q> control, int maxDiscrepancy)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
@@ -653,22 +710,44 @@ namespace TreesearchLib
             return control;
         }
 
-        public static SearchControl<T, Q> DoNaiveLDSearch<T, Q>(this SearchControl<T, Q> control, T state, int maxDiscrepancy)
+        /// <summary>
+        /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
+        /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
+        /// (N+1)th branch in a certain node. This penalty accumulates along the search path and the parameter
+        /// <paramref name="maxDiscrepancy"/> limits this accumulated penalty. The search thus visits only part of a tree.
+        /// 
+        /// For instance, a maxDiscrepancy of 2 allows any leaf to be reachable where always the first branch has been picked,
+        /// where at most 2 times the second branch has been picked or where at most once the third branch was picked. While this
+        /// reduces the size of the search tree, it still grows quickly with increasing values of maxDiscrepancy.
+        /// 
+        /// The naive implementation will not progress to visit nodes with lower discrepancy before visiting those with higher
+        /// discrepancies. For instance, a node with discrepancy 2 might be visited before a node with discrepancy 1. Consider
+        /// the "anytime" implementation of LD search if you want to interrupt the search, before it is completed and want to
+        /// ensure that all nodes with lower discrepancies are considered before those with higher ones.
+        /// </summary>
+        /// <param name="control">The instance that performs the runtim control and tracking</param>
+        /// <param name="state">The state from which to start exploring</param>
+        /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns></returns>
+        public static void DoNaiveLDSearch<T, Q>(ISearchControl<T, Q> control, T state, int maxDiscrepancy)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
+            if (maxDiscrepancy < 0) throw new ArgumentException(nameof(maxDiscrepancy), $"{maxDiscrepancy} must be >= 0");
             var searchState = new LIFOCollection<(T, int)>();
             searchState.Store((state, 0));
             
-            var branches = new Stack<(T, int)>();
             while (searchState.TryGetNext(out var tup) && !control.ShouldStop())
             {
                 var (currentState, discrepancy) = tup;
-                foreach (var next in currentState.GetBranches())
+                foreach (var next in currentState.GetBranches()
+                    .Select((s, i) => (state: s, discrepancy: discrepancy + i))
+                    .TakeWhile(x => x.discrepancy <= maxDiscrepancy).Reverse())
                 {
-                    if (discrepancy > maxDiscrepancy) break;
-                    var prune = !next.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
-                    control.VisitNode(next);
+                    var prune = !next.state.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
+                    control.VisitNode(next.state);
 
                     if (prune)
                     {
@@ -676,18 +755,32 @@ namespace TreesearchLib
                         continue;
                     }
 
-                    branches.Push((next, discrepancy));
+                    searchState.Store(next);
                     discrepancy++; // 2nd and further branches have a penalty
                 }
-                foreach (var b in branches)
-                {
-                    searchState.Store(b);
-                }
-                branches.Clear();
             }
-            return control;
         }
         
+        /// <summary>
+        /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
+        /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
+        /// (N+1)th branch in a certain node. This penalty accumulates along the search path and the parameter
+        /// <paramref name="maxDiscrepancy"/> limits this accumulated penalty. The search thus visits only part of a tree.
+        /// 
+        /// For instance, a maxDiscrepancy of 2 allows any leaf to be reachable where always the first branch has been picked,
+        /// where at most 2 times the second branch has been picked or where at most once the third branch was picked. While this
+        /// reduces the size of the search tree, it still grows quickly with increasing values of maxDiscrepancy.
+        /// 
+        /// The naive implementation will not progress to visit nodes with lower discrepancy before visiting those with higher
+        /// discrepancies. For instance, a node with discrepancy 2 might be visited before a node with discrepancy 1. Consider
+        /// the "anytime" implementation of LD search if you want to interrupt the search, before it is completed and want to
+        /// ensure that all nodes with lower discrepancies are considered before those with higher ones.
+        /// </summary>
+        /// <param name="control">The instance that performs the runtim control and tracking</param>
+        /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns>The instance that performs the runtim control and tracking</returns>
         public static Task<SearchControl<T, C, Q>> NaiveLDSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int maxDiscrepancy)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
@@ -695,34 +788,70 @@ namespace TreesearchLib
             return Task.Run(() => NaiveLDSearch(control, maxDiscrepancy));
         }
 
+        /// <summary>
+        /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
+        /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
+        /// (N+1)th branch in a certain node. This penalty accumulates along the search path and the parameter
+        /// <paramref name="maxDiscrepancy"/> limits this accumulated penalty. The search thus visits only part of a tree.
+        /// 
+        /// For instance, a maxDiscrepancy of 2 allows any leaf to be reachable where always the first branch has been picked,
+        /// where at most 2 times the second branch has been picked or where at most once the third branch was picked. While this
+        /// reduces the size of the search tree, it still grows quickly with increasing values of maxDiscrepancy.
+        /// 
+        /// The naive implementation will not progress to visit nodes with lower discrepancy before visiting those with higher
+        /// discrepancies. For instance, a node with discrepancy 2 might be visited before a node with discrepancy 1. Consider
+        /// the "anytime" implementation of LD search if you want to interrupt the search, before it is completed and want to
+        /// ensure that all nodes with lower discrepancies are considered before those with higher ones.
+        /// </summary>
+        /// <param name="control">The instance that performs the runtim control and tracking</param>
+        /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns>The instance that performs the runtim control and tracking</returns>
         public static SearchControl<T, C, Q> NaiveLDSearch<T, C, Q>(this SearchControl<T, C, Q> control, int maxDiscrepancy)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             var state = (T)control.InitialState.Clone();
-            DoNaiveLDSearch(control, state, maxDiscrepancy);
+            DoNaiveLDSearch<T, C, Q>(control, state, maxDiscrepancy);
             return control;
         }
 
-        public static SearchControl<T, C, Q> DoNaiveLDSearch<T, C, Q>(this SearchControl<T, C, Q> control, T state, int maxDiscrepancy)
+        /// <summary>
+        /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
+        /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
+        /// (N+1)th branch in a certain node. This penalty accumulates along the search path and the parameter
+        /// <paramref name="maxDiscrepancy"/> limits this accumulated penalty. The search thus visits only part of a tree.
+        /// 
+        /// For instance, a maxDiscrepancy of 2 allows any leaf to be reachable where always the first branch has been picked,
+        /// where at most 2 times the second branch has been picked or where at most once the third branch was picked. While this
+        /// reduces the size of the search tree, it still grows quickly with increasing values of maxDiscrepancy.
+        /// 
+        /// The naive implementation will not progress to visit nodes with lower discrepancy before visiting those with higher
+        /// discrepancies. For instance, a node with discrepancy 2 might be visited before a node with discrepancy 1. Consider
+        /// the "anytime" implementation of LD search if you want to interrupt the search, before it is completed and want to
+        /// ensure that all nodes with lower discrepancies are considered before those with higher ones.
+        /// </summary>
+        /// <param name="control">The instance that performs the runtim control and tracking</param>
+        /// <param name="state">The state from which to start exploring</param>
+        /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns></returns>
+        public static void DoNaiveLDSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int maxDiscrepancy)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            if (maxDiscrepancy <= 0) throw new ArgumentException(nameof(maxDiscrepancy), $"{maxDiscrepancy} must be > 0");
+            if (maxDiscrepancy < 0) throw new ArgumentException(nameof(maxDiscrepancy), $"{maxDiscrepancy} must be >= 0");
             var searchState = new LIFOCollection<(int depth, C choice, int discrepancy)>();
             var stateDepth = 0;
 
-            var branches = new Stack<(int depth, C choice, int discrepancy)>();
-            foreach (var entry in state.GetChoices().Select((choice, i) => (stateDepth, choice, i)))
+            foreach (var entry in state.GetChoices()
+                .Select((choice, i) => (depth: stateDepth, choice, discrepancy: i))
+                .TakeWhile(x => x.discrepancy <= maxDiscrepancy).Reverse())
             {
-                if (entry.i > maxDiscrepancy) break;
-                branches.Push(entry);
+                searchState.Store(entry);
             }
-            foreach (var b in branches)
-            {
-                searchState.Store(b);
-            }
-            branches.Clear();
             
             while (searchState.TryGetNext(out var next) && !control.ShouldStop())
             {
@@ -742,18 +871,244 @@ namespace TreesearchLib
                     continue;
                 }
 
-                foreach (var entry in state.GetChoices().Select((ch, i) => (depth: stateDepth, choice: ch, discrepancy: discrepancy + i)))
+                foreach (var entry in state.GetChoices()
+                    .Select((ch, i) => (depth: stateDepth, choice: ch, discrepancy: discrepancy + i))
+                    .TakeWhile(x => x.discrepancy <= maxDiscrepancy).Reverse())
                 {
-                    if (entry.discrepancy > maxDiscrepancy) break;
-                    branches.Push(entry);
+                    searchState.Store(entry);
                 }
-                foreach (var b in branches)
-                {
-                    searchState.Store(b);
-                }
-                branches.Clear();
             }
+        }
+
+        /// <summary>
+        /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
+        /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
+        /// (N+1)th branch in a certain node. This penalty accumulates along the search path and the parameter
+        /// <paramref name="maxDiscrepancy"/> limits this accumulated penalty. The search thus visits only part of a tree.
+        /// 
+        /// For instance, a maxDiscrepancy of 2 allows any leaf to be reachable where always the first branch has been picked,
+        /// where at most 2 times the second branch has been picked or where at most once the third branch was picked. While this
+        /// reduces the size of the search tree, it still grows quickly with increasing values of maxDiscrepancy.
+        /// 
+        /// The anytime implementation first processes all nodes with discrepancy K, before moving to nodes with discrepancy K+1.
+        /// If you intend to always completely visit all reachable nodes, the naive implementation can be chosen instead. If the
+        /// intent is to limit the runtime, then this implementation should be chosen.
+        /// </summary>
+        /// <param name="control">The instance that performs the runtim control and tracking</param>
+        /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns></returns>
+        public static Task<SearchControl<T, Q>> AnytimeLDSearchAsync<T, Q>(this SearchControl<T, Q> control, int maxDiscrepancy)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            return Task.Run(() => AnytimeLDSearch(control, maxDiscrepancy));
+        }
+
+        /// <summary>
+        /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
+        /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
+        /// (N+1)th branch in a certain node. This penalty accumulates along the search path and the parameter
+        /// <paramref name="maxDiscrepancy"/> limits this accumulated penalty. The search thus visits only part of a tree.
+        /// 
+        /// For instance, a maxDiscrepancy of 2 allows any leaf to be reachable where always the first branch has been picked,
+        /// where at most 2 times the second branch has been picked or where at most once the third branch was picked. While this
+        /// reduces the size of the search tree, it still grows quickly with increasing values of maxDiscrepancy.
+        /// 
+        /// The anytime implementation first processes all nodes with discrepancy K, before moving to nodes with discrepancy K+1.
+        /// If you intend to always completely visit all reachable nodes, the naive implementation can be chosen instead. If the
+        /// intent is to limit the runtime, then this implementation should be chosen.
+        /// </summary>
+        /// <param name="control">The instance that performs the runtim control and tracking</param>
+        /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns></returns>
+        public static SearchControl<T, Q> AnytimeLDSearch<T, Q>(this SearchControl<T, Q> control, int maxDiscrepancy)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            var state = (T)control.InitialState.Clone();
+            DoAnytimeLDSearch(control, state, maxDiscrepancy);
             return control;
+        }
+
+        /// <summary>
+        /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
+        /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
+        /// (N+1)th branch in a certain node. This penalty accumulates along the search path and the parameter
+        /// <paramref name="maxDiscrepancy"/> limits this accumulated penalty. The search thus visits only part of a tree.
+        /// 
+        /// For instance, a maxDiscrepancy of 2 allows any leaf to be reachable where always the first branch has been picked,
+        /// where at most 2 times the second branch has been picked or where at most once the third branch was picked. While this
+        /// reduces the size of the search tree, it still grows quickly with increasing values of maxDiscrepancy.
+        /// 
+        /// The anytime implementation first processes all nodes with discrepancy K, before moving to nodes with discrepancy K+1.
+        /// If you intend to always completely visit all reachable nodes, the naive implementation can be chosen instead. If the
+        /// intent is to limit the runtime, then this implementation should be chosen.
+        /// </summary>
+        /// <param name="control">The instance that performs the runtim control and tracking</param>
+        /// <param name="state">The state from which to start exploring</param>
+        /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns></returns>
+        public static void DoAnytimeLDSearch<T, Q>(ISearchControl<T, Q> control, T state, int maxDiscrepancy)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            if (maxDiscrepancy < 0) throw new ArgumentException(nameof(maxDiscrepancy), $"{maxDiscrepancy} must be >= 0");
+            var searchState = new Stack<T>[maxDiscrepancy + 1];
+            for (var i = 0; i <= maxDiscrepancy; i++)
+            {
+                searchState[i] = new Stack<T>();
+            }
+            searchState[0].Push(state);
+            var K = 0; // the active discrepancy that is explored
+            while (K <= maxDiscrepancy && !control.ShouldStop())
+            {
+                var currentState = searchState[K].Pop();
+                foreach (var tup in currentState.GetBranches()
+                    .Select((b, i) => (state: b, discrepancy: K + i))
+                    .TakeWhile(x => x.discrepancy <= maxDiscrepancy).Reverse())
+                {
+                    var (next, discrepancy) = tup;
+                    var prune = !next.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
+                    control.VisitNode(next);
+
+                    if (!prune)
+                    {
+                        searchState[discrepancy].Push(next);
+                    }
+                }
+                if (searchState[K].Count == 0)
+                {
+                    K++;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
+        /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
+        /// (N+1)th branch in a certain node. This penalty accumulates along the search path and the parameter
+        /// <paramref name="maxDiscrepancy"/> limits this accumulated penalty. The search thus visits only part of a tree.
+        /// 
+        /// For instance, a maxDiscrepancy of 2 allows any leaf to be reachable where always the first branch has been picked,
+        /// where at most 2 times the second branch has been picked or where at most once the third branch was picked. While this
+        /// reduces the size of the search tree, it still grows quickly with increasing values of maxDiscrepancy.
+        /// 
+        /// The anytime implementation first processes all nodes with discrepancy K, before moving to nodes with discrepancy K+1.
+        /// If you intend to always completely visit all reachable nodes, the naive implementation can be chosen instead. If the
+        /// intent is to limit the runtime, then this implementation should be chosen.
+        /// There is a performance penalty of the anytime version, as the search cannot rely on undoing moves and thus has to do
+        /// some cloning of states.
+        /// </summary>
+        /// <param name="control">The instance that performs the runtim control and tracking</param>
+        /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns></returns>
+        public static Task<SearchControl<T, C, Q>> AnytimeLDSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int maxDiscrepancy)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            return Task.Run(() => AnytimeLDSearch(control, maxDiscrepancy));
+        }
+
+        /// <summary>
+        /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
+        /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
+        /// (N+1)th branch in a certain node. This penalty accumulates along the search path and the parameter
+        /// <paramref name="maxDiscrepancy"/> limits this accumulated penalty. The search thus visits only part of a tree.
+        /// 
+        /// For instance, a maxDiscrepancy of 2 allows any leaf to be reachable where always the first branch has been picked,
+        /// where at most 2 times the second branch has been picked or where at most once the third branch was picked. While this
+        /// reduces the size of the search tree, it still grows quickly with increasing values of maxDiscrepancy.
+        /// 
+        /// The anytime implementation first processes all nodes with discrepancy K, before moving to nodes with discrepancy K+1.
+        /// If you intend to always completely visit all reachable nodes, the naive implementation can be chosen instead. If the
+        /// intent is to limit the runtime, then this implementation should be chosen.
+        /// There is a performance penalty of the anytime version, as the search cannot rely on undoing moves and thus has to do
+        /// some cloning of states.
+        /// </summary>
+        /// <param name="control">The instance that performs the runtim control and tracking</param>
+        /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns></returns>
+        public static SearchControl<T, C, Q> AnytimeLDSearch<T, C, Q>(this SearchControl<T, C, Q> control, int maxDiscrepancy)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            var state = (T)control.InitialState.Clone();
+            DoAnytimeLDSearch<T, C, Q>(control, state, maxDiscrepancy);
+            return control;
+        }
+
+        /// <summary>
+        /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
+        /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
+        /// (N+1)th branch in a certain node. This penalty accumulates along the search path and the parameter
+        /// <paramref name="maxDiscrepancy"/> limits this accumulated penalty. The search thus visits only part of a tree.
+        /// 
+        /// For instance, a maxDiscrepancy of 2 allows any leaf to be reachable where always the first branch has been picked,
+        /// where at most 2 times the second branch has been picked or where at most once the third branch was picked. While this
+        /// reduces the size of the search tree, it still grows quickly with increasing values of maxDiscrepancy.
+        /// 
+        /// The anytime implementation first processes all nodes with discrepancy K, before moving to nodes with discrepancy K+1.
+        /// If you intend to always completely visit all reachable nodes, the naive implementation can be chosen instead. If the
+        /// intent is to limit the runtime, then this implementation should be chosen.
+        /// There is a performance penalty of the anytime version, as the search cannot rely on undoing moves and thus has to do
+        /// some cloning of states.
+        /// </summary>
+        /// <param name="control">The instance that performs the runtim control and tracking</param>
+        /// <param name="state">The state from which to start exploring</param>
+        /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns></returns>
+        public static void DoAnytimeLDSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int maxDiscrepancy)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            if (maxDiscrepancy < 0) throw new ArgumentException(nameof(maxDiscrepancy), $"{maxDiscrepancy} must be >= 0");
+            var searchState = new Stack<(C choice, T choiceState)>[maxDiscrepancy + 1];
+            for (var i = 0; i <= maxDiscrepancy; i++)
+            {
+                searchState[i] = new Stack<(C, T)>();
+            }
+            var K = 0;
+            foreach (var entry in state.GetChoices()
+                .Select((choice, i) => (choice, discrepancy: K + i))
+                .TakeWhile(x => x.discrepancy <= maxDiscrepancy).Reverse())
+            {
+                searchState[entry.discrepancy].Push((entry.choice, entry.discrepancy == K ? state : (T)state.Clone()));
+            }
+            while (K <= maxDiscrepancy && !control.ShouldStop())
+            {
+                var next = searchState[K].Pop();
+                var (choice, choiceState) = (next.choice, next.choiceState);
+                choiceState.Apply(choice);
+
+                var prune = !choiceState.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
+                control.VisitNode(choiceState);
+
+                if (!prune)
+                {
+                    foreach (var entry in choiceState.GetChoices()
+                        .Select((ch, i) => (choice: ch, discrepancy: K + i))
+                        .TakeWhile(x => x.discrepancy <= maxDiscrepancy).Reverse())
+                    {
+                        searchState[entry.discrepancy].Push((entry.choice, entry.discrepancy == K ? choiceState : (T)choiceState.Clone()));
+                    }
+                }
+                if (searchState[K].Count == 0)
+                {
+                    K++;
+                }
+            }
         }
     }
 

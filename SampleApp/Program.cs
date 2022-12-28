@@ -78,6 +78,9 @@ namespace SampleApp
             var resultNaiveLD = Maximize.Start(knapsack).NaiveLDSearch(3);
             Console.WriteLine($"NaiveLDSearch(3) {resultNaiveLD.BestQuality} {resultNaiveLD.VisitedNodes} ({(resultNaiveLD.VisitedNodes / resultNaiveLD.Elapsed.TotalSeconds):F2} nodes/sec)");
 
+            var resultAnytimeLD = Maximize.Start(knapsack).AnytimeLDSearch(3);
+            Console.WriteLine($"AnytimeLDSearch(3) {resultAnytimeLD.BestQuality} {resultAnytimeLD.VisitedNodes} ({(resultAnytimeLD.VisitedNodes / resultAnytimeLD.Elapsed.TotalSeconds):F2} nodes/sec)");
+
             var resultDFS1 = Maximize.Start(knapsack).DepthFirst();
             Console.WriteLine($"DFSearch reversible {resultDFS1.BestQuality} {resultDFS1.VisitedNodes} ({(resultDFS1.VisitedNodes / resultDFS1.Elapsed.TotalSeconds):F2} nodes/sec)");
             

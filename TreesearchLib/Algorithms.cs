@@ -49,7 +49,7 @@ namespace TreesearchLib
             where Q : struct, IQuality<Q>
         {
             var state = (T)control.InitialState.Clone();
-            DoDepthSearch(control, state, beamWidth);
+            DoDepthSearch<T, C, Q>(control, state, beamWidth);
             return control;
         }
 
@@ -65,11 +65,11 @@ namespace TreesearchLib
             where Q : struct, IQuality<Q>
         {
             var state = (T)control.InitialState.Clone();
-            DoBreadthSearch(control, state, beamWidth, depthLimit, int.MaxValue);
+            DoBreadthSearch<T, C, Q>(control, state, beamWidth, depthLimit, int.MaxValue);
             return control;
         }
 
-        public static IStateCollection<(int, T)> DoSearch<T, Q>(SearchControl<T, Q> control, T state, bool depthFirst, int beamWidth, int depthLimit, int nodesReached)
+        public static IStateCollection<(int, T)> DoSearch<T, Q>(ISearchControl<T, Q> control, T state, bool depthFirst, int beamWidth, int depthLimit, int nodesReached)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -102,7 +102,7 @@ namespace TreesearchLib
             return searchState;
         }
 
-        public static void DoDepthSearch<T, C, Q>(this SearchControl<T, C, Q> control, T state, int beamWidth = int.MaxValue)
+        public static void DoDepthSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -139,7 +139,7 @@ namespace TreesearchLib
             }
         }
 
-        public static IStateCollection<(int, T)> DoBreadthSearch<T, C, Q>(SearchControl<T, C, Q> control, T state, int beamWidth, int depthLimit, int nodesReached)
+        public static IStateCollection<(int, T)> DoBreadthSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, int depthLimit, int nodesReached)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
