@@ -1,8 +1,121 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace TreesearchLib
 {
+    public static class MCTSStateExtensions
+    {
+        public static Task<TState> MCTSAsync<TState>(this IState<TState, Maximize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true,
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Maximize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : IState<TState, Maximize>
+        {
+            return Task.Run(() => MCTS(state, confidence, adaptiveConfidence, seed, runtime, nodelimit, callback, token));
+        }
+
+        public static TState MCTS<TState>(this IState<TState, Maximize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true,
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Maximize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : IState<TState, Maximize>
+        {
+            if (!runtime.HasValue && !nodelimit.HasValue && (token == default(CancellationToken) || token == CancellationToken.None))
+                throw new ArgumentException("No termination condition provided for MCTS");
+            var control = SearchControl<TState, Maximize>.Start((TState)state).WithCancellationToken(token);
+            if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
+            if (callback != null) control = control.WithImprovementCallback(callback);
+            Action<MCTSNode<TState, Maximize>, TState> updateNodeScore = (node, s) => node.Score += s.Quality.Value.Value;
+            return MonteCarloTreeSearch<TState, Maximize>.Search(control, updateNodeScore, confidence, adaptiveConfidence, seed).State;
+        }
+
+        public static Task<TState> MCTSAsync<TState>(this IState<TState, Minimize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true,
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Minimize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : IState<TState, Minimize>
+        {
+            return Task.Run(() => MCTS(state, confidence, adaptiveConfidence, seed, runtime, nodelimit, callback, token));
+        }
+
+        public static TState MCTS<TState>(this IState<TState, Minimize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true,
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Minimize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : IState<TState, Minimize>
+        {
+            if (!runtime.HasValue && !nodelimit.HasValue && (token == default(CancellationToken) || token == CancellationToken.None))
+                throw new ArgumentException("No termination condition provided for MCTS");
+            var control = SearchControl<TState, Minimize>.Start((TState)state).WithCancellationToken(token);
+            if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
+            if (callback != null) control = control.WithImprovementCallback(callback);
+            Action<MCTSNode<TState, Minimize>, TState> updateNodeScore = (node, s) => node.Score -= s.Quality.Value.Value;
+            return MonteCarloTreeSearch<TState, Minimize>.Search(control, updateNodeScore, confidence, adaptiveConfidence, seed).State;
+        }
+
+        public static Task<TState> MCTSAsync<TState, TChoice>(this IMutableState<TState, TChoice, Maximize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true, 
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Maximize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : class, IMutableState<TState, TChoice, Maximize>
+        {
+            return Task.Run(() => MCTS(state, confidence, adaptiveConfidence, seed, runtime, nodelimit, callback, token));
+        }
+
+        public static TState MCTS<TState, TChoice>(this IMutableState<TState, TChoice, Maximize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true,
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Maximize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : class, IMutableState<TState, TChoice, Maximize>
+        {
+            if (!runtime.HasValue && !nodelimit.HasValue && (token == default(CancellationToken) || token == CancellationToken.None))
+                throw new ArgumentException("No termination condition provided for MCTS");
+            var control = SearchControl<TState, TChoice, Maximize>.Start((TState)state).WithCancellationToken(token);
+            if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
+            if (callback != null) control = control.WithImprovementCallback(callback);
+            Action<MCTSNode<TState, TChoice, Maximize>, TState> updateNodeScore = (node, s) => node.Score += s.Quality.Value.Value;
+            return MonteCarloTreeSearch<TState, TChoice, Maximize>.Search(control, updateNodeScore, confidence, adaptiveConfidence, seed).State;
+        }
+
+        public static Task<TState> MCTSAsync<TState, TChoice>(this IMutableState<TState, TChoice, Minimize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true, 
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Minimize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : class, IMutableState<TState, TChoice, Minimize>
+        {
+            return Task.Run(() => MCTS(state, confidence, adaptiveConfidence, seed, runtime, nodelimit, callback, token));
+        }
+
+        public static TState MCTS<TState, TChoice>(this IMutableState<TState, TChoice, Minimize> state,
+                double confidence = 1.414213562373095, bool adaptiveConfidence = true, 
+                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+                QualityCallback<TState, Minimize> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : class, IMutableState<TState, TChoice, Minimize>
+        {
+            if (!runtime.HasValue && !nodelimit.HasValue && (token == default(CancellationToken) || token == CancellationToken.None))
+                throw new ArgumentException("No termination condition provided for MCTS");
+            var control = SearchControl<TState, TChoice, Minimize>.Start((TState)state).WithCancellationToken(token);
+            if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
+            if (callback != null) control = control.WithImprovementCallback(callback);
+            Action<MCTSNode<TState, TChoice, Minimize>, TState> updateNodeScore = (node, s) => node.Score -= s.Quality.Value.Value;
+            return MonteCarloTreeSearch<TState, TChoice, Minimize>.Search(control, updateNodeScore, confidence, adaptiveConfidence, seed).State;
+        }
+    }
+    
     // A node in the Monte Carlo tree
     public class MCTSNode<TState, TQuality>
         where TState : IState<TState, TQuality>
