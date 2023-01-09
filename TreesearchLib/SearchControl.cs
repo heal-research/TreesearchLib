@@ -4,6 +4,7 @@ using System.Threading;
 
 namespace TreesearchLib
 {
+    public enum VisitResult { Ok = 0, Discard = 1 }
     public delegate void QualityCallback<TState, TQuality>(ISearchControl<TState, TQuality> control, TState state, TQuality quality)
         where TState : IQualifiable<TQuality>
         where TQuality : struct, IQuality<TQuality>;
@@ -22,7 +23,7 @@ namespace TreesearchLib
         bool IsFinished { get; }
 
         bool ShouldStop();
-        void VisitNode(TState state);
+        VisitResult VisitNode(TState state);
     }
 
     /// <summary>
@@ -80,20 +81,23 @@ namespace TreesearchLib
             return false;
         }
 
-        public void VisitNode(TState state)
+        public VisitResult VisitNode(TState state)
         {
             VisitedNodes++;
+
+            var result = BestQuality.HasValue && !state.Bound.IsBetter(BestQuality.Value) ? VisitResult.Discard : VisitResult.Ok;
 
             var quality = state.Quality;
             if (quality.HasValue)
             {
-                if (quality.Value.IsBetter(BestQuality))
+                if (!BestQuality.HasValue || quality.Value.IsBetter(BestQuality.Value))
                 {
                     BestQuality = quality;
                     BestQualityState = (TState)state.Clone();
                     ImprovementCallback?.Invoke(this, state, quality.Value);
                 }
             }
+            return result;
         }
 
         public static SearchControl<TState, TChoice, TQuality> Start(IMutableState<TState, TChoice, TQuality> state)
@@ -156,20 +160,23 @@ namespace TreesearchLib
             return false;
         }
 
-        public void VisitNode(TState state)
+        public VisitResult VisitNode(TState state)
         {
             VisitedNodes++;
+
+            var result = BestQuality.HasValue && !state.Bound.IsBetter(BestQuality.Value) ? VisitResult.Discard : VisitResult.Ok;
 
             var quality = state.Quality;
             if (quality.HasValue)
             {
-                if (quality.Value.IsBetter(BestQuality))
+                if (!BestQuality.HasValue || quality.Value.IsBetter(BestQuality.Value))
                 {
                     BestQuality = quality;
                     BestQualityState = (TState)state.Clone();
                     ImprovementCallback?.Invoke(this, state, quality.Value);
                 }
             }
+            return result;
         }
 
         public static SearchControl<TState, TQuality> Start(TState state)

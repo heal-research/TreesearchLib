@@ -11,29 +11,29 @@ namespace TreesearchLib
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => DepthFirst(control, filterWidth: filterWidth), control.Cancellation);
+            return Task.Run(() => DepthFirst(control, filterWidth: filterWidth));
         }
 
         public static SearchControl<T, Q> DepthFirst<T, Q>(this SearchControl<T, Q> control, int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            DoSearch(control, control.InitialState, true, filterWidth, int.MaxValue, int.MaxValue);
+            DoDepthSearch(control, control.InitialState, filterWidth);
             return control;
         }
 
-        public static Task<SearchControl<T, Q>> BreadthFirstAsync<T, Q>(this SearchControl<T, Q> control, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
+        public static Task<SearchControl<T, Q>> BreadthFirstAsync<T, Q>(this SearchControl<T, Q> control, int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => BreadthFirst(control, filterWidth, depthLimit), control.Cancellation);
+            return Task.Run(() => BreadthFirst(control, filterWidth));
         }
 
-        public static SearchControl<T, Q> BreadthFirst<T, Q>(this SearchControl<T, Q> control, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
+        public static SearchControl<T, Q> BreadthFirst<T, Q>(this SearchControl<T, Q> control, int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            DoSearch(control, control.InitialState, false, filterWidth, depthLimit, int.MaxValue);
+            DoBreadthSearch(control, control.InitialState, filterWidth, int.MaxValue, int.MaxValue);
             return control;
         }
 
@@ -41,7 +41,7 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => DepthFirst(control, filterWidth), control.Cancellation);
+            return Task.Run(() => DepthFirst(control, filterWidth));
         }
 
         public static SearchControl<T, C, Q> DepthFirst<T, C, Q>(this SearchControl<T, C, Q> control, int filterWidth = int.MaxValue)
@@ -53,55 +53,69 @@ namespace TreesearchLib
             return control;
         }
 
-        public static Task<SearchControl<T, C, Q>> BreadthFirstAsync<T, C, Q>(this SearchControl<T, C, Q> control, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
+        public static Task<SearchControl<T, C, Q>> BreadthFirstAsync<T, C, Q>(this SearchControl<T, C, Q> control, int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => BreadthFirst<T, C, Q>(control, filterWidth, depthLimit), control.Cancellation);
+            return Task.Run(() => BreadthFirst<T, C, Q>(control, filterWidth));
         }
 
-        public static SearchControl<T, C, Q> BreadthFirst<T, C, Q>(this SearchControl<T, C, Q> control, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
+        public static SearchControl<T, C, Q> BreadthFirst<T, C, Q>(this SearchControl<T, C, Q> control, int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             var state = (T)control.InitialState.Clone();
-            DoBreadthSearch<T, C, Q>(control, state, filterWidth, depthLimit, int.MaxValue);
+            DoBreadthSearch<T, C, Q>(control, state, filterWidth, int.MaxValue, int.MaxValue);
             return control;
         }
+        
+        public static void DoDepthSearch<T, Q>(ISearchControl<T, Q> control, T state, int filterWidth = int.MaxValue)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
+            var searchState = new LIFOCollection<T>();
+            while (searchState.TryGetNext(out var currentState) && !control.ShouldStop())
+            {
+                foreach (var next in currentState.GetBranches().Reverse().Take(filterWidth))
+                {
+                    if (control.VisitNode(next) == VisitResult.Discard)
+                    {
+                        continue;
+                    }
 
-        public static IStateCollection<(int, T)> DoSearch<T, Q>(ISearchControl<T, Q> control, T state, bool depthFirst, int filterWidth, int depthLimit, int nodesReached)
+                    searchState.Store(next);
+                }
+            }
+        }
+
+        public static IStateCollection<T> DoBreadthSearch<T, Q>(ISearchControl<T, Q> control, T state, int filterWidth, int depthLimit, int nodesReached)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
             if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be breater or equal than 0", nameof(depthLimit));
-            var searchState = depthFirst ? (IStateCollection<(int, T)>)new LIFOCollection<(int, T)>() : new FIFOCollection<(int, T)>();
-            searchState.Store((0, state));
-            if (searchState.Nodes >= nodesReached)
-                return searchState;
-            
-            while (searchState.TryGetNext(out var tup) && !control.ShouldStop())
+            if (nodesReached <= 0) throw new ArgumentException($"{nodesReached} needs to be breater or equal than 0", nameof(nodesReached));
+            var searchState = new BiLevelFIFOCollection<T>(state);
+            var depth = 0;
+            while (searchState.GetQueueNodes > 0 && depth < depthLimit && searchState.GetQueueNodes < nodesReached && !control.ShouldStop())
             {
-                var (depth, currentState) = tup;
-                var branches = currentState.GetBranches();
-                if (depthFirst) branches = branches.Reverse(); // the first choices are supposed to be preferable
-                foreach (var next in branches.Take(filterWidth))
+                while (searchState.TryFromGetQueue(out var currentState) && !control.ShouldStop())
                 {
-                    
-                    var prune = !next.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
-                    control.VisitNode(next);
-
-                    if (prune || depth + 1 >= depthLimit)
+                    foreach (var next in currentState.GetBranches().Take(filterWidth))
                     {
-                        continue;
-                    }
+                        if (control.VisitNode(next) == VisitResult.Discard)
+                        {
+                            continue;
+                        }
 
-                    searchState.Store((depth + 1, next));
+                        searchState.ToPutQueue(next);
+                    }
                 }
-                if (searchState.Nodes >= nodesReached)
-                    return searchState;
+                depth++;
+                searchState.SwapQueues();
             }
-            return searchState;
+            return searchState.ToSingleLevel();
         }
 
         public static void DoDepthSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int filterWidth = int.MaxValue)
@@ -125,11 +139,9 @@ namespace TreesearchLib
                     stateDepth--;
                 }
                 state.Apply(choice);
-                var prune = !state.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
-                control.VisitNode(state);
                 stateDepth++;
 
-                if (prune)
+                if (control.VisitNode(state) == VisitResult.Discard)
                 {
                     continue;
                 }
@@ -142,39 +154,36 @@ namespace TreesearchLib
             }
         }
 
-        public static IStateCollection<(int, T)> DoBreadthSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int filterWidth, int depthLimit, int nodesReached)
+        public static IStateCollection<T> DoBreadthSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int filterWidth, int depthLimit, int nodesReached)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
             if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be breater or equal than 0", nameof(depthLimit));
-            var searchState = new FIFOCollection<(int, T)>();
-            searchState.Store((0, state));
-            if (searchState.Nodes >= nodesReached)
-                return searchState;
-
-            while (searchState.TryGetNext(out var tup) && !control.ShouldStop())
+            if (nodesReached <= 0) throw new ArgumentException($"{nodesReached} needs to be breater or equal than 0", nameof(nodesReached));
+            var searchState = new BiLevelFIFOCollection<T>(state);
+            var depth = 0;
+            while (searchState.GetQueueNodes > 0 && depth < depthLimit && searchState.GetQueueNodes < nodesReached && !control.ShouldStop())
             {
-                var (depth, currentState) = tup;
-
-                foreach (var next in currentState.GetChoices().Take(filterWidth))
+                while (searchState.TryFromGetQueue(out var currentState) && !control.ShouldStop())
                 {
-                    var clone = (T)currentState.Clone();
-                    clone.Apply(next);
-                    var prune = !clone.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
-                    control.VisitNode(clone);
-
-                    if (prune || depth + 1 >= depthLimit)
+                    foreach (var next in currentState.GetChoices().Take(filterWidth))
                     {
-                        continue;
-                    }
+                        var clone = (T)currentState.Clone();
+                        clone.Apply(next);
 
-                    searchState.Store((depth + 1, clone));
+                        if (control.VisitNode(clone) == VisitResult.Discard)
+                        {
+                            continue;
+                        }
+
+                        searchState.ToPutQueue(clone);
+                    }
                 }
-                if (searchState.Nodes >= nodesReached)
-                    return searchState;
+                depth++;
+                searchState.SwapQueues();
             }
-            return searchState;
+            return searchState.ToSingleLevel();
         }
     }
 

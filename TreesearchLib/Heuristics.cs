@@ -115,10 +115,7 @@ namespace TreesearchLib
                     var currentState = currentLayer.Dequeue();
                     foreach (var next in currentState.GetBranches().Take(filterWidth))
                     {
-                        var prune = !next.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
-                        control.VisitNode(next);
-
-                        if (prune)
+                        if (control.VisitNode(next) == VisitResult.Discard)
                         {
                             continue;
                         }
@@ -178,10 +175,8 @@ namespace TreesearchLib
                     {
                         var next = (T)currentState.Clone();
                         next.Apply(choice);
-                        var prune = !next.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
-                        control.VisitNode(next);
 
-                        if (prune)
+                        if (control.VisitNode(next) == VisitResult.Discard)
                         {
                             continue;
                         }
@@ -219,10 +214,10 @@ namespace TreesearchLib
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            var rake = Algorithms.DoSearch(control, control.InitialState, false, int.MaxValue, int.MaxValue, rakeWidth);
+            var rake = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             while (rake.TryGetNext(out var next) && !control.ShouldStop())
             {
-                Algorithms.DoSearch(control, next.Item2, true, 1, int.MaxValue, int.MaxValue);
+                Algorithms.DoDepthSearch(control, next, 1);
             }
             return control;
         }
@@ -241,7 +236,7 @@ namespace TreesearchLib
             var rake = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             while (rake.TryGetNext(out var next) && !control.ShouldStop())
             {
-                Algorithms.DoDepthSearch<T, C, Q>(control, next.Item2, filterWidth: 1);
+                Algorithms.DoDepthSearch<T, C, Q>(control, next, filterWidth: 1);
             }
             return control;
         }
@@ -258,10 +253,10 @@ namespace TreesearchLib
             where Q : struct, IQuality<Q>
         {
             if (rank == null) rank = new BoundComparer<T, Q>();
-            var rake = Algorithms.DoSearch(control, control.InitialState, false, int.MaxValue, int.MaxValue, rakeWidth);
+            var rake = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             while (rake.TryGetNext(out var next) && !control.ShouldStop())
             {
-                DoBeamSearch(control, next.Item2, beamWidth, filterWidth, rank);
+                DoBeamSearch(control, next, beamWidth, filterWidth, rank);
             }
             return control;
         }
@@ -281,7 +276,7 @@ namespace TreesearchLib
             var rake = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             while (rake.TryGetNext(out var next) && !control.ShouldStop())
             {
-                DoBeamSearch<T, C, Q>(control, next.Item2, beamWidth, filterWidth, rank);
+                DoBeamSearch<T, C, Q>(control, next, beamWidth, filterWidth, rank);
             }
             return control;
         }
@@ -366,7 +361,7 @@ namespace TreesearchLib
                 {
                     if (rank == null && beamWidth == 1)
                     {
-                        Algorithms.DoSearch(control, next, depthFirst: true, filterWidth: beamWidth, depthLimit: int.MaxValue, nodesReached: int.MaxValue);
+                        Algorithms.DoDepthSearch(control, next, filterWidth: 1);
                     } else
                     {
                         DoBeamSearch(control, next, beamWidth: beamWidth, filterWidth: filterWidth, rank: rank);
@@ -580,10 +575,7 @@ namespace TreesearchLib
                     .Select((s, i) => (state: s, discrepancy: discrepancy + i))
                     .TakeWhile(x => x.discrepancy <= maxDiscrepancy).Reverse())
                 {
-                    var prune = !next.state.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
-                    control.VisitNode(next.state);
-
-                    if (prune)
+                    if (control.VisitNode(next.state) == VisitResult.Discard)
                     {
                         discrepancy++;
                         continue;
@@ -696,11 +688,9 @@ namespace TreesearchLib
                     stateDepth--;
                 }
                 state.Apply(choice);
-                var prune = !state.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
-                control.VisitNode(state);
                 stateDepth++;
 
-                if (prune)
+                if (control.VisitNode(state) == VisitResult.Discard)
                 {
                     continue;
                 }
@@ -808,10 +798,8 @@ namespace TreesearchLib
                     .TakeWhile(x => x.discrepancy <= maxDiscrepancy).Reverse())
                 {
                     var (next, discrepancy) = tup;
-                    var prune = !next.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
-                    control.VisitNode(next);
 
-                    if (!prune)
+                    if (control.VisitNode(next) == VisitResult.Ok)
                     {
                         searchState[discrepancy].Push(next);
                     }
@@ -926,10 +914,7 @@ namespace TreesearchLib
                 var (choice, choiceState) = (next.choice, next.choiceState);
                 choiceState.Apply(choice);
 
-                var prune = !choiceState.Bound.IsBetter(control.BestQuality); // this check _MUST be done BEFORE_ VisitNode, which may update BestQuality
-                control.VisitNode(choiceState);
-
-                if (!prune)
+                if (control.VisitNode(choiceState) == VisitResult.Ok)
                 {
                     foreach (var entry in choiceState.GetChoices()
                         .Select((ch, i) => (choice: ch, discrepancy: K + i))

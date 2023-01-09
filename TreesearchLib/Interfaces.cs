@@ -5,7 +5,7 @@ namespace TreesearchLib
 {
     public interface IQuality<T> : IComparable<T> where T : struct
     {
-        bool IsBetter(T? other);
+        bool IsBetter(T other);
     }
 
     public struct Minimize : IQuality<Minimize>
@@ -16,7 +16,7 @@ namespace TreesearchLib
             Value = value;
         }
 
-        public bool IsBetter(Minimize? other) => !other.HasValue || Value < other.Value.Value;
+        public bool IsBetter(Minimize other) => Value < other.Value;
 
         public override string ToString() => $"min( {Value} )";
 
@@ -43,7 +43,7 @@ namespace TreesearchLib
             Value = value;
         }
 
-        public bool IsBetter(Maximize? other) => !other.HasValue || Value > other.Value.Value;
+        public bool IsBetter(Maximize other) => Value > other.Value;
 
         public override string ToString() => $"max( {Value} )";
 
