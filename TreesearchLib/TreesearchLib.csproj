@@ -4,6 +4,26 @@
     <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>TreesearchLib.snk</AssemblyOriginatorKeyFile>
+    <Version>1.0.0</Version>
+    <Authors>Sebastian Leitner, Andreas Beham</Authors>
+    <Description>TreesearchLib is a framework for modeling optimization problems that are to be solved by constructive heuristics.
+    It includes a number of algorithms: exhaustive depth-first and breadth-first search, limited discrepancy search, the PILOT method,
+    Beam search, Rake search, and Monte Carlo Tree Search.</Description>
+    <Product>TreesearchLib</Product>
+    <Company>HEAL, FH Upper Austria</Company>
+    <Copyright>Sebastian Leitner, Andreas Beham</Copyright>
+    <PackageProjectUrl>https://github.com/heal-research/TreesearchLib</PackageProjectUrl>
+    <PackageReleaseNotes>
+    Initial release of TreesearchLib.
+    </PackageReleaseNotes>
+    <NeutralLanguage />
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IncludeSource>True</IncludeSource>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
   <ItemGroup>
