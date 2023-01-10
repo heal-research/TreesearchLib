@@ -12,17 +12,63 @@ namespace TreesearchLib
     public interface ISearchControl<TState, TQuality>
         where TState : IQualifiable<TQuality> 
         where TQuality : struct, IQuality<TQuality> {
+        /// <summary>
+        /// The state from which the search should start (if not determined otherwise)
+        /// </summary>
+        /// <value></value>
         TState InitialState { get; }
+        /// <summary>
+        /// The best-found quality (or none, if no solution found)
+        /// </summary>
+        /// <value></value>
         TQuality? BestQuality { get; }
+        /// <summary>
+        /// The best-found state (or none, if no solution found)
+        /// </summary>
+        /// <value></value>
         TState BestQualityState { get; }
+        /// <summary>
+        /// The elapsed time so far
+        /// </summary>
+        /// <value></value>
         TimeSpan Elapsed { get; }
+        /// <summary>
+        /// Limits the elapsed time, <see cref="ShouldStop"/> returns true when Elapsed > Runtime.
+        /// </summary>
+        /// <value></value>
         TimeSpan Runtime { get; }
+        /// <summary>
+        /// Allows to cancel the search operation
+        /// </summary>
+        /// <value></value>
         CancellationToken Cancellation { get; }
+        /// <summary>
+        /// Limits the number of nodes that should be visited
+        /// </summary>
+        /// <value></value>
         long NodeLimit { get; }
+        /// <summary>
+        /// Tracks the number of visited nodes.
+        /// </summary>
+        /// <value></value>
         long VisitedNodes { get; }
+        /// <summary>
+        /// Whether the tracker has finished
+        /// </summary>
+        /// <value></value>
         bool IsFinished { get; }
 
+        /// <summary>
+        /// Function to check if a termination condition has been reached.
+        /// </summary>
+        /// <returns>True if the search should terminate</returns>
         bool ShouldStop();
+        /// <summary>
+        /// Performs the tracking of best quality and respective state.
+        /// This function should be called for every visited node.
+        /// </summary>
+        /// <param name="state">The state that is visited</param>
+        /// <returns>Whether the node is ok, or whether it should be discarded, because the lower bound is already worse than the best upper bound</returns>
         VisitResult VisitNode(TState state);
     }
 
@@ -31,7 +77,7 @@ namespace TreesearchLib
     /// </summary>
     /// <typeparam name="TState">The type that represents the state</typeparam>
     /// <typeparam name="TChoice">The type that represents the choice (each choice leads to a branch)</typeparam>
-    /// <typeparam name="TQuality">The type that represents the quality</typeparam>
+    /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
     public class SearchControl<TState, TChoice, TQuality> : ISearchControl<TState, TQuality>
         where TState : class, IMutableState<TState, TChoice, TQuality>
         where TQuality : struct, IQuality<TQuality> 
@@ -110,7 +156,7 @@ namespace TreesearchLib
     /// Search control class for irreversible states
     /// </summary>
     /// <typeparam name="TState">The type that represents the state</typeparam>
-    /// <typeparam name="TQuality">The type that represents the quality</typeparam>
+    /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
     public class SearchControl<TState, TQuality> : ISearchControl<TState, TQuality>
         where TState : IState<TState, TQuality>
         where TQuality : struct, IQuality<TQuality>

@@ -203,6 +203,15 @@ namespace TreesearchLib
             }
         }
 
+        /// <summary>
+        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
+        /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, Q>> RakeSearchAsync<T, Q>(this SearchControl<T, Q> control, int rakeWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
@@ -210,6 +219,15 @@ namespace TreesearchLib
             return Task.Run(() => RakeSearch(control, rakeWidth));
         }
 
+        /// <summary>
+        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
+        /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The runtime control instance</returns>
         public static SearchControl<T, Q> RakeSearch<T, Q>(this SearchControl<T, Q> control, int rakeWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
@@ -222,6 +240,16 @@ namespace TreesearchLib
             return control;
         }
 
+        /// <summary>
+        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
+        /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="C">The choice type</typeparam>
+        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, C, Q>> RakeSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
@@ -229,6 +257,16 @@ namespace TreesearchLib
             return Task.Run(() => RakeSearch(control, rakeWidth));
         }
 
+        /// <summary>
+        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
+        /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="C">The choice type</typeparam>
+        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The runtime control instance</returns>
         public static SearchControl<T, C, Q> RakeSearch<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
@@ -241,6 +279,18 @@ namespace TreesearchLib
             return control;
         }
 
+        /// <summary>
+        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
+        /// nodes and then from each node a beam search is performed.
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <param name="beamWidth">Used in the beam search to determine the number of beams</param>
+        /// <param name="filterWidth">To limit the number of branches per node</param>
+        /// <param name="rank">The ranking function used by the beam search</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, Q>> RakeAndBeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, int filterWidth, IComparer<T> rank = null)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
@@ -248,6 +298,18 @@ namespace TreesearchLib
             return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, filterWidth, rank));
         }
 
+        /// <summary>
+        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
+        /// nodes and then from each node a beam search is performed.
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <param name="beamWidth">Used in the beam search to determine the number of beams</param>
+        /// <param name="filterWidth">To limit the number of branches per node</param>
+        /// <param name="rank">The ranking function used by the beam search</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The runtime control instance</returns>
         public static SearchControl<T, Q> RakeAndBeamSearch<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, int filterWidth, IComparer<T> rank = null)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
@@ -261,6 +323,19 @@ namespace TreesearchLib
             return control;
         }
 
+        /// <summary>
+        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
+        /// nodes and then from each node a beam search is performed.
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <param name="beamWidth">Used in the beam search to determine the number of beams</param>
+        /// <param name="filterWidth">To limit the number of branches per node</param>
+        /// <param name="rank">The ranking function used by the beam search</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="C">The choice type</typeparam>
+        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, C, Q>> RakeAndBeamSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth, int filterWidth, IComparer<T> rank = null)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
@@ -268,6 +343,19 @@ namespace TreesearchLib
             return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, filterWidth, rank));
         }
 
+        /// <summary>
+        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
+        /// nodes and then from each node a beam search is performed.
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <param name="beamWidth">Used in the beam search to determine the number of beams</param>
+        /// <param name="filterWidth">To limit the number of branches per node</param>
+        /// <param name="rank">The ranking function used by the beam search</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="C">The choice type</typeparam>
+        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The runtime control instance</returns>
         public static SearchControl<T, C, Q> RakeAndBeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth, int filterWidth, IComparer<T> rank = null)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
@@ -497,6 +585,13 @@ namespace TreesearchLib
         /// the "anytime" implementation of LD search if you want to interrupt the search, before it is completed and want to
         /// ensure that all nodes with lower discrepancies are considered before those with higher ones.
         /// </summary>
+        /// <remarks>
+        /// Limited discrepancy search has been described by
+        /// Harvey, W.D. and Ginsberg, M.L., 1995, August. Limited discrepancy search. In IJCAI (1) (pp. 607-615).
+        /// 
+        /// The implementation here differs, because we don't assume a fixed number of branches per node, nor that the
+        /// depth is fixed and known for each branch a priori.
+        /// </remarks>
         /// <param name="control">The instance that performs the runtim control and tracking</param>
         /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
         /// <typeparam name="T">The state type</typeparam>
@@ -525,6 +620,13 @@ namespace TreesearchLib
         /// the "anytime" implementation of LD search if you want to interrupt the search, before it is completed and want to
         /// ensure that all nodes with lower discrepancies are considered before those with higher ones.
         /// </summary>
+        /// <remarks>
+        /// Limited discrepancy search has been described by
+        /// Harvey, W.D. and Ginsberg, M.L., 1995, August. Limited discrepancy search. In IJCAI (1) (pp. 607-615).
+        /// 
+        /// The implementation here differs, because we don't assume a fixed number of branches per node, nor that the
+        /// depth is fixed and known for each branch a priori.
+        /// </remarks>
         /// <param name="control">The instance that performs the runtim control and tracking</param>
         /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
         /// <typeparam name="T">The state type</typeparam>
@@ -554,6 +656,13 @@ namespace TreesearchLib
         /// the "anytime" implementation of LD search if you want to interrupt the search, before it is completed and want to
         /// ensure that all nodes with lower discrepancies are considered before those with higher ones.
         /// </summary>
+        /// <remarks>
+        /// Limited discrepancy search has been described by
+        /// Harvey, W.D. and Ginsberg, M.L., 1995, August. Limited discrepancy search. In IJCAI (1) (pp. 607-615).
+        /// 
+        /// The implementation here differs, because we don't assume a fixed number of branches per node, nor that the
+        /// depth is fixed and known for each branch a priori.
+        /// </remarks>
         /// <param name="control">The instance that performs the runtim control and tracking</param>
         /// <param name="state">The state from which to start exploring</param>
         /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
@@ -602,6 +711,13 @@ namespace TreesearchLib
         /// the "anytime" implementation of LD search if you want to interrupt the search, before it is completed and want to
         /// ensure that all nodes with lower discrepancies are considered before those with higher ones.
         /// </summary>
+        /// <remarks>
+        /// Limited discrepancy search has been described by
+        /// Harvey, W.D. and Ginsberg, M.L., 1995, August. Limited discrepancy search. In IJCAI (1) (pp. 607-615).
+        /// 
+        /// The implementation here differs, because we don't assume a fixed number of branches per node, nor that the
+        /// depth is fixed and known for each branch a priori.
+        /// </remarks>
         /// <param name="control">The instance that performs the runtim control and tracking</param>
         /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
         /// <typeparam name="T">The state type</typeparam>
@@ -629,6 +745,13 @@ namespace TreesearchLib
         /// the "anytime" implementation of LD search if you want to interrupt the search, before it is completed and want to
         /// ensure that all nodes with lower discrepancies are considered before those with higher ones.
         /// </summary>
+        /// <remarks>
+        /// Limited discrepancy search has been described by
+        /// Harvey, W.D. and Ginsberg, M.L., 1995, August. Limited discrepancy search. In IJCAI (1) (pp. 607-615).
+        /// 
+        /// The implementation here differs, because we don't assume a fixed number of branches per node, nor that the
+        /// depth is fixed and known for each branch a priori.
+        /// </remarks>
         /// <param name="control">The instance that performs the runtim control and tracking</param>
         /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
         /// <typeparam name="T">The state type</typeparam>
@@ -658,6 +781,13 @@ namespace TreesearchLib
         /// the "anytime" implementation of LD search if you want to interrupt the search, before it is completed and want to
         /// ensure that all nodes with lower discrepancies are considered before those with higher ones.
         /// </summary>
+        /// <remarks>
+        /// Limited discrepancy search has been described by
+        /// Harvey, W.D. and Ginsberg, M.L., 1995, August. Limited discrepancy search. In IJCAI (1) (pp. 607-615).
+        /// 
+        /// The implementation here differs, because we don't assume a fixed number of branches per node, nor that the
+        /// depth is fixed and known for each branch a priori.
+        /// </remarks>
         /// <param name="control">The instance that performs the runtim control and tracking</param>
         /// <param name="state">The state from which to start exploring</param>
         /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
@@ -718,6 +848,13 @@ namespace TreesearchLib
         /// If you intend to always completely visit all reachable nodes, the naive implementation can be chosen instead. If the
         /// intent is to limit the runtime, then this implementation should be chosen.
         /// </summary>
+        /// <remarks>
+        /// Limited discrepancy search has been described by
+        /// Harvey, W.D. and Ginsberg, M.L., 1995, August. Limited discrepancy search. In IJCAI (1) (pp. 607-615).
+        /// 
+        /// The implementation here differs, because we don't assume a fixed number of branches per node, nor that the
+        /// depth is fixed and known for each branch a priori.
+        /// </remarks>
         /// <param name="control">The instance that performs the runtim control and tracking</param>
         /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
         /// <typeparam name="T">The state type</typeparam>
@@ -744,6 +881,13 @@ namespace TreesearchLib
         /// If you intend to always completely visit all reachable nodes, the naive implementation can be chosen instead. If the
         /// intent is to limit the runtime, then this implementation should be chosen.
         /// </summary>
+        /// <remarks>
+        /// Limited discrepancy search has been described by
+        /// Harvey, W.D. and Ginsberg, M.L., 1995, August. Limited discrepancy search. In IJCAI (1) (pp. 607-615).
+        /// 
+        /// The implementation here differs, because we don't assume a fixed number of branches per node, nor that the
+        /// depth is fixed and known for each branch a priori.
+        /// </remarks>
         /// <param name="control">The instance that performs the runtim control and tracking</param>
         /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
         /// <typeparam name="T">The state type</typeparam>
@@ -772,6 +916,13 @@ namespace TreesearchLib
         /// If you intend to always completely visit all reachable nodes, the naive implementation can be chosen instead. If the
         /// intent is to limit the runtime, then this implementation should be chosen.
         /// </summary>
+        /// <remarks>
+        /// Limited discrepancy search has been described by
+        /// Harvey, W.D. and Ginsberg, M.L., 1995, August. Limited discrepancy search. In IJCAI (1) (pp. 607-615).
+        /// 
+        /// The implementation here differs, because we don't assume a fixed number of branches per node, nor that the
+        /// depth is fixed and known for each branch a priori.
+        /// </remarks>
         /// <param name="control">The instance that performs the runtim control and tracking</param>
         /// <param name="state">The state from which to start exploring</param>
         /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
@@ -827,6 +978,13 @@ namespace TreesearchLib
         /// There is a performance penalty of the anytime version, as the search cannot rely on undoing moves and thus has to do
         /// some cloning of states.
         /// </summary>
+        /// <remarks>
+        /// Limited discrepancy search has been described by
+        /// Harvey, W.D. and Ginsberg, M.L., 1995, August. Limited discrepancy search. In IJCAI (1) (pp. 607-615).
+        /// 
+        /// The implementation here differs, because we don't assume a fixed number of branches per node, nor that the
+        /// depth is fixed and known for each branch a priori.
+        /// </remarks>
         /// <param name="control">The instance that performs the runtim control and tracking</param>
         /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
         /// <typeparam name="T">The state type</typeparam>
@@ -855,6 +1013,13 @@ namespace TreesearchLib
         /// There is a performance penalty of the anytime version, as the search cannot rely on undoing moves and thus has to do
         /// some cloning of states.
         /// </summary>
+        /// <remarks>
+        /// Limited discrepancy search has been described by
+        /// Harvey, W.D. and Ginsberg, M.L., 1995, August. Limited discrepancy search. In IJCAI (1) (pp. 607-615).
+        /// 
+        /// The implementation here differs, because we don't assume a fixed number of branches per node, nor that the
+        /// depth is fixed and known for each branch a priori.
+        /// </remarks>
         /// <param name="control">The instance that performs the runtim control and tracking</param>
         /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>
         /// <typeparam name="T">The state type</typeparam>
@@ -885,6 +1050,13 @@ namespace TreesearchLib
         /// There is a performance penalty of the anytime version, as the search cannot rely on undoing moves and thus has to do
         /// some cloning of states.
         /// </summary>
+        /// <remarks>
+        /// Limited discrepancy search has been described by
+        /// Harvey, W.D. and Ginsberg, M.L., 1995, August. Limited discrepancy search. In IJCAI (1) (pp. 607-615).
+        /// 
+        /// The implementation here differs, because we don't assume a fixed number of branches per node, nor that the
+        /// depth is fixed and known for each branch a priori.
+        /// </remarks>
         /// <param name="control">The instance that performs the runtim control and tracking</param>
         /// <param name="state">The state from which to start exploring</param>
         /// <param name="maxDiscrepancy">The parameter that limits the 2nd, 3rd, ... branch choices</param>

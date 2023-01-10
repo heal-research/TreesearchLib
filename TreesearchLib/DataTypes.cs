@@ -4,37 +4,58 @@ using System.Runtime.CompilerServices;
 
 namespace TreesearchLib
 {
-    public interface IStateCollection<TState>
+    public interface IStateCollection<T>
     {
+        /// <summary>
+        /// The number of nodes in the collection
+        /// </summary>
+        /// <value></value>
         int Nodes { get; }
+        /// <summary>
+        /// The number of successful TryGetNext calls that have been performed on the collection
+        /// </summary>
+        /// <value></value>
         long RetrievedNodes { get; }
 
-        bool TryGetNext(out TState value);
-        void Store(TState state);
+        /// <summary>
+        /// Obtains the next node, or none if the collection is empty
+        /// </summary>
+        /// <param name="value">The node that was obtained</param>
+        /// <returns>Whether a node was obtained</returns>
+        bool TryGetNext(out T value);
+        /// <summary>
+        /// Stores a node in the collection
+        /// </summary>
+        /// <param name="state">The node to store</param>
+        void Store(T state);
     }
 
-    public class LIFOCollection<TState> : IStateCollection<TState>
+    /// <summary>
+    /// This collection uses a stack, and thus the last stored node will be the first to be returned
+    /// </summary>
+    /// <typeparam name="T">The type of the node</typeparam>
+    public class LIFOCollection<T> : IStateCollection<T>
     {
         public int Nodes => states.Count;
         public long RetrievedNodes { get; private set; }
 
-        private Stack<TState> states = new Stack<TState>();
+        private Stack<T> states = new Stack<T>();
 
         public LIFOCollection()
         {
             RetrievedNodes = 0;
         }
 
-        public LIFOCollection(TState initial) : this()
+        public LIFOCollection(T initial) : this()
         {
             Store(initial);
         }
 
-        public bool TryGetNext(out TState next)
+        public bool TryGetNext(out T next)
         {
             if (states.Count == 0)
             {
-                next = default(TState);
+                next = default(T);
                 return false;
             }
             RetrievedNodes++;
@@ -42,37 +63,41 @@ namespace TreesearchLib
             return true;
         }
 
-        public void Store(TState state) => states.Push(state);
+        public void Store(T state) => states.Push(state);
     }
 
-    public class FIFOCollection<TState> : IStateCollection<TState>
+    /// <summary>
+    /// This collection uses a queue, and thus the first stored node will be the first to be returned
+    /// </summary>
+    /// <typeparam name="T">The type of the node</typeparam>
+    public class FIFOCollection<T> : IStateCollection<T>
     {
         public int Nodes => states.Count;
         public long RetrievedNodes { get; private set; }
 
-        private Queue<TState> states = new Queue<TState>();
+        private Queue<T> states = new Queue<T>();
 
         public FIFOCollection()
         {
             RetrievedNodes = 0;
         }
 
-        public FIFOCollection(TState initial) : this()
+        public FIFOCollection(T initial) : this()
         {
             Store(initial);
         }
 
-        internal FIFOCollection(Queue<TState> other, long retrievedNodes)
+        internal FIFOCollection(Queue<T> other, long retrievedNodes)
         {
             RetrievedNodes = retrievedNodes;
             states = other;
         }
 
-        public bool TryGetNext(out TState next)
+        public bool TryGetNext(out T next)
         {
             if (states.Count == 0)
             {
-                next = default(TState);
+                next = default(T);
                 return false;
             }
             RetrievedNodes++;
@@ -80,7 +105,7 @@ namespace TreesearchLib
             return true;
         }
 
-        public void Store(TState state) => states.Enqueue(state);
+        public void Store(T state) => states.Enqueue(state);
     }
 
 /// <summary>
@@ -94,30 +119,33 @@ namespace TreesearchLib
 /// </summary>
 /// <remarks>
 /// Because of the peculiar behaviour, BiLevelFIFOCollection does not implement
-/// <see cref="IStateCollection{TState}"/>. It allows to "export" as a regular
-/// <see cref="FIFOCollection{TState}"/>, by calling <see cref="ToSingleLevel"/>.
+/// <see cref="IStateCollection{T}"/>. It allows to "export" as a regular
+/// <see cref="FIFOCollection{T}"/>, by calling <see cref="ToSingleLevel"/>.
+/// 
+/// Also, when calling <see cref="SwapQueues"/>, any remaining nodes in the get-queue are prepended to the
+/// nodes in the put-queue before swapping.
 /// </remarks>
-/// <typeparam name="TState"></typeparam>
-    public class BiLevelFIFOCollection<TState>
+/// <typeparam name="T">The type of node to store</typeparam>
+    public class BiLevelFIFOCollection<T>
     {
         public int GetQueueNodes => getQueue.Count;
         public int PutQueueNodes => putQueue.Count;
         public long RetrievedNodes { get; private set; }
 
-        private Queue<TState> getQueue = new Queue<TState>();
-        private Queue<TState> putQueue = new Queue<TState>();
+        private Queue<T> getQueue = new Queue<T>();
+        private Queue<T> putQueue = new Queue<T>();
 
         public BiLevelFIFOCollection()
         {
             RetrievedNodes = 0;
         }
 
-        public BiLevelFIFOCollection(TState initial) : this()
+        public BiLevelFIFOCollection(T initial) : this()
         {
             getQueue.Enqueue(initial); // initially, the items are put into the get-queue
         }
 
-        public BiLevelFIFOCollection(IEnumerable<TState> initial) : this()
+        public BiLevelFIFOCollection(IEnumerable<T> initial) : this()
         {
             foreach (var i in initial)
             {
@@ -125,11 +153,11 @@ namespace TreesearchLib
             }
         }
 
-        public bool TryFromGetQueue(out TState next)
+        public bool TryFromGetQueue(out T next)
         {
             if (getQueue.Count == 0)
             {
-                next = default(TState);
+                next = default(T);
                 return false;
             }
             RetrievedNodes++;
@@ -137,7 +165,7 @@ namespace TreesearchLib
             return true;
         }
 
-        public void ToPutQueue(TState state) => putQueue.Enqueue(state);
+        public void ToPutQueue(T state) => putQueue.Enqueue(state);
 
         public void SwapQueues()
         {
@@ -160,11 +188,11 @@ namespace TreesearchLib
         /// non-empty put-queue.
         /// </remarks>
         /// <returns>The regular FIFO collection with just a single queue</returns>
-        public FIFOCollection<TState> ToSingleLevel()
+        public FIFOCollection<T> ToSingleLevel()
         {
             while (putQueue.Count > 0) getQueue.Enqueue(putQueue.Dequeue());
-            var result = new FIFOCollection<TState>(getQueue, RetrievedNodes);
-            getQueue = new Queue<TState>();
+            var result = new FIFOCollection<T>(getQueue, RetrievedNodes);
+            getQueue = new Queue<T>();
             return result;
         }
     }

@@ -4,6 +4,15 @@ using System.Collections.Generic;
 namespace TreesearchLib {
 
     public static class UndoStateExtension {
+        /// <summary>
+        /// Wraps the current state into one that does not allow to perform UndoLast() and thus requires that
+        /// each state is to be cloned, before a move is to be applied.
+        /// </summary>
+        /// <param name="state">The state that should be wrapped</param>
+        /// <typeparam name="TState">The state type</typeparam>
+        /// <typeparam name="TChoice">The choice type</typeparam>
+        /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The wrapped state instance</returns>
         public static UndoWrapper<TState, TChoice, TQuality> NoUndo<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state)
         where TState : class, IMutableState<TState, TChoice, TQuality>
         where TQuality : struct, IQuality<TQuality> {
