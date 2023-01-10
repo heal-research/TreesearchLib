@@ -56,7 +56,6 @@ namespace SampleApp
 
             // The knapsack implementation aims to provide efficient states for reversible search (only DFS), as well as for non-reversible search
             var knapsack = new Knapsack(profits, weights, capacity);
-            var knapsackNoUndo = new KnapsackNoUndo(profits, weights, capacity);
 
             var resultBS1 = Maximize.Start(knapsack).BeamSearch(10, 2);
             Console.WriteLine($"BeamSearch(10) {resultBS1.BestQuality} {resultBS1.VisitedNodes} ({(resultBS1.VisitedNodes / resultBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
@@ -88,14 +87,9 @@ namespace SampleApp
             var resultDFS1 = Maximize.Start(knapsack).DepthFirst();
             Console.WriteLine($"DFSearch reversible {resultDFS1.BestQuality} {resultDFS1.VisitedNodes} ({(resultDFS1.VisitedNodes / resultDFS1.Elapsed.TotalSeconds):F2} nodes/sec)");
             
-            /*var resultDFS2 = Maximize.Start(knapsackNoUndo).DepthFirst();
+            var knapsackNoUndo = new KnapsackNoUndo(profits, weights, capacity);
+            var resultDFS2 = Maximize.Start(knapsackNoUndo).DepthFirst();
             Console.WriteLine($"DFSearch non-reversible {resultDFS2.BestQuality} {resultDFS2.VisitedNodes} ({(resultDFS2.VisitedNodes / resultDFS2.Elapsed.TotalSeconds):F2} nodes/sec)");
-
-            var resultMCTS = Maximize.Start(knapsack).WithNodeLimit(resultDFS1.VisitedNodes)
-                .WithRuntimeLimit(resultDFS1.Elapsed);
-            MonteCarloTreeSearch<Knapsack, bool, Maximize>.Search(resultMCTS, (node, state) => node.Score += state.Quality.Value.Value);
-            Console.WriteLine($"MCTS reversible with {resultMCTS.VisitedNodes} nodes {resultMCTS.BestQuality} {resultMCTS.VisitedNodes} ({(resultMCTS.VisitedNodes / resultMCTS.Elapsed.TotalSeconds):F2} nodes/sec)");
-            */
         }
 
         private static void TravelingSalesman()

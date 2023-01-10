@@ -6,6 +6,12 @@ using TreesearchLib;
 
 namespace SampleApp
 {
+    /// <summary>
+    /// Provides an implementatino of the {0,1}-Knapsack problem that
+    /// supports undo, i.e., moves can be applied and reversed. It is
+    /// less efficient to clone this state, than <seealso cref="KnapsackNoUndo"/>,
+    /// because the Decision vector is always full length.
+    /// </summary>
     public class Knapsack : IMutableState<Knapsack, bool, Maximize>
     {
         public IReadOnlyList<int> Profits { get; set; }
@@ -39,6 +45,8 @@ namespace SampleApp
 
         public bool IsTerminal => Item == Profits.Count;
 
+        // Caching the bound improves performance a lot when e.g., using it
+        // as sorting criteria in beam search
         private Maximize? cachedbound;
         public Maximize Bound {
             get {
@@ -49,6 +57,8 @@ namespace SampleApp
                         cachedbound = new Maximize(Capacity - TotalWeight);
                     } else
                     {
+                        // This simple bound assumes all remaining items that may
+                        // fit (without considering the others) can be added
                         var profit = TotalProfit;
                         for (var i = Item; i < Profits.Count; i++)
                         {
@@ -67,6 +77,9 @@ namespace SampleApp
         public Maximize? Quality {
             get
             {
+                // as the constraint is checked in GetChoices(), the following condition
+                // should never be true, however if GetChoices() is changed to consider a relaxed
+                // formulation that seeks to minimize overweight, this function is still correct
                 if (TotalWeight > Capacity) return new Maximize(Capacity - TotalWeight);
                 return new Maximize(TotalProfit);
             }
@@ -92,8 +105,10 @@ namespace SampleApp
         public IEnumerable<bool> GetChoices()
         {
             if (IsTerminal) yield break;
-            if (Weights[Item] + TotalWeight <= Capacity)
+            if (Weights[Item] + TotalWeight <= Capacity) // Capacity constraint
+            {
                 yield return true;
+            }
             yield return false;
         }
 
@@ -115,6 +130,10 @@ namespace SampleApp
         }
     }
 
+    /// <summary>
+    /// Provides an implementatino of the {0,1}-Knapsack problem that
+    /// doesn't support undo and is optimized for more efficient cloning.
+    /// </summary>
     public class KnapsackNoUndo : IState<KnapsackNoUndo, Maximize>
     {
         public IReadOnlyList<int> Profits { get; private set; }
@@ -163,6 +182,8 @@ namespace SampleApp
 
         public bool IsTerminal => Decision.Length == Profits.Count;
 
+        // Caching the bound improves performance a lot when e.g., using it
+        // as sorting criteria in beam search
         private Maximize? cachedbound;
         public Maximize Bound
         {
@@ -175,6 +196,8 @@ namespace SampleApp
                         cachedbound = new Maximize(Capacity - TotalWeight);
                     } else
                     {
+                        // This simple bound assumes all remaining items that may
+                        // fit (without considering the others) can be added
                         var profit = TotalProfit;
                         for (var i = Decision.Length; i < Profits.Count; i++)
                         {
@@ -194,6 +217,9 @@ namespace SampleApp
         {
             get
             {
+                // as the constraint is checked in GetBranches(), the following condition
+                // should never be true, however if GetBranches() is changed to consider a relaxed
+                // formulation that seeks to minimize overweight, this function is still correct
                 if (TotalWeight > Capacity) return new Maximize(Capacity - TotalWeight);
                 return new Maximize(TotalProfit);
             }
@@ -208,7 +234,7 @@ namespace SampleApp
         {
             if (IsTerminal) yield break;
             var item = Decision.Length;
-            if (Weights[item] + TotalWeight <= Capacity)
+            if (Weights[item] + TotalWeight <= Capacity) // Capacity constraint
             {
                 yield return new KnapsackNoUndo(this, true);
             }

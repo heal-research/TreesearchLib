@@ -5,6 +5,9 @@ using TreesearchLib;
 
 namespace SampleApp
 {
+    /// <summary>
+    /// Implementation of the traveling salesman problem (TSP) that allows undoing moves
+    /// </summary>
     public class TSP : IMutableState<TSP, int, Minimize>
     {
         public int N { get; private set; }
@@ -24,6 +27,7 @@ namespace SampleApp
             {
                 if (!cachedBound.HasValue)
                 {
+                    // a very simplistic bound, whereby the tour is assumed to connect at least to the next closest city
                     cachedBound = new Minimize(TourLength + (Remaining.Count > 0 ? Remaining.Min(v => Distances[Tour[Index-1], v]) : 0));
                 }
                 return cachedBound.Value;

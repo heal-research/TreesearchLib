@@ -159,7 +159,7 @@ namespace TreesearchLib
             where Q : struct, IQuality<Q>
         {
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
-            var searchState = new LIFOCollection<T>();
+            var searchState = new LIFOCollection<T>(state);
             while (searchState.TryGetNext(out var currentState) && !control.ShouldStop())
             {
                 foreach (var next in currentState.GetBranches().Reverse().Take(filterWidth))
