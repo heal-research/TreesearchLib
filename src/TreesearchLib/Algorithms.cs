@@ -227,8 +227,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
-        /// <returns></returns>
-        public static void DoDepthSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int filterWidth = int.MaxValue)
+        /// <returns>The depth of the state in number of moves applied from the initial given state (assumed depth 0)</returns>
+        public static int DoDepthSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -262,6 +262,7 @@ namespace TreesearchLib
                     searchState.Store(entry);
                 }
             }
+            return stateDepth;
         }
 
         /// <summary>

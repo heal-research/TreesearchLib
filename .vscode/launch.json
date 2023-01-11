@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "builddebug",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/SampleApp/bin/Debug/net6.0/SampleApp.dll",
+            "program": "${workspaceFolder}/src/SampleApp/bin/Debug/net6.0/SampleApp.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/SampleApp",
+            "cwd": "${workspaceFolder}/src/SampleApp",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false
@@ -25,9 +25,9 @@
             "request": "launch",
             "preLaunchTask": "buildrelease",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/SampleApp/bin/Debug/net6.0/SampleApp.dll",
+            "program": "${workspaceFolder}/src/SampleApp/bin/Debug/net6.0/SampleApp.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/SampleApp",
+            "cwd": "${workspaceFolder}/src/SampleApp",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false

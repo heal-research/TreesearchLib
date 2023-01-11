@@ -412,7 +412,6 @@ namespace TreesearchLib
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            if (rank == null) rank = new BoundComparer<T, Q>();
             var state = control.InitialState;
             DoPilotMethod<T, Q>(control, state, beamWidth, filterWidth, rank);
             return control;
@@ -439,22 +438,34 @@ namespace TreesearchLib
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            if (beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1", nameof(beamWidth));
+            if (rank != null && beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1 when beam search is used ({nameof(rank)} is non-null)", nameof(beamWidth));
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
+            if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} parameter has no effect if {nameof(filterWidth)} is equal to 1", nameof(beamWidth));
             while (true)
             {
                 T bestBranch = default(T);
                 Q? bestBranchQuality = null;
                 foreach (var next in state.GetBranches())
                 {
-                    if (rank == null && beamWidth == 1)
+                    Q? quality;
+                    if (next.IsTerminal)
                     {
-                        Algorithms.DoDepthSearch(control, next, filterWidth: 1);
+                        // no lookahead required
+                        quality = next.Quality;
                     } else
                     {
-                        DoBeamSearch(control, next, beamWidth: beamWidth, filterWidth: filterWidth, rank: rank);
+                        // wrap the search control, to do best quality tracking for this particular lookahead run only
+                        var wrappedControl = new WrappedSearchControl<T, Q>(control);
+                        if (rank == null)
+                        {
+                            Algorithms.DoDepthSearch(wrappedControl, next, filterWidth: filterWidth);
+                        } else
+                        {
+                            DoBeamSearch(wrappedControl, next, beamWidth: beamWidth, filterWidth: filterWidth, rank: rank);
+                        }
+                        quality = wrappedControl.BestQuality;
                     }
-                    var quality = next.Quality;
+
                     if (!quality.HasValue) continue; // no solution achieved
                     if (!bestBranchQuality.HasValue || quality.Value.IsBetter(bestBranchQuality.Value))
                     {
@@ -512,7 +523,6 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            if (rank == null) rank = new BoundComparer<T, C, Q>();
             var state = (T)control.InitialState.Clone();
             DoPilotMethod<T, C, Q>(control, state, beamWidth, filterWidth, rank);
             return control;
@@ -540,24 +550,46 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            if (beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1", nameof(beamWidth));
+            if (rank != null && beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1 when beam search is used ({nameof(rank)} is non-null)", nameof(beamWidth));
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
+            if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} parameter has no effect if {nameof(filterWidth)} is equal to 1", nameof(beamWidth));
             while (true)
             {
                 C bestBranch = default(C);
                 Q? bestBranchQuality = null;
-                foreach (var choice in state.GetChoices())
+                foreach (var choice in state.GetChoices().ToList())
                 {
-                    var next = (T)state.Clone();
-                    next.Apply(choice);
-                    if (rank == null && beamWidth == 1)
+
+                    Q? quality;
+                    if (rank == null)
                     {
-                        Algorithms.DoDepthSearch<T, C, Q>(control, next, filterWidth: beamWidth);
+                        var wrappedControl = new WrappedSearchControl<T, C, Q>(control);
+                        var depth = Algorithms.DoDepthSearch<T, C, Q>(wrappedControl, state, filterWidth: filterWidth);
+                        quality = wrappedControl.BestQuality;
+                        while (depth > 0)
+                        {
+                            // undo all decisions made by the greedy lookahead heuristic
+                            state.UndoLast();
+                            depth--;
+                        }
                     } else
                     {
-                        DoBeamSearch<T, C, Q>(control, next, beamWidth: beamWidth, filterWidth: filterWidth, rank: rank);
+                        var next = (T)state.Clone();
+                        next.Apply(choice);
+                        if (next.IsTerminal)
+                        {
+                            // no greedy lookahead required
+                            quality = next.Quality;
+                        } else
+                        {
+                            // use beam search as greedy lookahead
+                            // wrap the search control, to do best quality tracking for this particular beam search run only
+                            var wrappedControl = new WrappedSearchControl<T, C, Q>(control);
+                            DoBeamSearch<T, C, Q>(wrappedControl, next, beamWidth: beamWidth, filterWidth: filterWidth, rank: rank);
+                            quality = wrappedControl.BestQuality;
+                        }
                     }
-                    var quality = next.Quality;
+
                     if (!quality.HasValue) continue; // no solution achieved
                     if (!bestBranchQuality.HasValue || quality.Value.IsBetter(bestBranchQuality.Value))
                     {

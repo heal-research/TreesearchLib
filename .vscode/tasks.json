@@ -7,11 +7,15 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/SampleApp/SampleApp.csproj",
+                "${workspaceFolder}/src/SampleApp/SampleApp.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
-            "problemMatcher": "$msCompile"
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
             "label": "buildrelease",
@@ -19,7 +23,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/SampleApp/SampleApp.csproj",
+                "${workspaceFolder}/src/SampleApp/SampleApp.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary",
                 "-c",
@@ -33,7 +37,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/SampleApp/SampleApp.csproj",
+                "${workspaceFolder}/src/SampleApp/SampleApp.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -47,7 +51,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/SampleApp/SampleApp.csproj"
+                "${workspaceFolder}/src/SampleApp/SampleApp.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

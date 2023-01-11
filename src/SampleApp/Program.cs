@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using TreesearchLib;
 
@@ -37,7 +38,7 @@ namespace SampleApp
 
         private static void KnapsackProblem()
         {
-            var size = 45;
+            var size = 30;
             var pmax = 100;
             var pmin = 1;
             var capfactor = 0.5;
@@ -95,7 +96,7 @@ namespace SampleApp
         private static void TravelingSalesman()
         {
             var tsp = new TSP(Berlin52.GetDistances());
-
+            
             var resultdf1 = Minimize.Start(tsp).DepthFirst(1);
             Console.WriteLine($"DepthFirst(1) {resultdf1.BestQuality} {resultdf1.VisitedNodes} ({(resultdf1.VisitedNodes / resultdf1.Elapsed.TotalSeconds):F2} nodes/sec)");
             
@@ -105,12 +106,11 @@ namespace SampleApp
             var resultRS100 = Minimize.Start(tsp).RakeSearch(100);
             Console.WriteLine($"RakeSearch(100) {resultRS100.BestQuality} {resultRS100.VisitedNodes} ({(resultRS100.VisitedNodes / resultRS100.Elapsed.TotalSeconds):F2} nodes/sec)");
             
-            var resultPM = Minimize.Start(tsp).PilotMethod();
+            var resultPM = Minimize.Start(tsp).PilotMethod(rank: new BoundComparer<TSP, int, Minimize>());
             Console.WriteLine($"Pilot Method {resultPM.BestQuality} {resultPM.VisitedNodes} ({(resultPM.VisitedNodes / resultPM.Elapsed.TotalSeconds):F2} nodes/sec)");
             
             var resultAnytimeLD = Minimize.Start(tsp).AnytimeLDSearch(3);
             Console.WriteLine($"AnytimeLDSearch(3) {resultAnytimeLD.BestQuality} {resultAnytimeLD.VisitedNodes} ({(resultAnytimeLD.VisitedNodes / resultAnytimeLD.Elapsed.TotalSeconds):F2} nodes/sec)");
-
         }
     }
 }

@@ -231,6 +231,104 @@ namespace TreesearchLib
         }
     }
 
+    public class WrappedSearchControl<TState, TQuality> : ISearchControl<TState, TQuality>
+        where TState : IState<TState, TQuality>
+        where TQuality : struct, IQuality<TQuality>
+    {
+        private readonly ISearchControl<TState, TQuality> control;
+
+        public WrappedSearchControl(ISearchControl<TState, TQuality> control)
+        {
+            this.control = control;
+        }
+
+        public TState InitialState => control.InitialState;
+
+        public TQuality? BestQuality { get; set; }
+
+        public TState BestQualityState { get; set; }
+
+        public TimeSpan Elapsed => control.Elapsed;
+
+        public TimeSpan Runtime => control.Runtime;
+
+        public CancellationToken Cancellation => control.Cancellation;
+
+        public long NodeLimit => control.NodeLimit;
+
+        public long VisitedNodes => control.VisitedNodes;
+
+        public bool IsFinished => control.IsFinished;
+
+        public bool ShouldStop()
+        {
+            return control.ShouldStop();
+        }
+
+        public VisitResult VisitNode(TState state)
+        {
+            var quality = state.Quality;
+            if (quality.HasValue)
+            {
+                if (!BestQuality.HasValue || quality.Value.IsBetter(BestQuality.Value))
+                {
+                    BestQuality = quality;
+                    BestQualityState = (TState)state.Clone();
+                }
+            }
+            return control.VisitNode(state);
+        }
+    }
+
+    public class WrappedSearchControl<TState, TChoice, TQuality> : ISearchControl<TState, TQuality>
+        where TState : class, IMutableState<TState, TChoice, TQuality>
+        where TQuality : struct, IQuality<TQuality>
+    {
+        private readonly ISearchControl<TState, TQuality> control;
+
+        public WrappedSearchControl(ISearchControl<TState, TQuality> control)
+        {
+            this.control = control;
+        }
+
+        public TState InitialState => control.InitialState;
+
+        public TQuality? BestQuality { get; set; }
+
+        public TState BestQualityState { get; set; }
+
+        public TimeSpan Elapsed => control.Elapsed;
+
+        public TimeSpan Runtime => control.Runtime;
+
+        public CancellationToken Cancellation => control.Cancellation;
+
+        public long NodeLimit => control.NodeLimit;
+
+        public long VisitedNodes => control.VisitedNodes;
+
+        public bool IsFinished => control.IsFinished;
+
+        public bool ShouldStop()
+        {
+            return control.ShouldStop();
+        }
+
+        public VisitResult VisitNode(TState state)
+        {
+            var quality = state.Quality;
+            if (quality.HasValue)
+            {
+                if (!BestQuality.HasValue || quality.Value.IsBetter(BestQuality.Value))
+                {
+                    BestQuality = quality;
+                    BestQualityState = (TState)state.Clone();
+                }
+            }
+            return control.VisitNode(state);
+        }
+    }
+
     public static class SearchControlExtensions
     {
         public static SearchControl<TState, TQuality> WithImprovementCallback<TState, TQuality>(this SearchControl<TState, TQuality> control, QualityCallback<TState, TQuality> callback)

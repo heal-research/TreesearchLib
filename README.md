@@ -6,9 +6,9 @@ Modeling optimization problems is performed by implementing a problem state clas
 
 Check out the SampleApp to see implementations of the following problems:
 
- * ChooseSmallestProblem - a fun problem which searches small values in the sequence of random number seeds
- * Knapsack - the famous {0, 1}-Knapsack, implemented using reversible search (allowing to undo moves), as well as non-reversible
- * TSP - the Berlin52 instance of the TSPLIB
+ * [ChooseSmallestProblem](src/SampleApp/ChooseSmallestProblem.cs) - a fun problem which searches small values in the sequence of random number seeds
+ * [Knapsack](src/SampleApp/Knapsack.cs) - the famous {0, 1}-Knapsack, implemented using reversible search (allowing to undo moves), as well as non-reversible
+ * [TSP](src/SampleApp/TSP.cs) - the Berlin52 instance of the TSPLIB
 
 These samples should give you an idea on how to use the framework for problem modeling.
 

@@ -88,6 +88,14 @@ namespace SampleApp
         }
     }
 
+    public class TSPTourLengthComparer : IComparer<TSP>
+    {
+        public int Compare(TSP x, TSP y)
+        {
+            return x.TourLength.CompareTo(y.TourLength);
+        }
+    }
+
     public static class Berlin52
     {
         public static int N => 52;
