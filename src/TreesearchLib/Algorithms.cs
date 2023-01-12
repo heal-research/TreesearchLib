@@ -13,14 +13,15 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="filterWidth">Limits the number of branches per node</param>
+        /// <param name="depthLimit">Limits the depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, Q>> DepthFirstAsync<T, Q>(this SearchControl<T, Q> control, int filterWidth = int.MaxValue)
+        public static Task<SearchControl<T, Q>> DepthFirstAsync<T, Q>(this SearchControl<T, Q> control, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => DepthFirst(control, filterWidth: filterWidth));
+            return Task.Run(() => DepthFirst(control, filterWidth: filterWidth, depthLimit: depthLimit));
         }
 
         /// <summary>
@@ -29,14 +30,15 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="filterWidth">Limits the number of branches per node</param>
+        /// <param name="depthLimit">Limits the depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static SearchControl<T, Q> DepthFirst<T, Q>(this SearchControl<T, Q> control, int filterWidth = int.MaxValue)
+        public static SearchControl<T, Q> DepthFirst<T, Q>(this SearchControl<T, Q> control, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            DoDepthSearch(control, control.InitialState, filterWidth);
+            DoDepthSearch(control, control.InitialState, filterWidth, depthLimit);
             return control;
         }
 
@@ -79,15 +81,16 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="filterWidth">Limits the number of branches per node</param>
+        /// <param name="depthLimit">Limits the depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, C, Q>> DepthFirstAsync<T, C, Q>(this SearchControl<T, C, Q> control, int filterWidth = int.MaxValue)
+        public static Task<SearchControl<T, C, Q>> DepthFirstAsync<T, C, Q>(this SearchControl<T, C, Q> control, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => DepthFirst(control, filterWidth));
+            return Task.Run(() => DepthFirst(control, filterWidth, depthLimit));
         }
 
         /// <summary>
@@ -96,16 +99,17 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="filterWidth">Limits the number of branches per node</param>
+        /// <param name="depthLimit">Limits the depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static SearchControl<T, C, Q> DepthFirst<T, C, Q>(this SearchControl<T, C, Q> control, int filterWidth = int.MaxValue)
+        public static SearchControl<T, C, Q> DepthFirst<T, C, Q>(this SearchControl<T, C, Q> control, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             var state = (T)control.InitialState.Clone();
-            DoDepthSearch<T, C, Q>(control, state, filterWidth);
+            DoDepthSearch<T, C, Q>(control, state, filterWidth, depthLimit);
             return control;
         }
 
@@ -151,25 +155,29 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="state">The initial state from which the search should start</param>
         /// <param name="filterWidth">Limits the number of branches per node</param>
+        /// <param name="depthLimit">Limits the depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns></returns>
-        public static void DoDepthSearch<T, Q>(ISearchControl<T, Q> control, T state, int filterWidth = int.MaxValue)
+        public static void DoDepthSearch<T, Q>(ISearchControl<T, Q> control, T state, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
-            var searchState = new LIFOCollection<T>(state);
-            while (searchState.TryGetNext(out var currentState) && !control.ShouldStop())
+            var searchState = new LIFOCollection<(int depth, T state)>((0, state));
+            while (searchState.TryGetNext(out var c) && !control.ShouldStop())
             {
+                var (depth, currentState) = c;
                 foreach (var next in currentState.GetBranches().Reverse().Take(filterWidth))
                 {
                     if (control.VisitNode(next) == VisitResult.Discard)
                     {
                         continue;
                     }
-
-                    searchState.Store(next);
+                    if (depth + 1 < depthLimit) // do not branch further
+                    {
+                        searchState.Store((depth + 1, next));
+                    }
                 }
             }
         }
@@ -224,11 +232,12 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="state">The initial state from which the search should start</param>
         /// <param name="filterWidth">Limits the number of branches per node</param>
+        /// <param name="depthLimit">Limits the depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The depth of the state in number of moves applied from the initial given state (assumed depth 0)</returns>
-        public static int DoDepthSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int filterWidth = int.MaxValue)
+        public static int DoDepthSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -256,6 +265,10 @@ namespace TreesearchLib
                     continue;
                 }
 
+                if (stateDepth >= depthLimit)
+                {
+                    continue;
+                }
 
                 foreach (var entry in state.GetChoices().Take(filterWidth).Reverse().Select(ch => (stateDepth, ch)))
                 {
@@ -317,6 +330,7 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="state">The state to start from</param>
         /// <param name="filterWidth">Limits the number of branches per node</param>
+        /// <param name="depthLimit">Limits the depth of the search</param>
         /// <param name="runtime">The maximum runtime</param>
         /// <param name="callback">A callback when an improving solution has been found</param>
         /// <param name="nodeLimit">A limit on the number of nodes to visit</param>
@@ -325,18 +339,19 @@ namespace TreesearchLib
         /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The resulting best state that has been found (or none)</returns>
         public static Task<TState> DepthFirstAsync<TState, TQuality>(this IState<TState, TQuality> state, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
+                int depthLimit = int.MaxValue, TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => DepthFirst((TState)state, filterWidth, runtime, callback, nodeLimit, token));
+            return Task.Run(() => DepthFirst((TState)state, filterWidth, depthLimit, runtime, callback, nodeLimit, token));
         }
         /// <summary>
         /// Performs a depth-first search with the given options.
         /// </summary>
         /// <param name="state">The state to start from</param>
         /// <param name="filterWidth">Limits the number of branches per node</param>
+        /// <param name="depthLimit">Limits the depth of the search</param>
         /// <param name="runtime">The maximum runtime</param>
         /// <param name="callback">A callback when an improving solution has been found</param>
         /// <param name="nodeLimit">A limit on the number of nodes to visit</param>
@@ -345,7 +360,7 @@ namespace TreesearchLib
         /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The resulting best state that has been found (or none)</returns>
         public static TState DepthFirst<TState, TQuality>(this IState<TState, TQuality> state, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
+                int depthLimit = int.MaxValue, TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
@@ -354,7 +369,7 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             if (nodeLimit.HasValue) control = control.WithNodeLimit(nodeLimit.Value);
-            return control.DepthFirst(filterWidth).BestQualityState;
+            return control.DepthFirst(filterWidth, depthLimit).BestQualityState;
         }
 
         /// <summary>
@@ -362,6 +377,7 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="state">The state to start from</param>
         /// <param name="filterWidth">Limits the number of branches per node</param>
+        /// <param name="depthLimit">Limits the depth of the search</param>
         /// <param name="runtime">The maximum runtime</param>
         /// <param name="callback">A callback when an improving solution has been found</param>
         /// <param name="nodeLimit">A limit on the number of nodes to visit</param>
@@ -371,12 +387,12 @@ namespace TreesearchLib
         /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The resulting best state that has been found (or none)</returns>
         public static Task<TState> DepthFirstAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
+                int depthLimit = int.MaxValue, TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => DepthFirst<TState, TChoice, TQuality>((TState)state, filterWidth, runtime, callback, nodeLimit, token));
+            return Task.Run(() => DepthFirst<TState, TChoice, TQuality>((TState)state, filterWidth, depthLimit, runtime, callback, nodeLimit, token));
         }
 
         /// <summary>
@@ -384,6 +400,7 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="state">The state to start from</param>
         /// <param name="filterWidth">Limits the number of branches per node</param>
+        /// <param name="depthLimit">Limits the depth of the search</param>
         /// <param name="runtime">The maximum runtime</param>
         /// <param name="callback">A callback when an improving solution has been found</param>
         /// <param name="nodeLimit">A limit on the number of nodes to visit</param>
@@ -393,7 +410,7 @@ namespace TreesearchLib
         /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The resulting best state that has been found (or none)</returns>
         public static TState DepthFirst<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
+                int depthLimit = int.MaxValue, TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
@@ -402,7 +419,7 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             if (nodeLimit.HasValue) control = control.WithNodeLimit(nodeLimit.Value);
-            return control.DepthFirst(filterWidth).BestQualityState;
+            return control.DepthFirst(filterWidth, depthLimit).BestQualityState;
         }
 
         /// <summary>
