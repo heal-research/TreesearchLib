@@ -18,6 +18,7 @@ The algorithms that are included are:
  * Breadth-first search
  * Limited Discrepancy Search
  * Beam Search
+ * Monotonic Beam Search
  * Rake Search (and a Rake+Beam combination)
  * Pilot Method
  * Monte Carlo Tree Search
