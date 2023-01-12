@@ -60,7 +60,6 @@ namespace SampleApp
         public void UndoLast()
         {
             choicesMade.Pop();
-
         }
 
         public override string ToString()

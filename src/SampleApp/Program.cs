@@ -58,10 +58,10 @@ namespace SampleApp
             // The knapsack implementation aims to provide efficient states for reversible search (only DFS), as well as for non-reversible search
             var knapsack = new Knapsack(profits, weights, capacity);
 
-            var resultBS1 = Maximize.Start(knapsack).BeamSearch(10, 2);
+            var resultBS1 = Maximize.Start(knapsack).BeamSearch(10, state => state.Bound.Value, 2);
             Console.WriteLine($"BeamSearch(10) {resultBS1.BestQuality} {resultBS1.VisitedNodes} ({(resultBS1.VisitedNodes / resultBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
             
-            var resultBS10 = Maximize.Start(knapsack).BeamSearch(100, 2);
+            var resultBS10 = Maximize.Start(knapsack).BeamSearch(100, state => state.Bound.Value, 2);
             Console.WriteLine($"BeamSearch(100) {resultBS10.BestQuality} {resultBS10.VisitedNodes} ({(resultBS10.VisitedNodes / resultBS10.Elapsed.TotalSeconds):F2} nodes/sec)");
             
             var resultRS1 = Maximize.Start(knapsack).RakeSearch(10);
@@ -70,10 +70,10 @@ namespace SampleApp
             var resultRS10 = Maximize.Start(knapsack).RakeSearch(100);
             Console.WriteLine($"RakeSearch(100) {resultRS10.BestQuality} {resultRS10.VisitedNodes} ({(resultRS10.VisitedNodes / resultRS10.Elapsed.TotalSeconds):F2} nodes/sec)");
             
-            var resultRBS1 = Maximize.Start(knapsack).RakeAndBeamSearch(10, 10, 2);
+            var resultRBS1 = Maximize.Start(knapsack).RakeAndBeamSearch(10, 10, state => state.Bound.Value, 2);
             Console.WriteLine($"RakeAndBeamSearch(10,10) {resultRBS1.BestQuality} {resultRBS1.VisitedNodes} ({(resultRBS1.VisitedNodes / resultRBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
 
-            var resultRBS10 = Maximize.Start(knapsack).RakeAndBeamSearch(100, 100, 2);
+            var resultRBS10 = Maximize.Start(knapsack).RakeAndBeamSearch(100, 100, state => state.Bound.Value, 2);
             Console.WriteLine($"RakeAndBeamSearch(100,100) {resultRBS10.BestQuality} {resultRBS10.VisitedNodes} ({(resultRBS10.VisitedNodes / resultRBS10.Elapsed.TotalSeconds):F2} nodes/sec)");
 
             var resultPM = Maximize.Start(knapsack).PilotMethod();
@@ -119,19 +119,19 @@ namespace SampleApp
             var resultMonoBS100 = Minimize.Start(tsp).MonotonicBeamSearch(100, rank: t => t.Bound.Value, filterWidth: 3);
             Console.WriteLine($"MonoBeamSearch(100,3) {resultMonoBS100.BestQuality} {resultMonoBS100.VisitedNodes} ({(resultMonoBS100.VisitedNodes / resultMonoBS100.Elapsed.TotalSeconds):F2} nodes/sec)");
             
-            var resultBS1 = Minimize.Start(tsp).BeamSearch(1, 3);
+            var resultBS1 = Minimize.Start(tsp).BeamSearch(1, state => state.Bound.Value, 3);
             Console.WriteLine($"BeamSearch(1,3) {resultBS1.BestQuality} {resultBS1.VisitedNodes} ({(resultBS1.VisitedNodes / resultBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
             
-            var resultBS10 = Minimize.Start(tsp).BeamSearch(10, 3);
+            var resultBS10 = Minimize.Start(tsp).BeamSearch(10, state => state.Bound.Value, 3);
             Console.WriteLine($"BeamSearch(10,3) {resultBS10.BestQuality} {resultBS10.VisitedNodes} ({(resultBS10.VisitedNodes / resultBS10.Elapsed.TotalSeconds):F2} nodes/sec)");
             
-            var resultBS100 = Minimize.Start(tsp).BeamSearch(100, 3);
+            var resultBS100 = Minimize.Start(tsp).BeamSearch(100, state => state.Bound.Value, 3);
             Console.WriteLine($"BeamSearch(100,3) {resultBS100.BestQuality} {resultBS100.VisitedNodes} ({(resultBS100.VisitedNodes / resultBS100.Elapsed.TotalSeconds):F2} nodes/sec)");
             
             var resultRS100 = Minimize.Start(tsp).RakeSearch(100);
             Console.WriteLine($"RakeSearch(100) {resultRS100.BestQuality} {resultRS100.VisitedNodes} ({(resultRS100.VisitedNodes / resultRS100.Elapsed.TotalSeconds):F2} nodes/sec)");
             
-            var resultPM = Minimize.Start(tsp).PilotMethod(rank: new BoundComparer<TSP, int, Minimize>());
+            var resultPM = Minimize.Start(tsp).PilotMethod(rank: state => state.Bound.Value);
             Console.WriteLine($"Pilot Method {resultPM.BestQuality} {resultPM.VisitedNodes} ({(resultPM.VisitedNodes / resultPM.Elapsed.TotalSeconds):F2} nodes/sec)");
             
             var resultAnytimeLD = Minimize.Start(tsp).AnytimeLDSearch(3);

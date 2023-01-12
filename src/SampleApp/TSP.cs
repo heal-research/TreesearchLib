@@ -20,19 +20,7 @@ namespace SampleApp
 
         public bool IsTerminal => Index == N;
 
-        private Minimize? cachedBound;
-        public Minimize Bound
-        {
-            get
-            {
-                if (!cachedBound.HasValue)
-                {
-                    // a very simplistic bound, whereby the tour is assumed to connect at least to the next closest city
-                    cachedBound = new Minimize(TourLength + (Remaining.Count > 0 ? Remaining.Min(v => Distances[Tour[Index-1], v]) : 0));
-                }
-                return cachedBound.Value;
-            }
-        }
+        public Minimize Bound => new Minimize(TourLength + (Remaining.Count > 0 ? Remaining.Min(v => Distances[Tour[Index-1], v]) : 0));
 
         public Minimize? Quality => IsTerminal ? Bound : (Minimize?)null;
 
@@ -54,7 +42,6 @@ namespace SampleApp
 
         public void Apply(int choice)
         {
-            cachedBound = null;
             Tour[Index] = choice;
             TourLength += Distances[Tour[Index-1], Tour[Index]];
             Remaining.Remove(choice);
@@ -66,7 +53,6 @@ namespace SampleApp
 
         public void UndoLast()
         {
-            cachedBound = null;
             var choice = Tour[Index - 1];
             if (IsTerminal)
             {
@@ -85,14 +71,6 @@ namespace SampleApp
         public IEnumerable<int> GetChoices()
         {
             return Remaining.Select(v => (City: v, Distance: Distances[Tour[Index-1], v])).OrderBy(x => x.Distance).Select(x => x.City);
-        }
-    }
-
-    public class TSPTourLengthComparer : IComparer<TSP>
-    {
-        public int Compare(TSP x, TSP y)
-        {
-            return x.TourLength.CompareTo(y.TourLength);
         }
     }
 

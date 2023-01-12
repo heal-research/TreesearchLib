@@ -153,7 +153,6 @@ namespace SampleApp
             Decision = new bool[0];
             TotalWeight = 0;
             TotalProfit = 0;
-            cachedbound = null;
         }
         public KnapsackNoUndo(KnapsackNoUndo other)
         {
@@ -163,7 +162,6 @@ namespace SampleApp
             Decision = other.Decision; // is considered immutable
             TotalWeight = other.TotalWeight;
             TotalProfit = other.TotalProfit;
-            cachedbound = other.cachedbound;
         }
         public KnapsackNoUndo(KnapsackNoUndo other, bool choice) : this(other)
         {
@@ -177,39 +175,31 @@ namespace SampleApp
             Array.Copy(other.Decision, decision, other.Decision.Length);
             decision[other.Decision.Length] = choice;
             Decision = decision;
-            cachedbound = null;
         }
 
         public bool IsTerminal => Decision.Length == Profits.Count;
 
-        // Caching the bound improves performance a lot when e.g., using it
-        // as sorting criteria in beam search
-        private Maximize? cachedbound;
         public Maximize Bound
         {
             get
             {
-                if (!cachedbound.HasValue)
+                if (TotalWeight > Capacity)
                 {
-                    if (TotalWeight > Capacity)
+                    return new Maximize(Capacity - TotalWeight);
+                } else
+                {
+                    // This simple bound assumes all remaining items that may
+                    // fit (without considering the others) can be added
+                    var profit = TotalProfit;
+                    for (var i = Decision.Length; i < Profits.Count; i++)
                     {
-                        cachedbound = new Maximize(Capacity - TotalWeight);
-                    } else
-                    {
-                        // This simple bound assumes all remaining items that may
-                        // fit (without considering the others) can be added
-                        var profit = TotalProfit;
-                        for (var i = Decision.Length; i < Profits.Count; i++)
+                        if (TotalWeight + Weights[i] <= Capacity)
                         {
-                            if (TotalWeight + Weights[i] <= Capacity)
-                            {
-                                profit += Profits[i];
-                            }
+                            profit += Profits[i];
                         }
-                        cachedbound = new Maximize(profit);
                     }
+                    return new Maximize(profit);
                 }
-                return cachedbound.Value;
             }
         }
 

@@ -14,16 +14,16 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
-        /// <param name="rank">The rank function that determines the order of nodes, default is to compare bounds</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static Task<SearchControl<T, Q>> BeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth, int filterWidth, IComparer<T> rank = null)
+        public static Task<SearchControl<T, Q>> BeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => BeamSearch(control, beamWidth, filterWidth, rank));
+            return Task.Run(() => BeamSearch(control, beamWidth, rank, filterWidth));
         }
 
         /// <summary>
@@ -32,17 +32,16 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
-        /// <param name="rank">The rank function that determines the order of nodes, default is to compare bounds</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static SearchControl<T, Q> BeamSearch<T, Q>(this SearchControl<T, Q> control, int beamWidth, int filterWidth, IComparer<T> rank = null)
+        public static SearchControl<T, Q> BeamSearch<T, Q>(this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            if (rank == null) rank = new BoundComparer<T, Q>();
-            DoBeamSearch(control, control.InitialState, beamWidth, filterWidth, rank);
+            DoBeamSearch(control, control.InitialState, beamWidth, rank, filterWidth);
             return control;
         }
 
@@ -52,16 +51,16 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
-        /// <param name="rank">The rank function that determines the order of nodes, default is to compare bounds</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static Task<SearchControl<T, C, Q>> BeamSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, int filterWidth, IComparer<T> rank = null)
+        public static Task<SearchControl<T, C, Q>> BeamSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => BeamSearch(control, beamWidth, filterWidth, rank));
+            return Task.Run(() => BeamSearch(control, beamWidth, rank, filterWidth));
         }
 
         /// <summary>
@@ -70,17 +69,16 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
-        /// <param name="rank">The rank function that determines the order of nodes, default is to compare bounds</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static SearchControl<T, C, Q> BeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, int filterWidth, IComparer<T> rank = null)
+        public static SearchControl<T, C, Q> BeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            if (rank == null) rank = new BoundComparer<T, C, Q>();
-            DoBeamSearch<T, C, Q>(control, control.InitialState, beamWidth, filterWidth, rank);
+            DoBeamSearch<T, C, Q>(control, control.InitialState, beamWidth, rank, filterWidth);
             return control;
         }
 
@@ -91,12 +89,12 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="state">The state to start the search from</param>
         /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
-        /// <param name="rank">The rank function that determines the order of nodes</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoBeamSearch<T,Q>(ISearchControl<T, Q> control, T state, int beamWidth, int filterWidth, IComparer<T> rank)
+        public static void DoBeamSearch<T,Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -107,7 +105,7 @@ namespace TreesearchLib
             
             var currentLayer = new Queue<T>();
             currentLayer.Enqueue(state);
-            var nextlayer = new List<T>();
+            var nextlayer = new List<(float rank, T state)>();
             while (!control.ShouldStop())
             {
                 nextlayer.Clear();
@@ -122,7 +120,7 @@ namespace TreesearchLib
                             continue;
                         }
 
-                        nextlayer.Add(next);
+                        nextlayer.Add((rank(next), next));
                     }
 
                     if (control.ShouldStop())
@@ -137,7 +135,7 @@ namespace TreesearchLib
                     break;
                 }
 
-                foreach (var nextState in nextlayer.OrderBy(x => x, rank).Take(beamWidth))
+                foreach (var nextState in nextlayer.OrderBy(x => x.rank).Take(beamWidth).Select(x => x.state))
                 {
                     currentLayer.Enqueue(nextState);
                 }
@@ -151,12 +149,12 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="state">The state to start the search from</param>
         /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
-        /// <param name="rank">The rank function that determines the order of nodes</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, int filterWidth, IComparer<T> rank)
+        public static void DoBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -167,7 +165,7 @@ namespace TreesearchLib
             
             var currentLayer = new Queue<T>();
             currentLayer.Enqueue(state);
-            var nextlayer = new List<T>();
+            var nextlayer = new List<(float rank, T state)>();
             while (!control.ShouldStop())
             {
                 nextlayer.Clear();
@@ -185,7 +183,7 @@ namespace TreesearchLib
                             continue;
                         }
 
-                        nextlayer.Add(next);
+                        nextlayer.Add((rank(next), next));
                     }
 
                     if (control.ShouldStop())
@@ -200,7 +198,7 @@ namespace TreesearchLib
                     break;
                 }
 
-                foreach (var nextState in nextlayer.OrderBy(x => x, rank).Take(beamWidth))
+                foreach (var nextState in nextlayer.OrderBy(x => x.rank).Take(beamWidth).Select(x => x.state))
                 {
                     currentLayer.Enqueue(nextState);
                 }
@@ -290,16 +288,16 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="beamWidth">Used in the beam search to determine the number of beams</param>
+        /// <param name="rank">The ranking function used by the beam search (lower is better)</param>
         /// <param name="filterWidth">To limit the number of branches per node</param>
-        /// <param name="rank">The ranking function used by the beam search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, Q>> RakeAndBeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, int filterWidth, IComparer<T> rank = null)
+        public static Task<SearchControl<T, Q>> RakeAndBeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, filterWidth, rank));
+            return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, rank, filterWidth));
         }
 
         /// <summary>
@@ -309,20 +307,19 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="beamWidth">Used in the beam search to determine the number of beams</param>
+        /// <param name="rank">The ranking function used by the beam search (lower is better)</param>
         /// <param name="filterWidth">To limit the number of branches per node</param>
-        /// <param name="rank">The ranking function used by the beam search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static SearchControl<T, Q> RakeAndBeamSearch<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, int filterWidth, IComparer<T> rank = null)
+        public static SearchControl<T, Q> RakeAndBeamSearch<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            if (rank == null) rank = new BoundComparer<T, Q>();
             var rake = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             while (rake.TryGetNext(out var next) && !control.ShouldStop())
             {
-                DoBeamSearch(control, next, beamWidth, filterWidth, rank);
+                DoBeamSearch(control, next, beamWidth, rank, filterWidth);
             }
             return control;
         }
@@ -334,17 +331,17 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="beamWidth">Used in the beam search to determine the number of beams</param>
+        /// <param name="rank">The ranking function used by the beam search (lower is better)</param>
         /// <param name="filterWidth">To limit the number of branches per node</param>
-        /// <param name="rank">The ranking function used by the beam search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, C, Q>> RakeAndBeamSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth, int filterWidth, IComparer<T> rank = null)
+        public static Task<SearchControl<T, C, Q>> RakeAndBeamSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, filterWidth, rank));
+            return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, rank, filterWidth));
         }
 
         /// <summary>
@@ -354,21 +351,20 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="beamWidth">Used in the beam search to determine the number of beams</param>
+        /// <param name="rank">The ranking function used by the beam search (lower is better)</param>
         /// <param name="filterWidth">To limit the number of branches per node</param>
-        /// <param name="rank">The ranking function used by the beam search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static SearchControl<T, C, Q> RakeAndBeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth, int filterWidth, IComparer<T> rank = null)
+        public static SearchControl<T, C, Q> RakeAndBeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            if (rank == null) rank = new BoundComparer<T, C, Q>();
             var rake = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             while (rake.TryGetNext(out var next) && !control.ShouldStop())
             {
-                DoBeamSearch<T, C, Q>(control, next, beamWidth, filterWidth, rank);
+                DoBeamSearch<T, C, Q>(control, next, beamWidth, rank, filterWidth);
             }
             return control;
         }
@@ -384,16 +380,16 @@ namespace TreesearchLib
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
+        /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
-        /// <param name="rank">A function that ranks states, if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
-        public static Task<SearchControl<T, Q>> PilotMethodAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth = 1, int filterWidth = 1, IComparer<T> rank = null)
+        public static Task<SearchControl<T, Q>> PilotMethodAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth = 1, Func<T, float> rank = null, int filterWidth = 1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => PilotMethod(control, beamWidth, filterWidth, rank));
+            return Task.Run(() => PilotMethod(control, beamWidth, rank, filterWidth));
         }
 
         /// <summary>
@@ -407,17 +403,17 @@ namespace TreesearchLib
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
+        /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
-        /// <param name="rank">A function that ranks states, if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
-        public static SearchControl<T, Q> PilotMethod<T, Q>(this SearchControl<T, Q> control, int beamWidth = 1, int filterWidth = 1, IComparer<T> rank = null)
+        public static SearchControl<T, Q> PilotMethod<T, Q>(this SearchControl<T, Q> control, int beamWidth = 1, Func<T, float> rank = null, int filterWidth = 1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             var state = control.InitialState;
-            DoPilotMethod<T, Q>(control, state, beamWidth, filterWidth, rank);
+            DoPilotMethod<T, Q>(control, state, beamWidth, rank, filterWidth);
             return control;
         }
 
@@ -433,18 +429,19 @@ namespace TreesearchLib
         /// <param name="control">Runtime control and best solution tracking.</param>
         /// <param name="state">The state from which the pilot method should start operating</param>
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
+        /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
-        /// <param name="rank">A function that ranks states, if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns></returns>
-        public static void DoPilotMethod<T, Q>(ISearchControl<T, Q> control, T state, int beamWidth, int filterWidth, IComparer<T> rank)
+        public static void DoPilotMethod<T, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             if (rank != null && beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1 when beam search is used ({nameof(rank)} is non-null)", nameof(beamWidth));
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
             if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} parameter has no effect if {nameof(filterWidth)} is equal to 1", nameof(beamWidth));
+            
             while (true)
             {
                 T bestBranch = default(T);
@@ -465,7 +462,7 @@ namespace TreesearchLib
                             Algorithms.DoDepthSearch(wrappedControl, next, filterWidth: filterWidth);
                         } else
                         {
-                            DoBeamSearch(wrappedControl, next, beamWidth: beamWidth, filterWidth: filterWidth, rank: rank);
+                            DoBeamSearch(wrappedControl, next, beamWidth: beamWidth, rank: rank, filterWidth: filterWidth);
                         }
                         quality = wrappedControl.BestQuality;
                     }
@@ -493,17 +490,17 @@ namespace TreesearchLib
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
+        /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
-        /// <param name="rank">A function that ranks states, if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
-        public static Task<SearchControl<T, C, Q>> PilotMethodAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = 1, int filterWidth = 1, IComparer<T> rank = null)
+        public static Task<SearchControl<T, C, Q>> PilotMethodAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = 1, Func<T, float> rank = null, int filterWidth = 1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => PilotMethod(control, beamWidth, filterWidth, rank));
+            return Task.Run(() => PilotMethod(control, beamWidth, rank, filterWidth));
         }
 
         /// <summary>
@@ -517,18 +514,18 @@ namespace TreesearchLib
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
+        /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
-        /// <param name="rank">A function that ranks states, if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
-        public static SearchControl<T, C, Q> PilotMethod<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = 1, int filterWidth = 1, IComparer<T> rank = null)
+        public static SearchControl<T, C, Q> PilotMethod<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = 1, Func<T, float> rank = null, int filterWidth = 1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             var state = (T)control.InitialState.Clone();
-            DoPilotMethod<T, C, Q>(control, state, beamWidth, filterWidth, rank);
+            DoPilotMethod<T, C, Q>(control, state, beamWidth, rank, filterWidth);
             return control;
         }
 
@@ -544,13 +541,13 @@ namespace TreesearchLib
         /// <param name="control">Runtime control and best solution tracking.</param>
         /// <param name="state">The state from which the pilot method should start operating</param>
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
+        /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
-        /// <param name="rank">A function that ranks states, if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns></returns>
-        public static void DoPilotMethod<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, int filterWidth, IComparer<T> rank)
+        public static void DoPilotMethod<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -589,7 +586,7 @@ namespace TreesearchLib
                             // use beam search as greedy lookahead
                             // wrap the search control, to do best quality tracking for this particular beam search run only
                             var wrappedControl = new WrappedSearchControl<T, C, Q>(control);
-                            DoBeamSearch<T, C, Q>(wrappedControl, next, beamWidth: beamWidth, filterWidth: filterWidth, rank: rank);
+                            DoBeamSearch<T, C, Q>(wrappedControl, next, beamWidth: beamWidth, rank: rank, filterWidth: filterWidth);
                             quality = wrappedControl.BestQuality;
                         }
                     }
@@ -1457,50 +1454,19 @@ namespace TreesearchLib
         }
     }
 
-    /// <summary>
-    /// A simple ranking method that compares the states' bounds
-    /// </summary>
-    /// <typeparam name="T">The state type</typeparam>
-    /// <typeparam name="Q">The quality type</typeparam>
-    public class BoundComparer<T, Q> : IComparer<T>
-        where T : IState<T, Q>
-        where Q : struct, IQuality<Q>
-    {
-        public int Compare(T x, T y)
-        {
-            return x.Bound.CompareTo(y.Bound);
-        }
-    }
-
-    /// <summary>
-    /// A simple ranking method that compares the states' bounds
-    /// </summary>
-    /// <typeparam name="T">The state type</typeparam>
-    /// <typeparam name="C">The choice type</typeparam>
-    /// <typeparam name="Q">The quality type</typeparam>
-    public class BoundComparer<T, C, Q> : IComparer<T>
-        where T : class, IMutableState<T, C, Q>
-        where Q : struct, IQuality<Q>
-    {
-        public int Compare(T x, T y)
-        {
-            return x.Bound.CompareTo(y.Bound);
-        }
-    }
-
     public static class HeuristicStateExtensions
     {
-        public static Task<TState> BeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, IComparer<TState> rank,
+        public static Task<TState> BeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
                  int beamWidth = 100, int filterWidth = 3, TimeSpan? runtime = null,
                 long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => BeamSearch((TState)state, beamWidth, filterWidth, rank, runtime, nodelimit, callback, token));
+            return Task.Run(() => BeamSearch((TState)state, rank, beamWidth, filterWidth, runtime, nodelimit, callback, token));
         }
-        public static TState BeamSearch<TState, TQuality>(this IState<TState, TQuality> state, int beamWidth = 100, int filterWidth = 3,
-                IComparer<TState> rank = null, TimeSpan? runtime = null,
+        public static TState BeamSearch<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
+                int beamWidth = 100, int filterWidth = 3, TimeSpan? runtime = null,
                 long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
@@ -1510,21 +1476,21 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.BeamSearch(beamWidth, filterWidth, rank).BestQualityState;
+            return control.BeamSearch(beamWidth, rank, filterWidth).BestQualityState;
         }
 
-        public static Task<TState> BeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int beamWidth = 100,
-                int filterWidth = 3, IComparer<TState> rank = null, TimeSpan? runtime = null,
+        public static Task<TState> BeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
+                int beamWidth = 100, int filterWidth = 3, TimeSpan? runtime = null,
                 long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => BeamSearch<TState, TChoice, TQuality>((TState)state, beamWidth, filterWidth, rank, runtime, nodelimit, callback, token));
+            return Task.Run(() => BeamSearch<TState, TChoice, TQuality>((TState)state, rank, beamWidth, filterWidth, runtime, nodelimit, callback, token));
         }
 
-        public static TState BeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int beamWidth = 100,
-                int filterWidth = 3, IComparer<TState> rank = null, TimeSpan? runtime = null,
+        public static TState BeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
+                int beamWidth = 100, int filterWidth = 3, TimeSpan? runtime = null,
                 long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
@@ -1534,7 +1500,7 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.BeamSearch(beamWidth, filterWidth, rank).BestQualityState;
+            return control.BeamSearch(beamWidth, rank, filterWidth).BestQualityState;
         }
 
         public static Task<TState> RakeSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, int rakeWidth = 100,
@@ -1585,7 +1551,7 @@ namespace TreesearchLib
             return control.RakeSearch(rakeWidth).BestQualityState;
         }
 
-        public static Task<TState> RakeAndBeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, IComparer<TState> rank,
+        public static Task<TState> RakeAndBeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
                 int rakeWidth = 100, int beamWidth = 100, int filterWidth = 3,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
@@ -1593,11 +1559,11 @@ namespace TreesearchLib
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => RakeAndBeamSearch((TState)state, rakeWidth, beamWidth, filterWidth, rank, runtime, nodelimit, callback, token));
+            return Task.Run(() => RakeAndBeamSearch((TState)state, rank, rakeWidth, beamWidth, filterWidth, runtime, nodelimit, callback, token));
         }
 
-        public static TState RakeAndBeamSearch<TState, TQuality>(this IState<TState, TQuality> state,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = 3, IComparer<TState> rank = null,
+        public static TState RakeAndBeamSearch<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
+                int rakeWidth = 100, int beamWidth = 100, int filterWidth = 3,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
@@ -1608,10 +1574,10 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.RakeAndBeamSearch(rakeWidth, beamWidth, filterWidth, rank).BestQualityState;
+            return control.RakeAndBeamSearch(rakeWidth, beamWidth, rank, filterWidth).BestQualityState;
         }
 
-        public static Task<TState> RakeAndBeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, IComparer<TState> rank,
+        public static Task<TState> RakeAndBeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
                 int rakeWidth = 100, int beamWidth = 100, int filterWidth = 3,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
@@ -1619,11 +1585,11 @@ namespace TreesearchLib
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => RakeAndBeamSearch<TState, TChoice, TQuality>((TState)state, rakeWidth, beamWidth, filterWidth, rank, runtime, nodelimit, callback, token));
+            return Task.Run(() => RakeAndBeamSearch<TState, TChoice, TQuality>((TState)state, rank, rakeWidth, beamWidth, filterWidth, runtime, nodelimit, callback, token));
         }
 
-        public static TState RakeAndBeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = 3, IComparer<TState> rank = null,
+        public static TState RakeAndBeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
+                int rakeWidth = 100, int beamWidth = 100, int filterWidth = 3,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
@@ -1634,22 +1600,22 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.RakeAndBeamSearch(rakeWidth, beamWidth, filterWidth, rank).BestQualityState;
+            return control.RakeAndBeamSearch(rakeWidth, beamWidth, rank, filterWidth).BestQualityState;
         }
 
         public static Task<TState> PilotMethodAsync<TState, TQuality>(this IState<TState, TQuality> state,
-                int beamWidth = 1, int filterWidth = 3, IComparer<TState> rank = null,
+                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = 3,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => PilotMethod((TState)state, beamWidth, filterWidth, rank, runtime, nodelimit, callback, token));
+            return Task.Run(() => PilotMethod((TState)state, beamWidth, rank, filterWidth, runtime, nodelimit, callback, token));
         }
 
         public static TState PilotMethod<TState, TQuality>(this IState<TState, TQuality> state,
-                int beamWidth = 1, int filterWidth = 3, IComparer<TState> rank = null,
+                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = 3,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
@@ -1660,22 +1626,22 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.PilotMethod(beamWidth, filterWidth, rank).BestQualityState;
+            return control.PilotMethod(beamWidth, rank, filterWidth).BestQualityState;
         }
 
         public static Task<TState> PilotMethodAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state,
-                int beamWidth = 1, int filterWidth = 3, IComparer<TState> rank = null,
+                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = 3,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => PilotMethod<TState, TChoice, TQuality>((TState)state, beamWidth, filterWidth, rank, runtime, nodelimit, callback, token));
+            return Task.Run(() => PilotMethod<TState, TChoice, TQuality>((TState)state, beamWidth, rank, filterWidth, runtime, nodelimit, callback, token));
         }
 
         public static TState PilotMethod<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state,
-                int beamWidth = 1, int filterWidth = 3, IComparer<TState> rank = null,
+                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = 3,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
@@ -1686,7 +1652,7 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.PilotMethod(beamWidth, filterWidth, rank).BestQualityState;
+            return control.PilotMethod(beamWidth, rank, filterWidth).BestQualityState;
         }
         
         public static Task<TState> NaiveLDSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, int maxDiscrepancy = 1,
