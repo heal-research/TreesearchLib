@@ -103,6 +103,8 @@ namespace TreesearchLib
             if (beamWidth <= 0) throw new ArgumentException("A beam width of 0 or less is not possible");
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
             if (rank == null) throw new ArgumentNullException(nameof(rank));
+            if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} cannot exceed 1 when {nameof(filterWidth)} equals 1.");
+            
             var currentLayer = new Queue<T>();
             currentLayer.Enqueue(state);
             var nextlayer = new List<T>();
@@ -161,6 +163,8 @@ namespace TreesearchLib
             if (beamWidth <= 0) throw new ArgumentException("A beam width of 0 or less is not possible");
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
             if (rank == null) throw new ArgumentNullException(nameof(rank));
+            if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} cannot exceed 1 when {nameof(filterWidth)} equals 1.");
+            
             var currentLayer = new Queue<T>();
             currentLayer.Enqueue(state);
             var nextlayer = new List<T>();
@@ -176,7 +180,7 @@ namespace TreesearchLib
                         var next = (T)currentState.Clone();
                         next.Apply(choice);
 
-                        if (control.VisitNode(next) == VisitResult.Discard)
+                        if (control.VisitNode(next) == VisitResult.Discard || next.IsTerminal)
                         {
                             continue;
                         }
@@ -1131,6 +1135,324 @@ namespace TreesearchLib
                 {
                     K++;
                 }
+            }
+        }
+        
+        /// <summary>
+        /// Monotonic beam search uses several parallel beams which are iteratively updated.
+        /// Each beam may only choose among branches that beams before it have made available.
+        /// This behavior ensures that the call with beamWidth = n + 1 achieves as good results
+        /// as with beamWidth = n. For standard beam search this property does not hold and a
+        /// bigger beam search might lead to worse results (against the general trend of achieving
+        /// better solutions).
+        /// </summary>
+        /// <remarks>
+        /// The algorithms is described in Lemons, S., López, C.L., Holte, R.C. and Ruml, W., 2022.
+        /// Beam Search: Faster and Monotonic. arXiv preprint arXiv:2204.02929.
+        /// </remarks>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes, default is to compare bounds</param>
+        /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns>The runtime control and tracking instance after the search</returns>
+        public static Task<SearchControl<T, Q>> MonotonicBeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            return Task.Run(() => MonotonicBeamSearch(control, beamWidth, rank, filterWidth));
+        }
+
+        /// <summary>
+        /// Monotonic beam search uses several parallel beams which are iteratively updated.
+        /// Each beam may only choose among branches that beams before it have made available.
+        /// This behavior ensures that the call with beamWidth = n + 1 achieves as good results
+        /// as with beamWidth = n. For standard beam search this property does not hold and a
+        /// bigger beam search might lead to worse results (against the general trend of achieving
+        /// better solutions).
+        /// </summary>
+        /// <remarks>
+        /// The algorithms is described in Lemons, S., López, C.L., Holte, R.C. and Ruml, W., 2022.
+        /// Beam Search: Faster and Monotonic. arXiv preprint arXiv:2204.02929.
+        /// </remarks>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes, default is to compare bounds</param>
+        /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns>The runtime control and tracking instance after the search</returns>
+        public static SearchControl<T, Q> MonotonicBeamSearch<T, Q>(this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            DoMonotonicBeamSearch(control, control.InitialState, beamWidth, rank, filterWidth);
+            return control;
+        }
+
+        /// <summary>
+        /// Monotonic beam search uses several parallel beams which are iteratively updated.
+        /// Each beam may only choose among branches that beams before it have made available.
+        /// This behavior ensures that the call with beamWidth = n + 1 achieves as good results
+        /// as with beamWidth = n. For standard beam search this property does not hold and a
+        /// bigger beam search might lead to worse results (against the general trend of achieving
+        /// better solutions).
+        /// </summary>
+        /// <remarks>
+        /// The algorithms is described in Lemons, S., López, C.L., Holte, R.C. and Ruml, W., 2022.
+        /// Beam Search: Faster and Monotonic. arXiv preprint arXiv:2204.02929.
+        /// </remarks>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="state">The state to start from</param>
+        /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes, default is to compare bounds</param>
+        /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns></returns>
+        public static void DoMonotonicBeamSearch<T,Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            if (beamWidth <= 0) throw new ArgumentException("A beam width of 0 or less is not possible");
+            if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
+            if (rank == null) throw new ArgumentNullException(nameof(rank));
+            if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} cannot exceed 1 when {nameof(filterWidth)} equals 1.");
+
+            var beams = new T[beamWidth];
+            beams[0] = state;
+            var candidates = new Priority_Queue.StablePriorityQueue<StateNode<T, Q>>(beamWidth * 10);
+            while (!Equals(beams[0], default(T)) && !control.ShouldStop())
+            {
+                for (var b = 0; b < beams.Length; b++)
+                {
+                    if (Equals(beams[b], default(T)))
+                    {
+                        // launch a new beam (this does not violate monotonicity, because inactive beams will be shifted to the end of the beam array)
+                        if (candidates.Count > 0)
+                        {
+                            beams[b] = candidates.Dequeue().State;
+                            continue;
+                        } else break; // no more active beams will follow
+                    }
+
+                    var currentState = beams[b];
+
+                    foreach (var next in currentState.GetBranches().Take(filterWidth))
+                    {
+                        if (control.VisitNode(next) == VisitResult.Discard || next.IsTerminal)
+                        {
+                            continue;
+                        }
+
+                        if (candidates.Count == candidates.MaxSize)
+                        {
+                            candidates.Resize(candidates.MaxSize * 2);
+                        }
+                        candidates.Enqueue(new StateNode<T, Q>(next), rank(next));
+                    }
+
+                    if (candidates.Count == 0) // no more candidates, beam will become inactive and shifted to the end
+                    {
+                        var k = b;
+                        for (; k < beams.Length - 1; k++)
+                        {
+                            beams[k] = beams[k + 1]; // shift the remaining beams to the left
+                            if (Equals(beams[k], default(T)))
+                            {
+                                break; // only inactive beams follow
+                            }
+                        }
+                        beams[beams.Length - 1] = default(T);
+                        if (b == k) break;
+                        b--;
+                        continue;
+                    }
+
+                    beams[b] = candidates.Dequeue().State;
+
+                    if (control.ShouldStop())
+                    {
+                        return;
+                    }
+                }
+
+                candidates.Clear();
+            }
+        }
+        
+        /// <summary>
+        /// Monotonic beam search uses several parallel beams which are iteratively updated.
+        /// Each beam may only choose among branches that beams before it have made available.
+        /// This behavior ensures that the call with beamWidth = n + 1 achieves as good results
+        /// as with beamWidth = n. For standard beam search this property does not hold and a
+        /// bigger beam search might lead to worse results (against the general trend of achieving
+        /// better solutions).
+        /// </summary>
+        /// <remarks>
+        /// The algorithms is described in Lemons, S., López, C.L., Holte, R.C. and Ruml, W., 2022.
+        /// Beam Search: Faster and Monotonic. arXiv preprint arXiv:2204.02929.
+        /// </remarks>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes, default is to compare bounds</param>
+        /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="C">The choice type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns>The runtime control and tracking instance after the search</returns>
+        public static Task<SearchControl<T, C, Q>> MonotonicBeamSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            return Task.Run(() => MonotonicBeamSearch(control, beamWidth, rank, filterWidth));
+        }
+
+        /// <summary>
+        /// Monotonic beam search uses several parallel beams which are iteratively updated.
+        /// Each beam may only choose among branches that beams before it have made available.
+        /// This behavior ensures that the call with beamWidth = n + 1 achieves as good results
+        /// as with beamWidth = n. For standard beam search this property does not hold and a
+        /// bigger beam search might lead to worse results (against the general trend of achieving
+        /// better solutions).
+        /// </summary>
+        /// <remarks>
+        /// The algorithms is described in Lemons, S., López, C.L., Holte, R.C. and Ruml, W., 2022.
+        /// Beam Search: Faster and Monotonic. arXiv preprint arXiv:2204.02929.
+        /// </remarks>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes, default is to compare bounds</param>
+        /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="C">The choice type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns>The runtime control and tracking instance after the search</returns>
+        public static SearchControl<T, C, Q> MonotonicBeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            DoMonotonicBeamSearch<T, C, Q>(control, control.InitialState, beamWidth, rank, filterWidth);
+            return control;
+        }
+
+        /// <summary>
+        /// Monotonic beam search uses several parallel beams which are iteratively updated.
+        /// Each beam may only choose among branches that beams before it have made available.
+        /// This behavior ensures that the call with beamWidth = n + 1 achieves as good results
+        /// as with beamWidth = n. For standard beam search this property does not hold and a
+        /// bigger beam search might lead to worse results (against the general trend of achieving
+        /// better solutions).
+        /// </summary>
+        /// <remarks>
+        /// The algorithms is described in Lemons, S., López, C.L., Holte, R.C. and Ruml, W., 2022.
+        /// Beam Search: Faster and Monotonic. arXiv preprint arXiv:2204.02929.
+        /// </remarks>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="state">The state to start from</param>
+        /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes, default is to compare bounds</param>
+        /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns></returns>
+        public static void DoMonotonicBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            if (beamWidth <= 0) throw new ArgumentException("A beam width of 0 or less is not possible");
+            if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
+            if (rank == null) throw new ArgumentNullException(nameof(rank));
+            if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} cannot exceed 1 when {nameof(filterWidth)} equals 1.");
+
+            var beams = new T[beamWidth];
+            beams[0] = state;
+            var candidates = new Priority_Queue.StablePriorityQueue<StateNode<T, C, Q>>(beamWidth * 10);
+            while (!Equals(beams[0], default(T)) && !control.ShouldStop())
+            {
+                for (var b = 0; b < beams.Length; b++)
+                {
+                    if (Equals(beams[b], default(T)))
+                    {
+                        // launch a new beam (this does not violate monotonicity, because inactive beams will be shifted to the end of the beam array)
+                        if (candidates.Count > 0)
+                        {
+                            beams[b] = candidates.Dequeue().State;
+                            continue;
+                        } else break; // no more active beams will follow
+                    }
+
+                    var currentState = beams[b];
+
+                    foreach (var choice in currentState.GetChoices().Take(filterWidth))
+                    {
+                        var next = (T)currentState.Clone();
+                        next.Apply(choice);
+                        if (control.VisitNode(next) == VisitResult.Discard || next.IsTerminal)
+                        {
+                            continue;
+                        }
+
+                        if (candidates.Count == candidates.MaxSize)
+                        {
+                            candidates.Resize(candidates.MaxSize * 2);
+                        }
+                        candidates.Enqueue(new StateNode<T, C, Q>(next), rank(next));
+                    }
+
+                    if (candidates.Count == 0) // no more candidates, beam will become inactive and shifted to the end
+                    {
+                        var k = b;
+                        for (; k < beams.Length - 1; k++)
+                        {
+                            beams[k] = beams[k + 1]; // shift the remaining beams to the left
+                            if (Equals(beams[k], default(T)))
+                            {
+                                break; // only inactive beams follow
+                            }
+                        }
+                        beams[beams.Length - 1] = default(T);
+                        if (b == k) break;
+                        b--;
+                        continue;
+                    }
+
+                    beams[b] = candidates.Dequeue().State;
+
+                    if (control.ShouldStop())
+                    {
+                        return;
+                    }
+                }
+
+                candidates.Clear();
+            }
+        }
+
+        private class StateNode<TState, TQuality> : Priority_Queue.StablePriorityQueueNode
+            where TState : IState<TState, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            private readonly TState state;
+            public TState State => state;
+
+            public StateNode(TState state)
+            {
+                this.state = state;
+            }
+        }
+        
+        private class StateNode<TState, TChoice, TQuality> : Priority_Queue.StablePriorityQueueNode
+            where TState : class, IMutableState<TState, TChoice, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            private readonly TState state;
+            public TState State => state;
+
+            public StateNode(TState state)
+            {
+                this.state = state;
             }
         }
     }

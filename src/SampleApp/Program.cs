@@ -89,6 +89,16 @@ namespace SampleApp
             Console.WriteLine($"DFSearch reversible {resultDFS1.BestQuality} {resultDFS1.VisitedNodes} ({(resultDFS1.VisitedNodes / resultDFS1.Elapsed.TotalSeconds):F2} nodes/sec)");
             
             var knapsackNoUndo = new KnapsackNoUndo(profits, weights, capacity);
+
+            var resultMonoBS1 = Maximize.Start(knapsackNoUndo).MonotonicBeamSearch(beamWidth: 1, rank: ksp => -ksp.Bound.Value);
+            Console.WriteLine($"MonoBeam(1) {resultMonoBS1.BestQuality} {resultMonoBS1.VisitedNodes} ({(resultMonoBS1.VisitedNodes / resultMonoBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
+            var resultMonoBS2 = Maximize.Start(knapsackNoUndo).MonotonicBeamSearch(beamWidth: 2, rank: ksp => -ksp.Bound.Value);
+            Console.WriteLine($"MonoBeam(2) {resultMonoBS2.BestQuality} {resultMonoBS2.VisitedNodes} ({(resultMonoBS2.VisitedNodes / resultMonoBS2.Elapsed.TotalSeconds):F2} nodes/sec)");
+            var resultMonoBS5 = Maximize.Start(knapsackNoUndo).MonotonicBeamSearch(beamWidth: 5, rank: ksp => -ksp.Bound.Value);
+            Console.WriteLine($"MonoBeam(5) {resultMonoBS5.BestQuality} {resultMonoBS5.VisitedNodes} ({(resultMonoBS5.VisitedNodes / resultMonoBS5.Elapsed.TotalSeconds):F2} nodes/sec)");
+            var resultMonoBS10 = Maximize.Start(knapsackNoUndo).MonotonicBeamSearch(beamWidth: 10, rank: ksp => -ksp.Bound.Value);
+            Console.WriteLine($"MonoBeam(10) {resultMonoBS10.BestQuality} {resultMonoBS10.VisitedNodes} ({(resultMonoBS10.VisitedNodes / resultMonoBS10.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
             var resultDFS2 = Maximize.Start(knapsackNoUndo).DepthFirst();
             Console.WriteLine($"DFSearch non-reversible {resultDFS2.BestQuality} {resultDFS2.VisitedNodes} ({(resultDFS2.VisitedNodes / resultDFS2.Elapsed.TotalSeconds):F2} nodes/sec)");
         }
@@ -99,6 +109,21 @@ namespace SampleApp
             
             var resultdf1 = Minimize.Start(tsp).DepthFirst(1);
             Console.WriteLine($"DepthFirst(1) {resultdf1.BestQuality} {resultdf1.VisitedNodes} ({(resultdf1.VisitedNodes / resultdf1.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
+            var resultMonoBS1 = Minimize.Start(tsp).MonotonicBeamSearch(1, rank: t => t.Bound.Value, filterWidth: 3);
+            Console.WriteLine($"MonoBeamSearch(1,3) {resultMonoBS1.BestQuality} {resultMonoBS1.VisitedNodes} ({(resultMonoBS1.VisitedNodes / resultMonoBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
+            var resultMonoBS10 = Minimize.Start(tsp).MonotonicBeamSearch(10, rank: t => t.Bound.Value, filterWidth: 3);
+            Console.WriteLine($"MonoBeamSearch(10,3) {resultMonoBS10.BestQuality} {resultMonoBS10.VisitedNodes} ({(resultMonoBS10.VisitedNodes / resultMonoBS10.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
+            var resultMonoBS100 = Minimize.Start(tsp).MonotonicBeamSearch(100, rank: t => t.Bound.Value, filterWidth: 3);
+            Console.WriteLine($"MonoBeamSearch(100,3) {resultMonoBS100.BestQuality} {resultMonoBS100.VisitedNodes} ({(resultMonoBS100.VisitedNodes / resultMonoBS100.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
+            var resultBS1 = Minimize.Start(tsp).BeamSearch(1, 3);
+            Console.WriteLine($"BeamSearch(1,3) {resultBS1.BestQuality} {resultBS1.VisitedNodes} ({(resultBS1.VisitedNodes / resultBS1.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
+            var resultBS10 = Minimize.Start(tsp).BeamSearch(10, 3);
+            Console.WriteLine($"BeamSearch(10,3) {resultBS10.BestQuality} {resultBS10.VisitedNodes} ({(resultBS10.VisitedNodes / resultBS10.Elapsed.TotalSeconds):F2} nodes/sec)");
             
             var resultBS100 = Minimize.Start(tsp).BeamSearch(100, 3);
             Console.WriteLine($"BeamSearch(100,3) {resultBS100.BestQuality} {resultBS100.VisitedNodes} ({(resultBS100.VisitedNodes / resultBS100.Elapsed.TotalSeconds):F2} nodes/sec)");
