@@ -1,0 +1,43 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  create_release:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+        
+    - name: Restore dependencies
+      run: dotnet restore src/TreesearchLib/TreesearchLib.csproj
+    - name: Build
+      run: dotnet build --no-restore --configuration Release -p:ContinuousIntegrationBuild=true src/TreesearchLib/TreesearchLib.csproj
+    - name: Pack
+      run: dotnet pack --no-restore --no-build --configuration Release src/TreesearchLib/TreesearchLib.csproj
+      
+    - name: Get project version
+      uses: kzrnm/get-net-sdk-project-versions-action@v1
+      id: get-version
+      with:
+        proj-path: src/TreesearchLib/TreesearchLib.csproj
+      
+    - name: Create release
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.RELEASE_TOKEN }}"
+        prerelease: false
+        title: Release ${{steps.get-version.outputs.version}}
+        files: |
+          LICENSE.txt
+          src/TreesearchLib/bin/Release/TreesearchLib.${{ steps.get-version.outputs.version}}.nupkg
+          src/TreesearchLib/bin/Release/TreesearchLib.${{ steps.get-version.outputs.version}}.snupkg

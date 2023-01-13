@@ -8,7 +8,7 @@
     <Authors>Sebastian Leitner, Andreas Beham</Authors>
     <Description>TreesearchLib is a framework for modeling optimization problems that are to be solved by constructive heuristics.
     It includes a number of algorithms: exhaustive depth-first and breadth-first search, limited discrepancy search, the PILOT method,
-    Beam search, Rake search, and Monte Carlo Tree Search.</Description>
+    Beam search, Monotonic beam search, Rake search, and Monte Carlo Tree Search.</Description>
     <Product>TreesearchLib</Product>
     <Company>HEAL, FH Upper Austria</Company>
     <Copyright>Sebastian Leitner, Andreas Beham</Copyright>
@@ -24,9 +24,22 @@
     <IncludeSymbols>True</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <SourceRoot Include="$(MSBuildThisFileDirectory)"/>
+  </ItemGroup>
 
   <ItemGroup>
+      <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="OptimizedPriorityQueue" Version="5.1.0" />
     <PackageReference Include="System.ValueTuple" Version="4.3.1" />
   </ItemGroup>
