@@ -1457,7 +1457,7 @@ namespace TreesearchLib
     public static class HeuristicStateExtensions
     {
         public static Task<TState> BeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                 int beamWidth = 100, int filterWidth = 3, TimeSpan? runtime = null,
+                 int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
                 long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
@@ -1466,7 +1466,7 @@ namespace TreesearchLib
             return Task.Run(() => BeamSearch((TState)state, rank, beamWidth, filterWidth, runtime, nodelimit, callback, token));
         }
         public static TState BeamSearch<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                int beamWidth = 100, int filterWidth = 3, TimeSpan? runtime = null,
+                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
                 long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
@@ -1480,7 +1480,7 @@ namespace TreesearchLib
         }
 
         public static Task<TState> BeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int beamWidth = 100, int filterWidth = 3, TimeSpan? runtime = null,
+                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
                 long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
@@ -1490,7 +1490,7 @@ namespace TreesearchLib
         }
 
         public static TState BeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int beamWidth = 100, int filterWidth = 3, TimeSpan? runtime = null,
+                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
                 long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
@@ -1552,7 +1552,7 @@ namespace TreesearchLib
         }
 
         public static Task<TState> RakeAndBeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = 3,
+                int rakeWidth = 100, int beamWidth = 100, int filterWidth = int.MaxValue,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
@@ -1563,7 +1563,7 @@ namespace TreesearchLib
         }
 
         public static TState RakeAndBeamSearch<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = 3,
+                int rakeWidth = 100, int beamWidth = 100, int filterWidth = int.MaxValue,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
@@ -1578,7 +1578,7 @@ namespace TreesearchLib
         }
 
         public static Task<TState> RakeAndBeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = 3,
+                int rakeWidth = 100, int beamWidth = 100, int filterWidth = int.MaxValue,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
@@ -1589,7 +1589,7 @@ namespace TreesearchLib
         }
 
         public static TState RakeAndBeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = 3,
+                int rakeWidth = 100, int beamWidth = 100, int filterWidth = int.MaxValue,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
@@ -1604,7 +1604,7 @@ namespace TreesearchLib
         }
 
         public static Task<TState> PilotMethodAsync<TState, TQuality>(this IState<TState, TQuality> state,
-                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = 3,
+                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = int.MaxValue,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
@@ -1615,7 +1615,7 @@ namespace TreesearchLib
         }
 
         public static TState PilotMethod<TState, TQuality>(this IState<TState, TQuality> state,
-                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = 3,
+                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = int.MaxValue,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
@@ -1630,7 +1630,7 @@ namespace TreesearchLib
         }
 
         public static Task<TState> PilotMethodAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state,
-                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = 3,
+                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = int.MaxValue,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
@@ -1641,7 +1641,7 @@ namespace TreesearchLib
         }
 
         public static TState PilotMethod<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state,
-                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = 3,
+                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = int.MaxValue,
                 TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
                 CancellationToken token = default(CancellationToken))
@@ -1749,6 +1749,53 @@ namespace TreesearchLib
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.NaiveLDSearch(maxDiscrepancy).BestQualityState;
+        }
+
+        public static Task<TState> MonotonicBeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
+                 int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
+                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : IState<TState, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            return Task.Run(() => MonotonicBeamSearch((TState)state, rank, beamWidth, filterWidth, runtime, nodelimit, callback, token));
+        }
+        public static TState MonotonicBeamSearch<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
+                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
+                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : IState<TState, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
+            if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
+            if (callback != null) control = control.WithImprovementCallback(callback);
+            return control.MonotonicBeamSearch(beamWidth, rank, filterWidth).BestQualityState;
+        }
+
+        public static Task<TState> MonotonicBeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
+                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
+                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : class, IMutableState<TState, TChoice, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            return Task.Run(() => MonotonicBeamSearch<TState, TChoice, TQuality>((TState)state, rank, beamWidth, filterWidth, runtime, nodelimit, callback, token));
+        }
+
+        public static TState MonotonicBeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
+                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
+                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
+                CancellationToken token = default(CancellationToken))
+            where TState : class, IMutableState<TState, TChoice, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
+            if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
+            if (callback != null) control = control.WithImprovementCallback(callback);
+            return control.MonotonicBeamSearch(beamWidth, rank, filterWidth).BestQualityState;
         }
     }
 }
