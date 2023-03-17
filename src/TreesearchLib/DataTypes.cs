@@ -28,6 +28,11 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="state">The node to store</param>
         void Store(T state);
+        /// <summary>
+        /// Returns all stored states as an enumerable in no particular order
+        /// </summary>
+        /// <returns>The stored states</returns>
+        IEnumerable<T> AsEnumerable();
     }
 
     /// <summary>
@@ -64,6 +69,8 @@ namespace TreesearchLib
         }
 
         public void Store(T state) => states.Push(state);
+
+        public IEnumerable<T> AsEnumerable() => states;
     }
 
     /// <summary>
@@ -93,6 +100,12 @@ namespace TreesearchLib
             states = other;
         }
 
+        internal FIFOCollection(IEnumerable<T> other, long retrievedNodes)
+        {
+            RetrievedNodes = retrievedNodes;
+            states = new Queue<T>(other);
+        }
+
         public bool TryGetNext(out T next)
         {
             if (states.Count == 0)
@@ -106,6 +119,8 @@ namespace TreesearchLib
         }
 
         public void Store(T state) => states.Enqueue(state);
+
+        public IEnumerable<T> AsEnumerable() => states;
     }
 
 /// <summary>

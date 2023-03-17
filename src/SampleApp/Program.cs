@@ -15,6 +15,8 @@ namespace SampleApp
             KnapsackProblem();
             Console.WriteLine("======= TravelingSalesmanProblem ========");
             TravelingSalesman();
+            Console.WriteLine("========= SchedulingProblem =============");
+            SchedulingProblem();
         }
 
         private static void ChooseSmallestProblem()
@@ -99,6 +101,9 @@ namespace SampleApp
             var resultMonoBS10 = Maximize.Start(knapsackNoUndo).MonotonicBeamSearch(beamWidth: 10, rank: ksp => -ksp.Bound.Value);
             Console.WriteLine($"MonoBeam(10) {resultMonoBS10.BestQuality} {resultMonoBS10.VisitedNodes} ({(resultMonoBS10.VisitedNodes / resultMonoBS10.Elapsed.TotalSeconds):F2} nodes/sec)");
             
+            var resultPM1 = Maximize.Start(knapsackNoUndo).PilotMethod();
+            Console.WriteLine($"Pilot Method (no undo) {resultPM1.BestQuality} {resultPM1.VisitedNodes} ({(resultPM1.VisitedNodes / resultPM1.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
             var resultDFS2 = Maximize.Start(knapsackNoUndo).DepthFirst();
             Console.WriteLine($"DFSearch non-reversible {resultDFS2.BestQuality} {resultDFS2.VisitedNodes} ({(resultDFS2.VisitedNodes / resultDFS2.Elapsed.TotalSeconds):F2} nodes/sec)");
         }
@@ -136,6 +141,74 @@ namespace SampleApp
             
             var resultAnytimeLD = Minimize.Start(tsp).AnytimeLDSearch(3);
             Console.WriteLine($"AnytimeLDSearch(3) {resultAnytimeLD.BestQuality} {resultAnytimeLD.VisitedNodes} ({(resultAnytimeLD.VisitedNodes / resultAnytimeLD.Elapsed.TotalSeconds):F2} nodes/sec)");
+
+            var resultParallelDF = Minimize.Start(tsp).ParallelDepthFirst(maxDegreeOfParallelism: 16);
+            Console.WriteLine($"ParallelDepthFirst(16) {resultParallelDF.BestQuality} {resultParallelDF.VisitedNodes} ({(resultParallelDF.VisitedNodes / resultParallelDF.Elapsed.TotalSeconds):F2} nodes/sec)");
+        }
+
+        private static void SchedulingProblem()
+        {
+            // generate sample data for jobs and machines
+            var random = new Random(13);
+            var now = DateTime.Now.Date.AddHours(7.5);
+            var jobs = Enumerable.Range(0, 10).Select(x => new Job
+            {
+                Id = x + 1,
+                Name = $"Job {x+1}",
+                ReadyDate = now.AddMinutes(random.Next(0, 100)),
+                Duration = TimeSpan.FromMinutes(random.Next(10, 20))
+            }).ToList();
+            var machines = Enumerable.Range(0, 3).Select(x => new Machine
+            {
+                Id = x + 1,
+                Name = $"Machine {x+1}",
+                Start = now
+            }).ToList();
+
+            var state = new SchedulingProblem(SampleApp.SchedulingProblem.ObjectiveType.Makespan, jobs, machines);
+            var control = Minimize.Start(state).DepthFirst();
+            var result = control.BestQualityState;
+            Console.WriteLine("===== Makespan =====");
+            Console.WriteLine($"Objective: {result.Quality}");
+            Console.WriteLine($"Nodes: {control.VisitedNodes}");
+            foreach (var group in result.Choices.GroupBy(c => c.Machine))
+            {
+                Console.WriteLine(group.Key.Name);
+                foreach (var c in group.OrderBy(c => c.ScheduledDate))
+                {
+                    Console.WriteLine($"  {c.Job.Name} {c.Job.ReadyDate} {c.Job.Duration} {c.ScheduledDate}");
+                }
+            }
+            
+            state = new SchedulingProblem(SampleApp.SchedulingProblem.ObjectiveType.Delay, jobs, machines);
+            control = Minimize.Start(state).DepthFirst();
+            result = control.BestQualityState;
+            Console.WriteLine("===== Job Delay =====");
+            Console.WriteLine($"Objective: {result.Quality}");
+            Console.WriteLine($"Nodes: {control.VisitedNodes}");
+            foreach (var group in result.Choices.GroupBy(c => c.Machine))
+            {
+                Console.WriteLine(group.Key.Name);
+                foreach (var c in group.OrderBy(c => c.ScheduledDate))
+                {
+                    Console.WriteLine($"  {c.Job.Name} {c.Job.ReadyDate} {c.Job.Duration} {c.ScheduledDate}");
+                }
+            }
+            
+            state = new SchedulingProblem(SampleApp.SchedulingProblem.ObjectiveType.TotalCompletionTime, jobs, machines);
+            control = Minimize.Start(state).DepthFirst();
+            result = control.BestQualityState;
+            Console.WriteLine("===== Total Completion Time =====");
+            Console.WriteLine($"Objective: {result.Quality}");
+            Console.WriteLine($"Nodes: {control.VisitedNodes}");
+            foreach (var group in result.Choices.GroupBy(c => c.Machine))
+            {
+                Console.WriteLine(group.Key.Name);
+                foreach (var c in group.OrderBy(c => c.ScheduledDate))
+                {
+                    Console.WriteLine($"  {c.Job.Name} {c.Job.ReadyDate} {c.Job.Duration} {c.ScheduledDate}");
+                }
+            }
         }
     }
 }

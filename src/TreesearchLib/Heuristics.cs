@@ -564,8 +564,9 @@ namespace TreesearchLib
                     Q? quality;
                     if (rank == null)
                     {
+                        state.Apply(choice);
                         var wrappedControl = new WrappedSearchControl<T, C, Q>(control);
-                        var depth = Algorithms.DoDepthSearch<T, C, Q>(wrappedControl, state, filterWidth: filterWidth);
+                        var depth = 1 + Algorithms.DoDepthSearch<T, C, Q>(wrappedControl, state, filterWidth: filterWidth);
                         quality = wrappedControl.BestQuality;
                         while (depth > 0)
                         {
@@ -1426,31 +1427,31 @@ namespace TreesearchLib
                 candidates.Clear();
             }
         }
+    }
+    
+    internal class StateNode<TState, TQuality> : Priority_Queue.StablePriorityQueueNode
+        where TState : IState<TState, TQuality>
+        where TQuality : struct, IQuality<TQuality>
+    {
+        private readonly TState state;
+        public TState State => state;
 
-        private class StateNode<TState, TQuality> : Priority_Queue.StablePriorityQueueNode
-            where TState : IState<TState, TQuality>
-            where TQuality : struct, IQuality<TQuality>
+        public StateNode(TState state)
         {
-            private readonly TState state;
-            public TState State => state;
-
-            public StateNode(TState state)
-            {
-                this.state = state;
-            }
+            this.state = state;
         }
-        
-        private class StateNode<TState, TChoice, TQuality> : Priority_Queue.StablePriorityQueueNode
-            where TState : class, IMutableState<TState, TChoice, TQuality>
-            where TQuality : struct, IQuality<TQuality>
-        {
-            private readonly TState state;
-            public TState State => state;
+    }
+    
+    internal class StateNode<TState, TChoice, TQuality> : Priority_Queue.StablePriorityQueueNode
+        where TState : class, IMutableState<TState, TChoice, TQuality>
+        where TQuality : struct, IQuality<TQuality>
+    {
+        private readonly TState state;
+        public TState State => state;
 
-            public StateNode(TState state)
-            {
-                this.state = state;
-            }
+        public StateNode(TState state)
+        {
+            this.state = state;
         }
     }
 
