@@ -70,6 +70,11 @@ namespace TreesearchLib
         /// <param name="state">The state that is visited</param>
         /// <returns>Whether the node is ok, or whether it should be discarded, because the lower bound is already worse than the best upper bound</returns>
         VisitResult VisitNode(TState state);
+        /// <summary>
+        /// This operation merges the information in the other search control into this one.
+        /// </summary>
+        /// <param name="other">The search control with the information to be merged.</param>
+        void Merge(ISearchControl<TState, TQuality> other);
     }
 
     /// <summary>
@@ -144,6 +149,20 @@ namespace TreesearchLib
                 }
             }
             return result;
+        }
+
+        public void Merge(ISearchControl<TState, TQuality> other)
+        {
+            if (other.BestQuality.HasValue)
+            {
+                if (!BestQuality.HasValue || other.BestQuality.Value.IsBetter(BestQuality.Value))
+                {
+                    BestQuality = other.BestQuality;
+                    BestQualityState = other.BestQualityState; // is already a clone
+                    ImprovementCallback?.Invoke(this, other.BestQualityState, other.BestQuality.Value);
+                }
+            }
+            VisitedNodes += other.VisitedNodes;
         }
 
         public static SearchControl<TState, TChoice, TQuality> Start(IMutableState<TState, TChoice, TQuality> state)
@@ -225,13 +244,27 @@ namespace TreesearchLib
             return result;
         }
 
+        public void Merge(ISearchControl<TState, TQuality> other)
+        {
+            if (other.BestQuality.HasValue)
+            {
+                if (!BestQuality.HasValue || other.BestQuality.Value.IsBetter(BestQuality.Value))
+                {
+                    BestQuality = other.BestQuality;
+                    BestQualityState = other.BestQualityState; // is already a clone
+                    ImprovementCallback?.Invoke(this, other.BestQualityState, other.BestQuality.Value);
+                }
+            }
+            VisitedNodes += other.VisitedNodes;
+        }
+
         public static SearchControl<TState, TQuality> Start(TState state)
         {
             return new SearchControl<TState, TQuality>(state);
         }
     }
 
-    public class WrappedSearchControl<TState, TQuality> : ISearchControl<TState, TQuality>
+    internal class WrappedSearchControl<TState, TQuality> : ISearchControl<TState, TQuality>
         where TState : IState<TState, TQuality>
         where TQuality : struct, IQuality<TQuality>
     {
@@ -278,62 +311,14 @@ namespace TreesearchLib
             }
             return control.VisitNode(state);
         }
-    }
 
-    public class WrappedThreadSafeSearchControl<TState, TQuality> : ISearchControl<TState, TQuality>
-        where TState : IState<TState, TQuality>
-        where TQuality : struct, IQuality<TQuality>
-    {
-        private static readonly object locker = new object();
-        private readonly ISearchControl<TState, TQuality> control;
-
-        public WrappedThreadSafeSearchControl(ISearchControl<TState, TQuality> control)
+        public void Merge(ISearchControl<TState, TQuality> other)
         {
-            this.control = control;
-        }
-
-        public TState InitialState => control.InitialState;
-
-        public TQuality? BestQuality { get; set; }
-
-        public TState BestQualityState { get; set; }
-
-        public TimeSpan Elapsed => control.Elapsed;
-
-        public TimeSpan Runtime => control.Runtime;
-
-        public CancellationToken Cancellation => control.Cancellation;
-
-        public long NodeLimit => control.NodeLimit;
-
-        public long VisitedNodes => control.VisitedNodes;
-
-        public bool IsFinished => control.IsFinished;
-
-        public bool ShouldStop()
-        {
-            return control.ShouldStop();
-        }
-
-        public VisitResult VisitNode(TState state)
-        {
-            lock (locker)
-            {
-                var quality = state.Quality;
-                if (quality.HasValue)
-                {
-                    if (!BestQuality.HasValue || quality.Value.IsBetter(BestQuality.Value))
-                    {
-                        BestQuality = quality;
-                        BestQualityState = (TState)state.Clone();
-                    }
-                }
-                return control.VisitNode(state);
-            }
+            control.Merge(other);
         }
     }
 
-    public class WrappedSearchControl<TState, TChoice, TQuality> : ISearchControl<TState, TQuality>
+    internal class WrappedSearchControl<TState, TChoice, TQuality> : ISearchControl<TState, TQuality>
         where TState : class, IMutableState<TState, TChoice, TQuality>
         where TQuality : struct, IQuality<TQuality>
     {
@@ -380,58 +365,10 @@ namespace TreesearchLib
             }
             return control.VisitNode(state);
         }
-    }
 
-    public class WrappedThreadSafeSearchControl<TState, TChoice, TQuality> : ISearchControl<TState, TQuality>
-        where TState : class, IMutableState<TState, TChoice, TQuality>
-        where TQuality : struct, IQuality<TQuality>
-    {
-        private static readonly object locker = new object();
-        private readonly ISearchControl<TState, TQuality> control;
-
-        public WrappedThreadSafeSearchControl(ISearchControl<TState, TQuality> control)
+        public void Merge(ISearchControl<TState, TQuality> other)
         {
-            this.control = control;
-        }
-
-        public TState InitialState => control.InitialState;
-
-        public TQuality? BestQuality { get; set; }
-
-        public TState BestQualityState { get; set; }
-
-        public TimeSpan Elapsed => control.Elapsed;
-
-        public TimeSpan Runtime => control.Runtime;
-
-        public CancellationToken Cancellation => control.Cancellation;
-
-        public long NodeLimit => control.NodeLimit;
-
-        public long VisitedNodes => control.VisitedNodes;
-
-        public bool IsFinished => control.IsFinished;
-
-        public bool ShouldStop()
-        {
-            return control.ShouldStop();
-        }
-
-        public VisitResult VisitNode(TState state)
-        {
-            lock(locker)
-            {
-                var quality = state.Quality;
-                if (quality.HasValue)
-                {
-                    if (!BestQuality.HasValue || quality.Value.IsBetter(BestQuality.Value))
-                    {
-                        BestQuality = quality;
-                        BestQualityState = (TState)state.Clone();
-                    }
-                }
-                return control.VisitNode(state);
-            }
+            control.Merge(other);
         }
     }
 

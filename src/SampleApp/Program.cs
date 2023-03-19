@@ -142,8 +142,18 @@ namespace SampleApp
             var resultAnytimeLD = Minimize.Start(tsp).AnytimeLDSearch(3);
             Console.WriteLine($"AnytimeLDSearch(3) {resultAnytimeLD.BestQuality} {resultAnytimeLD.VisitedNodes} ({(resultAnytimeLD.VisitedNodes / resultAnytimeLD.Elapsed.TotalSeconds):F2} nodes/sec)");
 
-            var resultParallelDF = Minimize.Start(tsp).ParallelDepthFirst(maxDegreeOfParallelism: 16);
+            var resultParallelDF = Minimize.Start(tsp)
+                .WithRuntimeLimit(TimeSpan.FromSeconds(5))
+                .ParallelDepthFirst(filterWidth: 10, maxDegreeOfParallelism: 16);
             Console.WriteLine($"ParallelDepthFirst(16) {resultParallelDF.BestQuality} {resultParallelDF.VisitedNodes} ({(resultParallelDF.VisitedNodes / resultParallelDF.Elapsed.TotalSeconds):F2} nodes/sec)");
+
+            var resultParallelBS100 = Minimize.Start(tsp)
+                .ParallelBeamSearch(100, state => state.Bound.Value, 3);
+            Console.WriteLine($"ParallelBeamSearch(100,3) {resultParallelBS100.BestQuality} {resultParallelBS100.VisitedNodes} ({(resultParallelBS100.VisitedNodes / resultParallelBS100.Elapsed.TotalSeconds):F2} nodes/sec)");
+
+            var resultParallelPilot = Minimize.Start(tsp)
+                .ParallelPilotMethod(rank: state => state.Bound.Value, maxDegreeOfParallelism: 16);
+            Console.WriteLine($"ParallelPilotMethod(16) {resultParallelPilot.BestQuality} {resultParallelPilot.VisitedNodes} ({(resultParallelPilot.VisitedNodes / resultParallelPilot.Elapsed.TotalSeconds):F2} nodes/sec)");
         }
 
         private static void SchedulingProblem()

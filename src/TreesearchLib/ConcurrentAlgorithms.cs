@@ -190,14 +190,35 @@ namespace TreesearchLib
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
             if (maxDegreeOfParallelism <= 0) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be greater or equal than 0", nameof(maxDegreeOfParallelism));
             
-            var states = Algorithms.DoBreadthSearch(control, state, filterWidth, depthLimit, maxDegreeOfParallelism);
-            var guard = new WrappedThreadSafeSearchControl<T, Q>(control); // wrap the control to make it thread-safe
+            var (depth, states) = Algorithms.DoBreadthSearch(control, state, filterWidth, depthLimit, maxDegreeOfParallelism);
+            if (depth >= depthLimit || states.Nodes == 0)
+            {
+                return;
+            }
+
+            var locker = new object();
             Parallel.ForEach(states.AsEnumerable(),
-                new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
-                s =>
+                new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism }, s =>
                 {
-                    var localControl = SearchControl<T, Q>.Start(s);
-                    Algorithms.DoDepthSearch(localControl, s, filterWidth, depthLimit);
+                    var localDepth = depth;
+                    var searchState = new LIFOCollection<(int, T)>((localDepth, s));
+                    while (!control.ShouldStop())
+                    {
+                        var localControl = SearchControl<T, Q>.Start(s).WithRuntimeLimit(TimeSpan.FromSeconds(1));
+                        if (control.BestQuality.HasValue)
+                        {
+                            localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
+                        }
+                        Algorithms.DoDepthSearch(localControl, searchState, filterWidth, depthLimit - localDepth);
+                        lock (locker)
+                        {
+                            control.Merge(localControl);
+                        }
+                        if (searchState.Nodes == 0)
+                        {
+                            break;
+                        }
+                    }
                 }
             );
         }
@@ -225,23 +246,45 @@ namespace TreesearchLib
             if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be breater or equal than 0", nameof(depthLimit));
             if (nodesReached <= 0) throw new ArgumentException($"{nodesReached} needs to be breater or equal than 0", nameof(nodesReached));
             
-            // TODO: get depth of sequential breadth-first search
-            var states = Algorithms.DoBreadthSearch(control, state, filterWidth, depthLimit, maxDegreeOfParallelism);
-            if (states.Nodes == 0 || states.Nodes >= nodesReached) return states;
+            var (depth, states) = Algorithms.DoBreadthSearch(control, state, filterWidth, depthLimit, maxDegreeOfParallelism);
+            if (depth >= depthLimit || states.Nodes == 0 || states.Nodes >= nodesReached)
+            {
+                return states;
+            }
 
             var queue = new ConcurrentQueue<List<T>>();
-            var retrievedNodes = 0L;
-            var guard = new WrappedThreadSafeSearchControl<T, Q>(control); // wrap the control to make it thread-safe
+            var locker = new object();
             Parallel.ForEach(states.AsEnumerable(),
-                new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
-                s => {
-                    // TODO: deduct depth above from depthLimit
-                    var result = Algorithms.DoBreadthSearch(guard, s, filterWidth, depthLimit, nodesReached);
-                    queue.Enqueue(result.AsEnumerable().ToList());
-                    Interlocked.Add(ref retrievedNodes, result.RetrievedNodes);
+                new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism }, s =>
+                {
+                    var localDepth = depth;
+                    var searchState = new BiLevelFIFOCollection<T>(s);
+                    while (!control.ShouldStop())
+                    {
+                        var localControl = SearchControl<T, Q>.Start(s).WithRuntimeLimit(TimeSpan.FromSeconds(1));
+                        if (control.BestQuality.HasValue)
+                        {
+                            localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
+                        }
+
+                        localDepth = Algorithms.DoBreadthSearch<T, Q>(localControl, searchState, localDepth, filterWidth, depthLimit - localDepth, nodesReached);
+                        
+                        lock (locker)
+                        {
+                            control.Merge(localControl);
+                        }
+
+                        if (searchState.GetQueueNodes + searchState.PutQueueNodes == 0
+                            || localDepth >= depthLimit
+                            || searchState.GetQueueNodes >= nodesReached)
+                        {
+                            break;
+                        }
+                    }
+                    queue.Enqueue(searchState.ToSingleLevel().AsEnumerable().ToList());
                 }
             );
-            return new FIFOCollection<T>(queue.SelectMany(x => x), retrievedNodes);
+            return new FIFOCollection<T>(queue.SelectMany(x => x));
         }
         
         /// <summary>
@@ -267,14 +310,45 @@ namespace TreesearchLib
             where Q : struct, IQuality<Q>
         {
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
-            var states = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)state.Clone(), filterWidth, depthLimit, maxDegreeOfParallelism);
-            var guard = new WrappedThreadSafeSearchControl<T, C, Q>(control); // wrap the control to make it thread-safe
+            
+            var (depth, states) = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)state.Clone(), filterWidth, depthLimit, maxDegreeOfParallelism);
+            if (depth >= depthLimit || states.Nodes == 0)
+            {
+                return;
+            }
+
+            var locker = new object();
             Parallel.ForEach(states.AsEnumerable(),
                 new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
                 s =>
-                {                    
-                    var localControl = SearchControl<T, C, Q>.Start(s);
-                    Algorithms.DoDepthSearch<T, C, Q>(localControl, s, filterWidth, depthLimit);
+                {
+                    var localDepth = depth;
+                    var searchState = new LIFOCollection<(int, C)>();
+                    foreach (var choice in s.GetChoices().Take(filterWidth).Reverse())
+                    {
+                        searchState.Store((localDepth, choice));
+                    }
+                    
+                    while (!control.ShouldStop())
+                    {
+                        var localControl = SearchControl<T, C, Q>.Start(s).WithRuntimeLimit(TimeSpan.FromSeconds(1));
+                        if (control.BestQuality.HasValue)
+                        {
+                            localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
+                        }
+                        
+                        localDepth = Algorithms.DoDepthSearch<T, C, Q>(localControl, s, searchState, localDepth, filterWidth, depthLimit - localDepth);
+                        localControl.Finish();
+
+                        lock (locker)
+                        {
+                            control.Merge(localControl);
+                        }
+                        if (searchState.Nodes == 0)
+                        {
+                            break;
+                        }
+                    }
                 }
             );
         }
@@ -297,33 +371,49 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            // TODO: Parallelize
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
             if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be breater or equal than 0", nameof(depthLimit));
             if (nodesReached <= 0) throw new ArgumentException($"{nodesReached} needs to be breater or equal than 0", nameof(nodesReached));
-            var searchState = new BiLevelFIFOCollection<T>(state);
-            var depth = 0;
-            while (searchState.GetQueueNodes > 0 && depth < depthLimit && searchState.GetQueueNodes < nodesReached && !control.ShouldStop())
+            
+            var (depth, states) = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)state.Clone(), filterWidth, depthLimit, maxDegreeOfParallelism);
+            if (depth >= depthLimit || states.Nodes == 0 || states.Nodes >= nodesReached)
             {
-                while (searchState.TryFromGetQueue(out var currentState) && !control.ShouldStop())
-                {
-                    foreach (var next in currentState.GetChoices().Take(filterWidth))
-                    {
-                        var clone = (T)currentState.Clone();
-                        clone.Apply(next);
+                return states;
+            }
 
-                        if (control.VisitNode(clone) == VisitResult.Discard)
+            var queue = new ConcurrentQueue<List<T>>();
+            var locker = new object();
+            Parallel.ForEach(states.AsEnumerable(),
+                new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism }, s =>
+                {
+                    var localDepth = depth;
+                    var searchState = new BiLevelFIFOCollection<T>(s);
+                    while (!control.ShouldStop())
+                    {
+                        var localControl = SearchControl<T, C, Q>.Start(s).WithRuntimeLimit<T, C, Q>(TimeSpan.FromSeconds(1));
+                        if (control.BestQuality.HasValue)
                         {
-                            continue;
+                            localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
                         }
 
-                        searchState.ToPutQueue(clone);
+                        localDepth = Algorithms.DoBreadthSearch<T, C, Q>(localControl, searchState, localDepth, filterWidth, depthLimit - localDepth, nodesReached);
+                        
+                        lock (locker)
+                        {
+                            control.Merge(localControl);
+                        }
+
+                        if (searchState.GetQueueNodes + searchState.PutQueueNodes == 0
+                            || localDepth >= depthLimit
+                            || searchState.GetQueueNodes >= nodesReached)
+                        {
+                            break;
+                        }
                     }
+                    queue.Enqueue(searchState.ToSingleLevel().AsEnumerable().ToList());
                 }
-                depth++;
-                searchState.SwapQueues();
-            }
-            return searchState.ToSingleLevel();
+            );
+            return new FIFOCollection<T>(queue.SelectMany(x => x));
         }
     }
 
