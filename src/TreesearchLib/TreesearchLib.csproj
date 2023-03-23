@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>TreesearchLib.snk</AssemblyOriginatorKeyFile>
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
     <Authors>Sebastian Leitner, Andreas Beham</Authors>
     <Description>TreesearchLib is a framework for modeling optimization problems that are to be solved by constructive heuristics.
     It includes a number of algorithms: exhaustive depth-first and breadth-first search, limited discrepancy search, the PILOT method, Beam search, Monotonic beam search, Rake search, and Monte Carlo Tree Search.</Description>
@@ -13,7 +13,15 @@
     <Copyright>Sebastian Leitner, Andreas Beham</Copyright>
     <PackageProjectUrl>https://github.com/heal-research/TreesearchLib</PackageProjectUrl>
     <PackageReleaseNotes>
-    Add additional extension methods for monotonic beam search and change some defaults.
+    Add parallel implementations of the following algorithms and heuristics:
+    - Depth-first Search
+    - Breadth-first Search
+    - Beam Search
+    - Rake Search
+    - Rake and Beam Search
+    - Pilot Method
+
+    Add a new Scheduling example with three different objectives
     </PackageReleaseNotes>
     <NeutralLanguage />
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
