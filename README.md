@@ -9,18 +9,19 @@ Check out the SampleApp to see implementations of the following problems:
  * [ChooseSmallestProblem](src/SampleApp/ChooseSmallestProblem.cs) - a fun problem which searches small values in the sequence of random number seeds
  * [Knapsack](src/SampleApp/Knapsack.cs) - the famous {0, 1}-Knapsack, implemented using reversible search (allowing to undo moves), as well as non-reversible
  * [TSP](src/SampleApp/TSP.cs) - the Berlin52 instance of the TSPLIB
+ * [SchedulingProblem](src/SampleApp/SchedulingProblem.cs) - a very simple scheduling problem
 
 These samples should give you an idea on how to use the framework for problem modeling.
 
 The algorithms that are included are:
 
- * Branch and bound (depth-first search)
- * Breadth-first search
- * Limited Discrepancy Search
- * Beam Search
- * Monotonic Beam Search
- * Rake Search (and a Rake+Beam combination)
- * Pilot Method
- * Monte Carlo Tree Search
+ * Branch and bound (depth-first search), sequential and parallel
+ * Breadth-first search, sequential and parallel
+ * Limited Discrepancy Search, sequential only
+ * Beam Search, sequental and parallel
+ * Monotonic Beam Search, sequential only
+ * Rake Search (and a Rake+Beam combination), sequential and parallel
+ * Pilot Method, sequential and parallel
+ * Monte Carlo Tree Search, sequential only
 
 New hybrid algorithms can be implemented, also by making use of the existing algorithms.

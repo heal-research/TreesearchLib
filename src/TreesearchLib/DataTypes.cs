@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace TreesearchLib
@@ -11,11 +12,6 @@ namespace TreesearchLib
         /// </summary>
         /// <value></value>
         int Nodes { get; }
-        /// <summary>
-        /// The number of successful TryGetNext calls that have been performed on the collection
-        /// </summary>
-        /// <value></value>
-        long RetrievedNodes { get; }
 
         /// <summary>
         /// Obtains the next node, or none if the collection is empty
@@ -28,6 +24,11 @@ namespace TreesearchLib
         /// </summary>
         /// <param name="state">The node to store</param>
         void Store(T state);
+        /// <summary>
+        /// Returns all stored states as an enumerable in no particular order
+        /// </summary>
+        /// <returns>The stored states</returns>
+        IEnumerable<T> AsEnumerable();
     }
 
     /// <summary>
@@ -37,13 +38,11 @@ namespace TreesearchLib
     public class LIFOCollection<T> : IStateCollection<T>
     {
         public int Nodes => states.Count;
-        public long RetrievedNodes { get; private set; }
 
         private Stack<T> states = new Stack<T>();
 
         public LIFOCollection()
         {
-            RetrievedNodes = 0;
         }
 
         public LIFOCollection(T initial) : this()
@@ -58,12 +57,13 @@ namespace TreesearchLib
                 next = default(T);
                 return false;
             }
-            RetrievedNodes++;
             next = states.Pop();
             return true;
         }
 
         public void Store(T state) => states.Push(state);
+
+        public IEnumerable<T> AsEnumerable() => states;
     }
 
     /// <summary>
@@ -73,13 +73,11 @@ namespace TreesearchLib
     public class FIFOCollection<T> : IStateCollection<T>
     {
         public int Nodes => states.Count;
-        public long RetrievedNodes { get; private set; }
 
         private Queue<T> states = new Queue<T>();
 
         public FIFOCollection()
         {
-            RetrievedNodes = 0;
         }
 
         public FIFOCollection(T initial) : this()
@@ -87,10 +85,14 @@ namespace TreesearchLib
             Store(initial);
         }
 
-        internal FIFOCollection(Queue<T> other, long retrievedNodes)
+        internal FIFOCollection(Queue<T> other)
         {
-            RetrievedNodes = retrievedNodes;
             states = other;
+        }
+
+        internal FIFOCollection(IEnumerable<T> other)
+        {
+            states = new Queue<T>(other);
         }
 
         public bool TryGetNext(out T next)
@@ -100,32 +102,33 @@ namespace TreesearchLib
                 next = default(T);
                 return false;
             }
-            RetrievedNodes++;
             next = states.Dequeue();
             return true;
         }
 
         public void Store(T state) => states.Enqueue(state);
+
+        public IEnumerable<T> AsEnumerable() => states;
     }
 
-/// <summary>
-/// This collection maintains two queues, the first queue (aka the get-queue) is to retrieve items,
-/// the second queue (aka the put-queue) to store items. Using <see cref="SwapQueues"/> the queues
-/// may be swapped and their roles switch.
-/// 
-/// Sometimes in breadth-first search, a level should be completed, before the next level is started.
-/// This collection supports that case in that the next level is maintained in a separate collection.
-/// The <see cref="Nodes"> point to the number of states in the get-queue.
-/// </summary>
-/// <remarks>
-/// Because of the peculiar behaviour, BiLevelFIFOCollection does not implement
-/// <see cref="IStateCollection{T}"/>. It allows to "export" as a regular
-/// <see cref="FIFOCollection{T}"/>, by calling <see cref="ToSingleLevel"/>.
-/// 
-/// Also, when calling <see cref="SwapQueues"/>, any remaining nodes in the get-queue are prepended to the
-/// nodes in the put-queue before swapping.
-/// </remarks>
-/// <typeparam name="T">The type of node to store</typeparam>
+    /// <summary>
+    /// This collection maintains two queues, the first queue (aka the get-queue) is to retrieve items,
+    /// the second queue (aka the put-queue) to store items. Using <see cref="SwapQueues"/> the queues
+    /// may be swapped and their roles switch.
+    /// 
+    /// Sometimes in breadth-first search, a level should be completed, before the next level is started.
+    /// This collection supports that case in that the next level is maintained in a separate collection.
+    /// The <see cref="Nodes"> point to the number of states in the get-queue.
+    /// </summary>
+    /// <remarks>
+    /// Because of the peculiar behaviour, BiLevelFIFOCollection does not implement
+    /// <see cref="IStateCollection{T}"/>. It allows to "export" as a regular
+    /// <see cref="FIFOCollection{T}"/>, by calling <see cref="ToSingleLevel"/>.
+    /// 
+    /// Also, when calling <see cref="SwapQueues"/>, any remaining nodes in the get-queue are prepended to the
+    /// nodes in the put-queue before swapping.
+    /// </remarks>
+    /// <typeparam name="T">The type of node to store</typeparam>
     public class BiLevelFIFOCollection<T>
     {
         public int GetQueueNodes => getQueue.Count;
@@ -191,9 +194,71 @@ namespace TreesearchLib
         public FIFOCollection<T> ToSingleLevel()
         {
             while (putQueue.Count > 0) getQueue.Enqueue(putQueue.Dequeue());
-            var result = new FIFOCollection<T>(getQueue, RetrievedNodes);
+            var result = new FIFOCollection<T>(getQueue);
             getQueue = new Queue<T>();
             return result;
+        }
+    }
+
+    public class PriorityBiLevelFIFOCollection<T>
+    {
+        public int CurrentLayerNodes => currentLayerQueue.Count;
+        public int NextLayerNodes => nextLayerQueue.Count;
+        public long RetrievedNodes { get; private set; }
+
+        private Queue<T> currentLayerQueue = new Queue<T>();
+        private LinkedList<(float priority, T state)> nextLayerQueue = new LinkedList<(float, T)>();
+
+        public PriorityBiLevelFIFOCollection()
+        {
+            RetrievedNodes = 0;
+        }
+
+        public PriorityBiLevelFIFOCollection(T initial) : this()
+        {
+            currentLayerQueue.Enqueue(initial); // initially, the items are put into the get-queue
+        }
+
+        public PriorityBiLevelFIFOCollection(IEnumerable<T> initial) : this()
+        {
+            foreach (var i in initial)
+            {
+                currentLayerQueue.Enqueue(i); // initially, the items are put into the get-queue
+            }
+        }
+
+        public bool TryFromCurrentLayerQueue(out T next)
+        {
+            if (currentLayerQueue.Count == 0)
+            {
+                next = default(T);
+                return false;
+            }
+            RetrievedNodes++;
+            next = currentLayerQueue.Dequeue();
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="state"></param>
+        /// <param name="priority"></param>
+        public void ToNextLayerQueue(T state, float priority) => nextLayerQueue.AddLast((priority, state));
+
+        /// <summary>
+        /// Discards any remaining states in the current layer queue and replaces it with the
+        /// <paramref name="bestN"/> best states from the next layer queue.
+        /// </summary>
+        /// <param name="bestN">The number of states to choose for the next layer</param>
+        public void AdvanceLayer(int bestN)
+        {
+            currentLayerQueue.Clear();
+            foreach (var (priority, state) in nextLayerQueue.OrderBy(x => x.priority).Take(bestN))
+            {
+                currentLayerQueue.Enqueue(state);
+            }
+            nextLayerQueue.Clear();
         }
     }
 }

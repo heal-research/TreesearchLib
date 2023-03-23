@@ -70,6 +70,11 @@ namespace TreesearchLib
         /// <param name="state">The state that is visited</param>
         /// <returns>Whether the node is ok, or whether it should be discarded, because the lower bound is already worse than the best upper bound</returns>
         VisitResult VisitNode(TState state);
+        /// <summary>
+        /// This operation merges the information in the other search control into this one.
+        /// </summary>
+        /// <param name="other">The search control with the information to be merged.</param>
+        void Merge(ISearchControl<TState, TQuality> other);
     }
 
     /// <summary>
@@ -144,6 +149,20 @@ namespace TreesearchLib
                 }
             }
             return result;
+        }
+
+        public void Merge(ISearchControl<TState, TQuality> other)
+        {
+            if (other.BestQuality.HasValue)
+            {
+                if (!BestQuality.HasValue || other.BestQuality.Value.IsBetter(BestQuality.Value))
+                {
+                    BestQuality = other.BestQuality;
+                    BestQualityState = other.BestQualityState; // is already a clone
+                    ImprovementCallback?.Invoke(this, other.BestQualityState, other.BestQuality.Value);
+                }
+            }
+            VisitedNodes += other.VisitedNodes;
         }
 
         public static SearchControl<TState, TChoice, TQuality> Start(IMutableState<TState, TChoice, TQuality> state)
@@ -225,13 +244,27 @@ namespace TreesearchLib
             return result;
         }
 
+        public void Merge(ISearchControl<TState, TQuality> other)
+        {
+            if (other.BestQuality.HasValue)
+            {
+                if (!BestQuality.HasValue || other.BestQuality.Value.IsBetter(BestQuality.Value))
+                {
+                    BestQuality = other.BestQuality;
+                    BestQualityState = other.BestQualityState; // is already a clone
+                    ImprovementCallback?.Invoke(this, other.BestQualityState, other.BestQuality.Value);
+                }
+            }
+            VisitedNodes += other.VisitedNodes;
+        }
+
         public static SearchControl<TState, TQuality> Start(TState state)
         {
             return new SearchControl<TState, TQuality>(state);
         }
     }
 
-    public class WrappedSearchControl<TState, TQuality> : ISearchControl<TState, TQuality>
+    internal class WrappedSearchControl<TState, TQuality> : ISearchControl<TState, TQuality>
         where TState : IState<TState, TQuality>
         where TQuality : struct, IQuality<TQuality>
     {
@@ -278,9 +311,14 @@ namespace TreesearchLib
             }
             return control.VisitNode(state);
         }
+
+        public void Merge(ISearchControl<TState, TQuality> other)
+        {
+            control.Merge(other);
+        }
     }
 
-    public class WrappedSearchControl<TState, TChoice, TQuality> : ISearchControl<TState, TQuality>
+    internal class WrappedSearchControl<TState, TChoice, TQuality> : ISearchControl<TState, TQuality>
         where TState : class, IMutableState<TState, TChoice, TQuality>
         where TQuality : struct, IQuality<TQuality>
     {
@@ -326,6 +364,11 @@ namespace TreesearchLib
                 }
             }
             return control.VisitNode(state);
+        }
+
+        public void Merge(ISearchControl<TState, TQuality> other)
+        {
+            control.Merge(other);
         }
     }
 

@@ -94,7 +94,7 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoBeamSearch<T,Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
+        public static void DoBeamSearch<T, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -102,17 +102,31 @@ namespace TreesearchLib
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
             if (rank == null) throw new ArgumentNullException(nameof(rank));
             if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} cannot exceed 1 when {nameof(filterWidth)} equals 1.");
-            
-            var currentLayer = new Queue<T>();
-            currentLayer.Enqueue(state);
-            var nextlayer = new List<(float rank, T state)>();
-            while (!control.ShouldStop())
-            {
-                nextlayer.Clear();
 
-                while (currentLayer.Count > 0)
+            var searchState = new PriorityBiLevelFIFOCollection<T>(state);
+            DoBeamSearch(control, searchState, beamWidth, rank, filterWidth);
+        }
+
+        /// <summary>
+        /// Beam search uses several parallel traces. When called with a rank function, all nodes of the next layer are gathered
+        /// and then sorted by the rank function (using a stable sort).
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="searchState">The algorithm's inner state</param>
+        /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
+        /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns></returns>
+        public static void DoBeamSearch<T, Q>(ISearchControl<T, Q> control, PriorityBiLevelFIFOCollection<T> searchState, int beamWidth, Func<T, float> rank, int filterWidth)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            while (!control.ShouldStop() && searchState.CurrentLayerNodes > 0)
+            {
+                while (!control.ShouldStop() && searchState.TryFromCurrentLayerQueue(out var currentState))
                 {
-                    var currentState = currentLayer.Dequeue();
                     foreach (var next in currentState.GetBranches().Take(filterWidth))
                     {
                         if (control.VisitNode(next) == VisitResult.Discard)
@@ -120,24 +134,12 @@ namespace TreesearchLib
                             continue;
                         }
 
-                        nextlayer.Add((rank(next), next));
-                    }
-
-                    if (control.ShouldStop())
-                    {
-                        nextlayer.Clear();
-                        break;
+                        searchState.ToNextLayerQueue(next, rank(next));
                     }
                 }
-
-                if (nextlayer.Count == 0)
+                if (searchState.CurrentLayerNodes == 0)
                 {
-                    break;
-                }
-
-                foreach (var nextState in nextlayer.OrderBy(x => x.rank).Take(beamWidth).Select(x => x.state))
-                {
-                    currentLayer.Enqueue(nextState);
+                    searchState.AdvanceLayer(beamWidth);
                 }
             }
         }
@@ -162,7 +164,7 @@ namespace TreesearchLib
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
             if (rank == null) throw new ArgumentNullException(nameof(rank));
             if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} cannot exceed 1 when {nameof(filterWidth)} equals 1.");
-            
+
             var currentLayer = new Queue<T>();
             currentLayer.Enqueue(state);
             var nextlayer = new List<(float rank, T state)>();
@@ -206,6 +208,46 @@ namespace TreesearchLib
         }
 
         /// <summary>
+        /// Beam search uses several parallel traces. When called with a rank function, all nodes of the next layer are gathered
+        /// and then sorted by the rank function (using a stable sort).
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="searchState">The algorithm's inner state</param>
+        /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
+        /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="C">The choice type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns></returns>
+        public static void DoBeamSearch<T, C, Q>(ISearchControl<T, Q> control, PriorityBiLevelFIFOCollection<T> searchState, int beamWidth, Func<T, float> rank, int filterWidth)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            while (!control.ShouldStop() && searchState.CurrentLayerNodes > 0)
+            {
+                while (!control.ShouldStop() && searchState.TryFromCurrentLayerQueue(out var currentState))
+                {
+                    foreach (var choice in currentState.GetChoices().Take(filterWidth))
+                    {
+                        var next = (T)currentState.Clone();
+                        next.Apply(choice);
+                        if (control.VisitNode(next) == VisitResult.Discard)
+                        {
+                            continue;
+                        }
+
+                        searchState.ToNextLayerQueue(next, rank(next));
+                    }
+                }
+                if (searchState.CurrentLayerNodes == 0)
+                {
+                    searchState.AdvanceLayer(beamWidth);
+                }
+            }
+        }
+
+        /// <summary>
         /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
         /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
         /// </summary>
@@ -234,7 +276,7 @@ namespace TreesearchLib
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            var rake = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
+            var (_, rake) = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             while (rake.TryGetNext(out var next) && !control.ShouldStop())
             {
                 Algorithms.DoDepthSearch(control, next, 1);
@@ -273,7 +315,7 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            var rake = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
+            var (_, rake) = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             while (rake.TryGetNext(out var next) && !control.ShouldStop())
             {
                 Algorithms.DoDepthSearch<T, C, Q>(control, next, filterWidth: 1);
@@ -316,7 +358,7 @@ namespace TreesearchLib
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            var rake = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
+            var (_, rake) = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             while (rake.TryGetNext(out var next) && !control.ShouldStop())
             {
                 DoBeamSearch(control, next, beamWidth, rank, filterWidth);
@@ -361,7 +403,7 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            var rake = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
+            var (_, rake) = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             while (rake.TryGetNext(out var next) && !control.ShouldStop())
             {
                 DoBeamSearch<T, C, Q>(control, next, beamWidth, rank, filterWidth);
@@ -441,7 +483,7 @@ namespace TreesearchLib
             if (rank != null && beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1 when beam search is used ({nameof(rank)} is non-null)", nameof(beamWidth));
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
             if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} parameter has no effect if {nameof(filterWidth)} is equal to 1", nameof(beamWidth));
-            
+
             while (true)
             {
                 T bestBranch = default(T);
@@ -564,8 +606,9 @@ namespace TreesearchLib
                     Q? quality;
                     if (rank == null)
                     {
+                        state.Apply(choice);
                         var wrappedControl = new WrappedSearchControl<T, C, Q>(control);
-                        var depth = Algorithms.DoDepthSearch<T, C, Q>(wrappedControl, state, filterWidth: filterWidth);
+                        var depth = 1 + Algorithms.DoDepthSearch<T, C, Q>(wrappedControl, state, filterWidth: filterWidth);
                         quality = wrappedControl.BestQuality;
                         while (depth > 0)
                         {
@@ -709,7 +752,7 @@ namespace TreesearchLib
             if (maxDiscrepancy < 0) throw new ArgumentException(nameof(maxDiscrepancy), $"{maxDiscrepancy} must be >= 0");
             var searchState = new LIFOCollection<(T, int)>();
             searchState.Store((state, 0));
-            
+
             while (searchState.TryGetNext(out var tup) && !control.ShouldStop())
             {
                 var (currentState, discrepancy) = tup;
@@ -728,7 +771,7 @@ namespace TreesearchLib
                 }
             }
         }
-        
+
         /// <summary>
         /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
         /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
@@ -841,8 +884,8 @@ namespace TreesearchLib
             {
                 searchState.Store(entry);
             }
-            
-            while (searchState.TryGetNext(out var next) && !control.ShouldStop())
+
+            while (!control.ShouldStop() && searchState.TryGetNext(out var next))
             {
                 var (depth, choice, discrepancy) = next;
                 while (depth < stateDepth)
@@ -994,7 +1037,7 @@ namespace TreesearchLib
                 }
             }
         }
-        
+
         /// <summary>
         /// The limited discrepancy (LD) search assumes branches are sorted according to a heuristic and generally taking the
         /// first branch leads to better outcomes. It assumes that there is a discrepancy, i.e., penalty, of N for visiting the
@@ -1134,7 +1177,7 @@ namespace TreesearchLib
                 }
             }
         }
-        
+
         /// <summary>
         /// Monotonic beam search uses several parallel beams which are iteratively updated.
         /// Each beam may only choose among branches that beams before it have made available.
@@ -1208,7 +1251,7 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoMonotonicBeamSearch<T,Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
+        public static void DoMonotonicBeamSearch<T, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -1278,7 +1321,7 @@ namespace TreesearchLib
                 candidates.Clear();
             }
         }
-        
+
         /// <summary>
         /// Monotonic beam search uses several parallel beams which are iteratively updated.
         /// Each beam may only choose among branches that beams before it have made available.
@@ -1426,31 +1469,31 @@ namespace TreesearchLib
                 candidates.Clear();
             }
         }
+    }
 
-        private class StateNode<TState, TQuality> : Priority_Queue.StablePriorityQueueNode
-            where TState : IState<TState, TQuality>
-            where TQuality : struct, IQuality<TQuality>
+    internal class StateNode<TState, TQuality> : Priority_Queue.StablePriorityQueueNode
+        where TState : IState<TState, TQuality>
+        where TQuality : struct, IQuality<TQuality>
+    {
+        private readonly TState state;
+        public TState State => state;
+
+        public StateNode(TState state)
         {
-            private readonly TState state;
-            public TState State => state;
-
-            public StateNode(TState state)
-            {
-                this.state = state;
-            }
+            this.state = state;
         }
-        
-        private class StateNode<TState, TChoice, TQuality> : Priority_Queue.StablePriorityQueueNode
-            where TState : class, IMutableState<TState, TChoice, TQuality>
-            where TQuality : struct, IQuality<TQuality>
-        {
-            private readonly TState state;
-            public TState State => state;
+    }
 
-            public StateNode(TState state)
-            {
-                this.state = state;
-            }
+    internal class StateNode<TState, TChoice, TQuality> : Priority_Queue.StablePriorityQueueNode
+        where TState : class, IMutableState<TState, TChoice, TQuality>
+        where TQuality : struct, IQuality<TQuality>
+    {
+        private readonly TState state;
+        public TState State => state;
+
+        public StateNode(TState state)
+        {
+            this.state = state;
         }
     }
 
@@ -1654,7 +1697,7 @@ namespace TreesearchLib
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.PilotMethod(beamWidth, rank, filterWidth).BestQualityState;
         }
-        
+
         public static Task<TState> NaiveLDSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, int maxDiscrepancy = 1,
                 int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
@@ -1664,7 +1707,7 @@ namespace TreesearchLib
         {
             return Task.Run(() => NaiveLDSearch(state, maxDiscrepancy, seed, runtime, nodelimit, callback, token));
         }
-        
+
         public static TState NaiveLDSearch<TState, TQuality>(this IState<TState, TQuality> state, int maxDiscrepancy = 1,
                 int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
@@ -1678,7 +1721,7 @@ namespace TreesearchLib
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.NaiveLDSearch(maxDiscrepancy).BestQualityState;
         }
-        
+
         public static Task<TState> NaiveLDSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int maxDiscrepancy = 1,
                 int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
@@ -1688,7 +1731,7 @@ namespace TreesearchLib
         {
             return Task.Run(() => NaiveLDSearch(state, maxDiscrepancy, seed, runtime, nodelimit, callback, token));
         }
-        
+
         public static TState NaiveLDSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int maxDiscrepancy = 1,
                 int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
@@ -1712,7 +1755,7 @@ namespace TreesearchLib
         {
             return Task.Run(() => AnytimeLDSearch(state, maxDiscrepancy, seed, runtime, nodelimit, callback, token));
         }
-        
+
         public static TState AnytimeLDSearch<TState, TQuality>(this IState<TState, TQuality> state, int maxDiscrepancy = 1,
                 int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
@@ -1726,7 +1769,7 @@ namespace TreesearchLib
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.AnytimeLDSearch(maxDiscrepancy).BestQualityState;
         }
-        
+
         public static Task<TState> AnytimeLDSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int maxDiscrepancy = 1,
                 int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
@@ -1736,7 +1779,7 @@ namespace TreesearchLib
         {
             return Task.Run(() => AnytimeLDSearch(state, maxDiscrepancy, seed, runtime, nodelimit, callback, token));
         }
-        
+
         public static TState AnytimeLDSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int maxDiscrepancy = 1,
                 int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
                 QualityCallback<TState, TQuality> callback = null,
