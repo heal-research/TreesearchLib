@@ -315,7 +315,7 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            while (searchState.TryGetNext(out var next) && !control.ShouldStop())
+            while (!control.ShouldStop() && searchState.TryGetNext(out var next))
             {
                 var (depth, choice) = next;
                 while (depth < stateDepth)

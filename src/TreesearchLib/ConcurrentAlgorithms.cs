@@ -22,7 +22,7 @@ namespace TreesearchLib
         /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, Q>> ParallelDepthFirstAsync<T, Q>(this SearchControl<T, Q> control,
             int filterWidth = int.MaxValue, int depthLimit = int.MaxValue,
-            int maxDegreeOfParallelism = 4)
+            int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -42,7 +42,7 @@ namespace TreesearchLib
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, Q> ParallelDepthFirst<T, Q>(this SearchControl<T, Q> control,
             int filterWidth = int.MaxValue, int depthLimit = int.MaxValue,
-            int maxDegreeOfParallelism = 4)
+            int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -61,7 +61,7 @@ namespace TreesearchLib
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, Q>> ParallelBreadthFirstAsync<T, Q>(this SearchControl<T, Q> control,
-            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = 4)
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -79,7 +79,7 @@ namespace TreesearchLib
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, Q> ParallelBreadthFirst<T, Q>(this SearchControl<T, Q> control,
-            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = 4)
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -100,7 +100,7 @@ namespace TreesearchLib
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, C, Q>> ParallelDepthFirstAsync<T, C, Q>(this SearchControl<T, C, Q> control,
-            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue, int maxDegreeOfParallelism = 4)
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -120,7 +120,7 @@ namespace TreesearchLib
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, C, Q> ParallelDepthFirst<T, C, Q>(this SearchControl<T, C, Q> control,
-            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue, int maxDegreeOfParallelism = 4)
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -141,7 +141,7 @@ namespace TreesearchLib
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, C, Q>> ParallelBreadthFirstAsync<T, C, Q>(this SearchControl<T, C, Q> control,
-            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = 4)
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -160,7 +160,7 @@ namespace TreesearchLib
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, C, Q> ParallelBreadthFirst<T, C, Q>(this SearchControl<T, C, Q> control,
-            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = 4)
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -183,15 +183,17 @@ namespace TreesearchLib
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns></returns>
         public static void DoParallelDepthSearch<T, Q>(ISearchControl<T, Q> control, T state,
-            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue, int maxDegreeOfParallelism = 4)
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
-            if (maxDegreeOfParallelism <= 0) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be greater or equal than 0", nameof(maxDegreeOfParallelism));
+            if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be breater or equal than 0", nameof(depthLimit));
+            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             
-            var (depth, states) = Algorithms.DoBreadthSearch(control, state, filterWidth, depthLimit, maxDegreeOfParallelism);
-            if (depth >= depthLimit || states.Nodes == 0)
+            var (depth, states) = Algorithms.DoBreadthSearch(control, state, filterWidth, depthLimit, maxDegreeOfParallelism < 0 ? Environment.ProcessorCount : maxDegreeOfParallelism);
+            var remainingNodes = control.NodeLimit - control.VisitedNodes;
+            if (depth >= depthLimit || states.Nodes == 0 || remainingNodes <= 0)
             {
                 return;
             }
@@ -204,15 +206,24 @@ namespace TreesearchLib
                     var searchState = new LIFOCollection<(int, T)>((localDepth, s));
                     while (!control.ShouldStop())
                     {
-                        var localControl = SearchControl<T, Q>.Start(s).WithRuntimeLimit(TimeSpan.FromSeconds(1));
-                        if (control.BestQuality.HasValue)
+                        var localControl = SearchControl<T, Q>.Start(s)
+                            .WithRuntimeLimit(TimeSpan.FromSeconds(1))
+                            .WithCancellationToken(control.Cancellation);
+                        lock (locker)
                         {
-                            localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
+                            localControl = localControl.WithNodeLimit(remainingNodes);
+                            if (control.BestQuality.HasValue)
+                            {
+                                localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
+                            }
                         }
                         Algorithms.DoDepthSearch(localControl, searchState, filterWidth, depthLimit - localDepth);
+                        localControl.Finish();
+
                         lock (locker)
                         {
                             control.Merge(localControl);
+                            remainingNodes = control.NodeLimit - control.VisitedNodes;
                         }
                         if (searchState.Nodes == 0)
                         {
@@ -245,9 +256,11 @@ namespace TreesearchLib
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
             if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be breater or equal than 0", nameof(depthLimit));
             if (nodesReached <= 0) throw new ArgumentException($"{nodesReached} needs to be breater or equal than 0", nameof(nodesReached));
-            
-            var (depth, states) = Algorithms.DoBreadthSearch(control, state, filterWidth, depthLimit, maxDegreeOfParallelism);
-            if (depth >= depthLimit || states.Nodes == 0 || states.Nodes >= nodesReached)
+            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
+
+            var (depth, states) = Algorithms.DoBreadthSearch(control, state, filterWidth, depthLimit, Math.Min(nodesReached, maxDegreeOfParallelism < 0 ? Environment.ProcessorCount : maxDegreeOfParallelism));
+            var remainingnodes = control.NodeLimit - control.VisitedNodes;
+            if (depth >= depthLimit || states.Nodes == 0 || states.Nodes >= nodesReached || remainingnodes <= 0)
             {
                 return states;
             }
@@ -261,17 +274,25 @@ namespace TreesearchLib
                     var searchState = new BiLevelFIFOCollection<T>(s);
                     while (!control.ShouldStop())
                     {
-                        var localControl = SearchControl<T, Q>.Start(s).WithRuntimeLimit(TimeSpan.FromSeconds(1));
-                        if (control.BestQuality.HasValue)
+                        var localControl = SearchControl<T, Q>.Start(s)
+                            .WithRuntimeLimit(TimeSpan.FromSeconds(1))
+                            .WithCancellationToken(control.Cancellation);
+                        lock (locker)
                         {
-                            localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
+                            localControl = localControl.WithNodeLimit(remainingnodes);
+                            if (control.BestQuality.HasValue)
+                            {
+                                localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
+                            }
                         }
 
                         localDepth = Algorithms.DoBreadthSearch<T, Q>(localControl, searchState, localDepth, filterWidth, depthLimit - localDepth, nodesReached);
-                        
+                        localControl.Finish();
+
                         lock (locker)
                         {
                             control.Merge(localControl);
+                            remainingnodes = control.NodeLimit - control.VisitedNodes;
                         }
 
                         if (searchState.GetQueueNodes + searchState.PutQueueNodes == 0
@@ -305,14 +326,17 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         public static void DoParallelDepthSearch<T, C, Q>(ISearchControl<T, Q> control, T state,
-            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue, int maxDegreeOfParallelism = 4)
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
-            
-            var (depth, states) = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)state.Clone(), filterWidth, depthLimit, maxDegreeOfParallelism);
-            if (depth >= depthLimit || states.Nodes == 0)
+            if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be breater or equal than 0", nameof(depthLimit));
+            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
+
+            var (depth, states) = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)state.Clone(), filterWidth, depthLimit, maxDegreeOfParallelism < 0 ? Environment.ProcessorCount : maxDegreeOfParallelism);
+            var remainingnodes = control.NodeLimit - control.VisitedNodes;
+            if (depth >= depthLimit || states.Nodes == 0 || remainingnodes <= 0)
             {
                 return;
             }
@@ -331,10 +355,16 @@ namespace TreesearchLib
                     
                     while (!control.ShouldStop())
                     {
-                        var localControl = SearchControl<T, C, Q>.Start(s).WithRuntimeLimit(TimeSpan.FromSeconds(1));
-                        if (control.BestQuality.HasValue)
+                        var localControl = SearchControl<T, C, Q>.Start(s)
+                            .WithRuntimeLimit(TimeSpan.FromSeconds(1))
+                            .WithCancellationToken(control.Cancellation);
+                        lock (locker)
                         {
-                            localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
+                            localControl = localControl.WithNodeLimit(remainingnodes);
+                            if (control.BestQuality.HasValue)
+                            {
+                                localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
+                            }
                         }
                         
                         localDepth = Algorithms.DoDepthSearch<T, C, Q>(localControl, s, searchState, localDepth, filterWidth, depthLimit - localDepth);
@@ -343,6 +373,7 @@ namespace TreesearchLib
                         lock (locker)
                         {
                             control.Merge(localControl);
+                            remainingnodes = control.NodeLimit - control.VisitedNodes;
                         }
                         if (searchState.Nodes == 0)
                         {
@@ -374,9 +405,11 @@ namespace TreesearchLib
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
             if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be breater or equal than 0", nameof(depthLimit));
             if (nodesReached <= 0) throw new ArgumentException($"{nodesReached} needs to be breater or equal than 0", nameof(nodesReached));
-            
-            var (depth, states) = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)state.Clone(), filterWidth, depthLimit, maxDegreeOfParallelism);
-            if (depth >= depthLimit || states.Nodes == 0 || states.Nodes >= nodesReached)
+            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
+
+            var (depth, states) = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)state.Clone(), filterWidth, depthLimit, Math.Min(nodesReached, maxDegreeOfParallelism < 0 ? Environment.ProcessorCount : maxDegreeOfParallelism));
+            var remainingnodes = control.NodeLimit - control.VisitedNodes;
+            if (depth >= depthLimit || states.Nodes == 0 || states.Nodes >= nodesReached || remainingnodes <= 0)
             {
                 return states;
             }
@@ -390,17 +423,25 @@ namespace TreesearchLib
                     var searchState = new BiLevelFIFOCollection<T>(s);
                     while (!control.ShouldStop())
                     {
-                        var localControl = SearchControl<T, C, Q>.Start(s).WithRuntimeLimit<T, C, Q>(TimeSpan.FromSeconds(1));
-                        if (control.BestQuality.HasValue)
+                        var localControl = SearchControl<T, C, Q>.Start(s)
+                            .WithRuntimeLimit<T, C, Q>(TimeSpan.FromSeconds(1))
+                            .WithCancellationToken(control.Cancellation);
+                        lock (locker)
                         {
-                            localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
+                            localControl = localControl.WithNodeLimit(remainingnodes);
+                            if (control.BestQuality.HasValue)
+                            {
+                                localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
+                            }
                         }
 
                         localDepth = Algorithms.DoBreadthSearch<T, C, Q>(localControl, searchState, localDepth, filterWidth, depthLimit - localDepth, nodesReached);
-                        
+                        localControl.Finish();
+
                         lock (locker)
                         {
                             control.Merge(localControl);
+                            remainingnodes = control.NodeLimit - control.VisitedNodes;
                         }
 
                         if (searchState.GetQueueNodes + searchState.PutQueueNodes == 0
@@ -433,7 +474,7 @@ namespace TreesearchLib
         /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The resulting best state that has been found (or none)</returns>
         public static Task<TState> ParallelDepthFirstAsync<TState, TQuality>(this IState<TState, TQuality> state, int filterWidth = int.MaxValue,
-                int depthLimit = int.MaxValue, int maxDegreeOfParallelism = 4,
+                int depthLimit = int.MaxValue, int maxDegreeOfParallelism = -1,
                 TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
@@ -456,7 +497,7 @@ namespace TreesearchLib
         /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The resulting best state that has been found (or none)</returns>
         public static TState ParallelDepthFirst<TState, TQuality>(this IState<TState, TQuality> state, int filterWidth = int.MaxValue,
-                int depthLimit = int.MaxValue, int maxDegreeOfParallelism = 4,
+                int depthLimit = int.MaxValue, int maxDegreeOfParallelism = -1,
                 TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
@@ -485,7 +526,7 @@ namespace TreesearchLib
         /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The resulting best state that has been found (or none)</returns>
         public static Task<TState> ParallelDepthFirstAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int filterWidth = int.MaxValue,
-                int depthLimit = int.MaxValue, int maxDegreeOfParallelism = 4,
+                int depthLimit = int.MaxValue, int maxDegreeOfParallelism = -1,
                 TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
@@ -510,7 +551,7 @@ namespace TreesearchLib
         /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The resulting best state that has been found (or none)</returns>
         public static TState ParallelDepthFirst<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int filterWidth = int.MaxValue,
-                int depthLimit = int.MaxValue, int maxDegreeOfParallelism = 4,
+                int depthLimit = int.MaxValue, int maxDegreeOfParallelism = -1,
                 TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
@@ -537,7 +578,7 @@ namespace TreesearchLib
         /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The resulting best state that has been found (or none)</returns>
         public static Task<TState> ParallelBreadthFirstAsync<TState, TQuality>(this IState<TState, TQuality> state,
-                int filterWidth = int.MaxValue, int maxDegreeOfParallelism = 4,
+                int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1,
                 TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
@@ -560,7 +601,7 @@ namespace TreesearchLib
         /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The resulting best state that has been found (or none)</returns>
         public static TState ParallelBreadthFirst<TState, TQuality>(this IState<TState, TQuality> state,
-                int filterWidth = int.MaxValue, int maxDegreeOfParallelism = 4,
+                int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1,
                 TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
                 CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
@@ -588,7 +629,7 @@ namespace TreesearchLib
         /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The resulting best state that has been found (or none)</returns>
         public static Task<TState> ParallelBreadthFirstAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state,
-                int filterWidth = int.MaxValue, int maxDegreeOfParallelism = 4,
+                int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1,
                 TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
@@ -612,7 +653,7 @@ namespace TreesearchLib
         /// <typeparam name="TQuality">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The resulting best state that has been found (or none)</returns>
         public static TState ParallelBreadthFirst<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state,
-                int filterWidth = int.MaxValue, int maxDegreeOfParallelism = 4,
+                int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1,
                 TimeSpan? runtime = null, QualityCallback<TState, TQuality> callback = null, long? nodeLimit = null,
                 CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
