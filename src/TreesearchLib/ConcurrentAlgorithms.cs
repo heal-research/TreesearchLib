@@ -83,7 +83,7 @@ namespace TreesearchLib
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            DoParallelBreadthSearch(control, control.InitialState, filterWidth, int.MaxValue, int.MaxValue, maxDegreeOfParallelism);
+            DoParallelBreadthSearch(control, control.InitialState, filterWidth, int.MaxValue, maxDegreeOfParallelism);
             return control;
         }
 
@@ -165,7 +165,7 @@ namespace TreesearchLib
             where Q : struct, IQuality<Q>
         {
             var state = (T)control.InitialState.Clone();
-            DoParallelBreadthSearch<T, C, Q>(control, state, filterWidth, int.MaxValue, int.MaxValue, maxDegreeOfParallelism);
+            DoParallelBreadthSearch<T, C, Q>(control, state, filterWidth, int.MaxValue, maxDegreeOfParallelism);
             return control;
         }
         
@@ -243,24 +243,22 @@ namespace TreesearchLib
         /// <param name="state">The initial state from which the search should start</param>
         /// <param name="filterWidth">Limits the number of branches per node</param>
         /// <param name="depthLimit">Limits the depth up to which the breadth-first search expands.</param>
-        /// <param name="nodesReached">Expands up to a depth with at least this many nodes.</param>
         /// <param name="maxDegreeOfParallelism">Limits the number of parallel tasks</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The remaining nodes (e.g., if aborted by depthLimit or nodesReached)</returns>
         public static IStateCollection<T> DoParallelBreadthSearch<T, Q>(ISearchControl<T, Q> control, T state,
-            int filterWidth, int depthLimit, int nodesReached, int maxDegreeOfParallelism)
+            int filterWidth, int depthLimit, int maxDegreeOfParallelism)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
             if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be breater or equal than 0", nameof(depthLimit));
-            if (nodesReached <= 0) throw new ArgumentException($"{nodesReached} needs to be breater or equal than 0", nameof(nodesReached));
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
 
-            var (depth, states) = Algorithms.DoBreadthSearch(control, state, filterWidth, depthLimit, Math.Min(nodesReached, maxDegreeOfParallelism < 0 ? Environment.ProcessorCount : maxDegreeOfParallelism));
+            var (depth, states) = Algorithms.DoBreadthSearch(control, state, filterWidth, depthLimit, maxDegreeOfParallelism < 0 ? Environment.ProcessorCount : maxDegreeOfParallelism);
             var remainingnodes = control.NodeLimit - control.VisitedNodes;
-            if (depth >= depthLimit || states.Nodes == 0 || states.Nodes >= nodesReached || remainingnodes <= 0)
+            if (depth >= depthLimit || states.Nodes == 0 || remainingnodes <= 0)
             {
                 return states;
             }
@@ -286,7 +284,7 @@ namespace TreesearchLib
                             }
                         }
 
-                        localDepth = Algorithms.DoBreadthSearch<T, Q>(localControl, searchState, localDepth, filterWidth, depthLimit - localDepth, nodesReached);
+                        localDepth = Algorithms.DoBreadthSearch<T, Q>(localControl, searchState, localDepth, filterWidth, depthLimit - localDepth, int.MaxValue);
                         localControl.Finish();
 
                         lock (locker)
@@ -296,8 +294,7 @@ namespace TreesearchLib
                         }
 
                         if (searchState.GetQueueNodes + searchState.PutQueueNodes == 0
-                            || localDepth >= depthLimit
-                            || searchState.GetQueueNodes >= nodesReached)
+                            || localDepth >= depthLimit)
                         {
                             break;
                         }
@@ -391,25 +388,23 @@ namespace TreesearchLib
         /// <param name="state">The initial state from which the search should start</param>
         /// <param name="filterWidth">Limits the number of branches per node</param>
         /// <param name="depthLimit">Limits the depth up to which the breadth-first search expands.</param>
-        /// <param name="nodesReached">Expands up to a depth with at least this many nodes.</param>
         /// <param name="maxDegreeOfParallelism">Limits the number of parallel tasks</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The remaining nodes (e.g., if aborted by depthLimit or nodesReached)</returns>
         public static IStateCollection<T> DoParallelBreadthSearch<T, C, Q>(ISearchControl<T, Q> control, T state,
-            int filterWidth, int depthLimit, int nodesReached, int maxDegreeOfParallelism)
+            int filterWidth, int depthLimit, int maxDegreeOfParallelism)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 0", nameof(filterWidth));
             if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be breater or equal than 0", nameof(depthLimit));
-            if (nodesReached <= 0) throw new ArgumentException($"{nodesReached} needs to be breater or equal than 0", nameof(nodesReached));
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
 
-            var (depth, states) = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)state.Clone(), filterWidth, depthLimit, Math.Min(nodesReached, maxDegreeOfParallelism < 0 ? Environment.ProcessorCount : maxDegreeOfParallelism));
+            var (depth, states) = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)state.Clone(), filterWidth, depthLimit, maxDegreeOfParallelism < 0 ? Environment.ProcessorCount : maxDegreeOfParallelism);
             var remainingnodes = control.NodeLimit - control.VisitedNodes;
-            if (depth >= depthLimit || states.Nodes == 0 || states.Nodes >= nodesReached || remainingnodes <= 0)
+            if (depth >= depthLimit || states.Nodes == 0 || remainingnodes <= 0)
             {
                 return states;
             }
@@ -435,7 +430,7 @@ namespace TreesearchLib
                             }
                         }
 
-                        localDepth = Algorithms.DoBreadthSearch<T, C, Q>(localControl, searchState, localDepth, filterWidth, depthLimit - localDepth, nodesReached);
+                        localDepth = Algorithms.DoBreadthSearch<T, C, Q>(localControl, searchState, localDepth, filterWidth, depthLimit - localDepth, int.MaxValue);
                         localControl.Finish();
 
                         lock (locker)
@@ -445,8 +440,7 @@ namespace TreesearchLib
                         }
 
                         if (searchState.GetQueueNodes + searchState.PutQueueNodes == 0
-                            || localDepth >= depthLimit
-                            || searchState.GetQueueNodes >= nodesReached)
+                            || localDepth >= depthLimit)
                         {
                             break;
                         }

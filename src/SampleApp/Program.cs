@@ -209,6 +209,9 @@ namespace SampleApp
             var resultRS100 = Minimize.Start(tsp).RakeSearch(100);
             Console.WriteLine($"RakeSearch(100) {resultRS100.BestQuality} {resultRS100.VisitedNodes} ({(resultRS100.VisitedNodes / resultRS100.Elapsed.TotalSeconds):F2} nodes/sec)");
             
+            var resultParRS100 = Minimize.Start(tsp).ParallelRakeSearch(100);
+            Console.WriteLine($"ParallelRakeSearch(100) {resultParRS100.BestQuality} {resultParRS100.VisitedNodes} ({(resultParRS100.VisitedNodes / resultParRS100.Elapsed.TotalSeconds):F2} nodes/sec)");
+
             var resultPM = Minimize.Start(tsp).PilotMethod(rank: state => state.Bound.Value);
             Console.WriteLine($"Pilot Method {resultPM.BestQuality} {resultPM.VisitedNodes} ({(resultPM.VisitedNodes / resultPM.Elapsed.TotalSeconds):F2} nodes/sec)");
             

@@ -20,11 +20,14 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static Task<SearchControl<T, Q>> ParallelBeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+        public static Task<SearchControl<T, Q>> ParallelBeamSearchAsync<T, Q>(
+            this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => ParallelBeamSearch(control, beamWidth, rank, filterWidth, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelBeamSearch(control, beamWidth, rank,
+                filterWidth, maxDegreeOfParallelism));
         }
 
         /// <summary>
@@ -40,11 +43,14 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static SearchControl<T, Q> ParallelBeamSearch<T, Q>(this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+        public static SearchControl<T, Q> ParallelBeamSearch<T, Q>(
+            this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            DoParallelBeamSearch(control, control.InitialState, beamWidth, rank, filterWidth, maxDegreeOfParallelism);
+            DoParallelBeamSearch(control, control.InitialState, beamWidth, rank,
+                filterWidth, maxDegreeOfParallelism);
             return control;
         }
 
@@ -61,11 +67,14 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static Task<SearchControl<T, C, Q>> ParallelBeamSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+        public static Task<SearchControl<T, C, Q>> ParallelBeamSearchAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => ParallelBeamSearch(control, beamWidth, rank, filterWidth, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelBeamSearch(control, beamWidth, rank,
+                filterWidth, maxDegreeOfParallelism));
         }
 
         /// <summary>
@@ -81,11 +90,14 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static SearchControl<T, C, Q> ParallelBeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+        public static SearchControl<T, C, Q> ParallelBeamSearch<T, C, Q>(
+            this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            DoParallelBeamSearch<T, C, Q>(control, control.InitialState, beamWidth, rank, filterWidth, maxDegreeOfParallelism);
+            DoParallelBeamSearch<T, C, Q>(control, control.InitialState, beamWidth,
+                rank, filterWidth, maxDegreeOfParallelism);
             return control;
         }
         /// <summary>
@@ -102,7 +114,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoParallelBeamSearch<T, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth, int maxDegreeOfParallelism)
+        public static void DoParallelBeamSearch<T, Q>(ISearchControl<T, Q> control, T state,
+            int beamWidth, Func<T, float> rank, int filterWidth, int maxDegreeOfParallelism)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -254,7 +267,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, Q>> ParallelRakeSearchAsync<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int maxDegreeOfParallelism = -1)
+        public static Task<SearchControl<T, Q>> ParallelRakeSearchAsync<T, Q>(
+            this SearchControl<T, Q> control, int rakeWidth, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -271,14 +285,15 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static SearchControl<T, Q> ParallelRakeSearch<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int maxDegreeOfParallelism = -1)
+        public static SearchControl<T, Q> ParallelRakeSearch<T, Q>(
+            this SearchControl<T, Q> control, int rakeWidth, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             if (rakeWidth <= 0) throw new ArgumentException($"{rakeWidth} needs to be greater or equal than 1", nameof(rakeWidth));
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             
-            var rake = ConcurrentAlgorithms.DoParallelBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth, maxDegreeOfParallelism);
+            var (_, rake) = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             var remainingTime = control.Runtime - control.Elapsed;
             var remainingNodes = control.NodeLimit - control.VisitedNodes;
             if (control.ShouldStop() || remainingTime < TimeSpan.Zero || remainingNodes <= 0)
@@ -286,7 +301,7 @@ namespace TreesearchLib
                 return control;
             }
             var locker = new object();
-            Parallel.ForEach(rake.AsEnumerable(), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
+            Parallel.ForEach(rake.AsEnumerable().Take(rakeWidth), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
             next =>
             {
                 var localControl = SearchControl<T, Q>.Start(next)
@@ -321,7 +336,8 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, C, Q>> ParallelRakeSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int maxDegreeOfParallelism = -1)
+        public static Task<SearchControl<T, C, Q>> ParallelRakeSearchAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int rakeWidth, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -339,14 +355,15 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static SearchControl<T, C, Q> ParallelRakeSearch<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int maxDegreeOfParallelism = -1)
+        public static SearchControl<T, C, Q> ParallelRakeSearch<T, C, Q>(
+            this SearchControl<T, C, Q> control, int rakeWidth, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             if (rakeWidth <= 0) throw new ArgumentException($"{rakeWidth} needs to be greater or equal than 1", nameof(rakeWidth));
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             
-            var rake = ConcurrentAlgorithms.DoParallelBreadthSearch<T, C, Q>(control, (T)control.InitialState.Clone(), int.MaxValue, int.MaxValue, rakeWidth, maxDegreeOfParallelism);
+            var (_, rake) = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)control.InitialState.Clone(), int.MaxValue, int.MaxValue, rakeWidth);
             var remainingTime = control.Runtime - control.Elapsed;
             var remainingNodes = control.NodeLimit - control.VisitedNodes;
             if (control.ShouldStop() || remainingTime < TimeSpan.Zero || remainingNodes <= 0) // the last two are just safety checks, control.ShouldStop() should terminate in these cases too
@@ -354,7 +371,7 @@ namespace TreesearchLib
                 return control;
             }
             var locker = new object();
-            Parallel.ForEach(rake.AsEnumerable(), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
+            Parallel.ForEach(rake.AsEnumerable().Take(rakeWidth), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
             next =>
             {
                 var localControl = SearchControl<T, C, Q>.Start(next)
@@ -391,7 +408,10 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, Q>> ParallelRakeAndBeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+        public static Task<SearchControl<T, Q>> ParallelRakeAndBeamSearchAsync<T, Q>(
+            this SearchControl<T, Q> control, int rakeWidth, int beamWidth,
+            Func<T, float> rank, int filterWidth = int.MaxValue,
+            int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -411,7 +431,10 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static SearchControl<T, Q> ParallelRakeAndBeamSearch<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+        public static SearchControl<T, Q> ParallelRakeAndBeamSearch<T, Q>(
+            this SearchControl<T, Q> control, int rakeWidth, int beamWidth,
+            Func<T, float> rank, int filterWidth = int.MaxValue,
+            int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -420,7 +443,7 @@ namespace TreesearchLib
             if (filterWidth <= 0) throw new ArgumentException("A filter width of 0 or less is not possible");
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             
-            var rake = ConcurrentAlgorithms.DoParallelBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth, maxDegreeOfParallelism);
+            var (_, rake) = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
             var remainingTime = control.Runtime - control.Elapsed;
             var remainingNodes = control.NodeLimit - control.VisitedNodes;
             if (control.ShouldStop() || remainingTime < TimeSpan.Zero || remainingNodes <= 0) // the last two are just safety checks, control.ShouldStop() should terminate in these cases too
@@ -428,7 +451,7 @@ namespace TreesearchLib
                 return control;
             }
             var locker = new object();
-            Parallel.ForEach(rake.AsEnumerable(), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
+            Parallel.ForEach(rake.AsEnumerable().Take(rakeWidth), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
             next =>
             {
                 var localControl = SearchControl<T, Q>.Start(next)
@@ -466,7 +489,9 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, C, Q>> ParallelRakeAndBeamSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+        public static Task<SearchControl<T, C, Q>> ParallelRakeAndBeamSearchAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth,
+            Func<T, float> rank, int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -487,7 +512,9 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static SearchControl<T, C, Q> ParallelRakeAndBeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+        public static SearchControl<T, C, Q> ParallelRakeAndBeamSearch<T, C, Q>(
+            this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth,
+            Func<T, float> rank, int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -496,7 +523,7 @@ namespace TreesearchLib
             if (filterWidth <= 0) throw new ArgumentException("A filter width of 0 or less is not possible");
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             
-            var rake = ConcurrentAlgorithms.DoParallelBreadthSearch<T, C, Q>(control, (T)control.InitialState.Clone(), int.MaxValue, int.MaxValue, rakeWidth, maxDegreeOfParallelism);
+            var (_, rake) = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)control.InitialState.Clone(), int.MaxValue, int.MaxValue, rakeWidth);
             var remainingTime = control.Runtime - control.Elapsed;
             var remainingNodes = control.NodeLimit - control.VisitedNodes;
             if (control.ShouldStop() || remainingTime < TimeSpan.Zero || remainingNodes <= 0) // the last two are just safety checks, control.ShouldStop() should terminate in these cases too
@@ -504,7 +531,7 @@ namespace TreesearchLib
                 return control;
             }
             var locker = new object();
-            Parallel.ForEach(rake.AsEnumerable(), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
+            Parallel.ForEach(rake.AsEnumerable().Take(rakeWidth), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
             next =>
             {
                 var localControl = SearchControl<T, C, Q>.Start(next)
@@ -545,11 +572,14 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
-        public static Task<SearchControl<T, Q>> ParallelPilotMethodAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth = 1, Func<T, float> rank = null, int filterWidth = 1, int maxDegreeOfParallelism = -1)
+        public static Task<SearchControl<T, Q>> ParallelPilotMethodAsync<T, Q>(
+            this SearchControl<T, Q> control, int beamWidth = 1, Func<T, float> rank = null,
+            int filterWidth = 1, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => ParallelPilotMethod(control, beamWidth, rank, filterWidth, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelPilotMethod(control, beamWidth, rank, filterWidth,
+                maxDegreeOfParallelism));
         }
 
         /// <summary>
@@ -569,12 +599,15 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
-        public static SearchControl<T, Q> ParallelPilotMethod<T, Q>(this SearchControl<T, Q> control, int beamWidth = 1, Func<T, float> rank = null, int filterWidth = 1, int maxDegreeOfParallelism = -1)
+        public static SearchControl<T, Q> ParallelPilotMethod<T, Q>(
+            this SearchControl<T, Q> control, int beamWidth = 1, Func<T, float> rank = null,
+            int filterWidth = 1, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             var state = control.InitialState;
-            DoParallelPilotMethod<T, Q>(control, state, beamWidth, rank, filterWidth, maxDegreeOfParallelism);
+            DoParallelPilotMethod<T, Q>(control, state, beamWidth, rank, filterWidth,
+                maxDegreeOfParallelism);
             return control;
         }
 
@@ -596,7 +629,9 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns></returns>
-        public static void DoParallelPilotMethod<T, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth, int maxDegreeOfParallelism)
+        public static void DoParallelPilotMethod<T, Q>(ISearchControl<T, Q> control,
+            T state, int beamWidth, Func<T, float> rank, int filterWidth,
+            int maxDegreeOfParallelism)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -691,11 +726,14 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
-        public static Task<SearchControl<T, C, Q>> ParallelPilotMethodAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = 1, Func<T, float> rank = null, int filterWidth = 1, int maxDegreeOfParallelism = -1)
+        public static Task<SearchControl<T, C, Q>> ParallelPilotMethodAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int beamWidth = 1, Func<T, float> rank = null,
+            int filterWidth = 1, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => ParallelPilotMethod(control, beamWidth, rank, filterWidth, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelPilotMethod(control, beamWidth, rank, filterWidth,
+                maxDegreeOfParallelism));
         }
 
         /// <summary>
@@ -716,12 +754,15 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
-        public static SearchControl<T, C, Q> ParallelPilotMethod<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = 1, Func<T, float> rank = null, int filterWidth = 1, int maxDegreeOfParallelism = -1)
+        public static SearchControl<T, C, Q> ParallelPilotMethod<T, C, Q>(
+            this SearchControl<T, C, Q> control, int beamWidth = 1, Func<T, float> rank = null,
+            int filterWidth = 1, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             var state = (T)control.InitialState.Clone();
-            DoParallelPilotMethod<T, C, Q>(control, state, beamWidth, rank, filterWidth, maxDegreeOfParallelism);
+            DoParallelPilotMethod<T, C, Q>(control, state, beamWidth, rank, filterWidth,
+                maxDegreeOfParallelism);
             return control;
         }
 
@@ -744,7 +785,9 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns></returns>
-        public static void DoParallelPilotMethod<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth, int maxDegreeOfParallelism)
+        public static void DoParallelPilotMethod<T, C, Q>(ISearchControl<T, Q> control,
+            T state, int beamWidth, Func<T, float> rank, int filterWidth,
+            int maxDegreeOfParallelism)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -834,203 +877,272 @@ namespace TreesearchLib
 
     public static class ParallelHeuristicStateExtensions
     {
-        public static Task<TState> ParallelBeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                 int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
-                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static Task<TState> ParallelBeamSearchAsync<TState, TQuality>(
+            this IState<TState, TQuality> state, int beamWidth, Func<TState, float> rank,
+            int filterWidth = int.MaxValue, TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => ParallelBeamSearch((TState)state, rank, beamWidth, filterWidth, runtime, nodelimit, callback, token, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelBeamSearch((TState)state, beamWidth, rank,
+                filterWidth, runtime, nodelimit, callback, token, maxDegreeOfParallelism));
         }
-        public static TState ParallelBeamSearch<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
-                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static TState ParallelBeamSearch<TState, TQuality>(
+            this IState<TState, TQuality> state, int beamWidth, Func<TState, float> rank,
+            int filterWidth = int.MaxValue, TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelBeamSearch(beamWidth, rank, filterWidth, maxDegreeOfParallelism).BestQualityState;
+            return control.ParallelBeamSearch(beamWidth, rank, filterWidth,
+                maxDegreeOfParallelism).BestQualityState;
         }
 
-        public static Task<TState> ParallelBeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
-                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static Task<TState> ParallelBeamSearchAsync<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => ParallelBeamSearch<TState, TChoice, TQuality>((TState)state, rank, beamWidth, filterWidth, runtime, nodelimit, callback, token, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelBeamSearch<TState, TChoice, TQuality>(
+                (TState)state, beamWidth, rank, filterWidth, runtime, nodelimit,
+                callback, token, maxDegreeOfParallelism)
+            );
         }
 
-        public static TState ParallelBeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
-                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static TState ParallelBeamSearch<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).
+                WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelBeamSearch(beamWidth, rank, filterWidth, maxDegreeOfParallelism).BestQualityState;
+            return control.ParallelBeamSearch(beamWidth, rank, filterWidth,
+                maxDegreeOfParallelism).BestQualityState;
         }
 
-        public static Task<TState> ParallelRakeSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, int rakeWidth = 100,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static Task<TState> ParallelRakeSearchAsync<TState, TQuality>(
+            this IState<TState, TQuality> state, int rakeWidth,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => ParallelRakeSearch((TState)state, rakeWidth, runtime, nodelimit, callback, token, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelRakeSearch((TState)state, rakeWidth,
+                runtime, nodelimit, callback, token, maxDegreeOfParallelism));
         }
 
-        public static TState ParallelRakeSearch<TState, TQuality>(this IState<TState, TQuality> state, int rakeWidth = 100,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static TState ParallelRakeSearch<TState, TQuality>(
+            this IState<TState, TQuality> state, int rakeWidth,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelRakeSearch(rakeWidth, maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
+            return control.ParallelRakeSearch(rakeWidth,
+                maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
         }
 
-        public static Task<TState> ParallelRakeSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int rakeWidth = 100,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static Task<TState> ParallelRakeSearchAsync<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int rakeWidth,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => ParallelRakeSearch<TState, TChoice, TQuality>((TState)state, rakeWidth, runtime, nodelimit, callback, token, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelRakeSearch<TState, TChoice, TQuality>(
+                (TState)state, rakeWidth, runtime, nodelimit, callback, token,
+                maxDegreeOfParallelism)
+            );
         }
 
-        public static TState ParallelRakeSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int rakeWidth = 100,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static TState ParallelRakeSearch<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int rakeWidth,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelRakeSearch(rakeWidth, maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
+            return control.ParallelRakeSearch(rakeWidth,
+                maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
         }
 
-        public static Task<TState> ParallelRakeAndBeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static Task<TState> ParallelRakeAndBeamSearchAsync<TState, TQuality>(
+            this IState<TState, TQuality> state, int rakeWidth, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => ParallelRakeAndBeamSearch((TState)state, rank, rakeWidth, beamWidth, filterWidth, runtime, nodelimit, callback, token, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelRakeAndBeamSearch((TState)state, rakeWidth,
+                beamWidth, rank, filterWidth, runtime, nodelimit, callback,
+                token, maxDegreeOfParallelism)
+            );
         }
 
-        public static TState ParallelRakeAndBeamSearch<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static TState ParallelRakeAndBeamSearch<TState, TQuality>(
+            this IState<TState, TQuality> state, int rakeWidth, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelRakeAndBeamSearch(rakeWidth, beamWidth, rank, filterWidth, maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
+            return control.ParallelRakeAndBeamSearch(rakeWidth, beamWidth, rank,
+                filterWidth, maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
         }
 
-        public static Task<TState> ParallelRakeAndBeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static Task<TState> ParallelRakeAndBeamSearchAsync<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int rakeWidth, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => ParallelRakeAndBeamSearch<TState, TChoice, TQuality>((TState)state, rank, rakeWidth, beamWidth, filterWidth, runtime, nodelimit, callback, token, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelRakeAndBeamSearch<TState, TChoice, TQuality>(
+                (TState)state, rakeWidth, beamWidth, rank, filterWidth, runtime,
+                nodelimit, callback, token, maxDegreeOfParallelism)
+            );
         }
 
-        public static TState ParallelRakeAndBeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static TState ParallelRakeAndBeamSearch<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int rakeWidth, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelRakeAndBeamSearch(rakeWidth, beamWidth, rank, filterWidth, maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
+            return control.ParallelRakeAndBeamSearch(rakeWidth, beamWidth, rank,
+                filterWidth, maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
         }
 
-        public static Task<TState> ParallelPilotMethodAsync<TState, TQuality>(this IState<TState, TQuality> state,
-                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static Task<TState> ParallelPilotMethodAsync<TState, TQuality>(
+            this IState<TState, TQuality> state, int beamWidth = 1,
+            Func<TState, float> rank = null, int filterWidth = 1,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => ParallelPilotMethod((TState)state, beamWidth, rank, filterWidth, runtime, nodelimit, callback, token, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelPilotMethod((TState)state, beamWidth, rank,
+                filterWidth, runtime, nodelimit, callback, token, maxDegreeOfParallelism)
+            );
         }
 
-        public static TState ParallelPilotMethod<TState, TQuality>(this IState<TState, TQuality> state,
-                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static TState ParallelPilotMethod<TState, TQuality>(
+            this IState<TState, TQuality> state, int beamWidth = 1,
+            Func<TState, float> rank = null, int filterWidth = 1,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelPilotMethod(beamWidth, rank, filterWidth, maxDegreeOfParallelism).BestQualityState;
+            return control.ParallelPilotMethod(beamWidth, rank, filterWidth,
+                maxDegreeOfParallelism).BestQualityState;
         }
 
-        public static Task<TState> ParallelPilotMethodAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state,
-                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static Task<TState> ParallelPilotMethodAsync<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state,
+            int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = 1,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => ParallelPilotMethod<TState, TChoice, TQuality>((TState)state, beamWidth, rank, filterWidth, runtime, nodelimit, callback, token, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelPilotMethod<TState, TChoice, TQuality>(
+                (TState)state, beamWidth, rank, filterWidth, runtime, nodelimit,
+                callback, token, maxDegreeOfParallelism)
+            );
         }
 
-        public static TState ParallelPilotMethod<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state,
-                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken), int maxDegreeOfParallelism = -1)
+        public static TState ParallelPilotMethod<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state,
+            int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = 1,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken),
+            int maxDegreeOfParallelism = -1)
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelPilotMethod(beamWidth, rank, filterWidth, maxDegreeOfParallelism).BestQualityState;
+            return control.ParallelPilotMethod(beamWidth, rank, filterWidth,
+                maxDegreeOfParallelism).BestQualityState;
         }
     }
 }

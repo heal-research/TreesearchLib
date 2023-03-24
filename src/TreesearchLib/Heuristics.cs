@@ -19,7 +19,9 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static Task<SearchControl<T, Q>> BeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+        public static Task<SearchControl<T, Q>> BeamSearchAsync<T, Q>(
+            this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -37,7 +39,9 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static SearchControl<T, Q> BeamSearch<T, Q>(this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+        public static SearchControl<T, Q> BeamSearch<T, Q>(
+            this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -56,7 +60,9 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static Task<SearchControl<T, C, Q>> BeamSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+        public static Task<SearchControl<T, C, Q>> BeamSearchAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -74,7 +80,9 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static SearchControl<T, C, Q> BeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+        public static SearchControl<T, C, Q> BeamSearch<T, C, Q>(
+            this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -94,7 +102,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoBeamSearch<T, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
+        public static void DoBeamSearch<T, Q>(ISearchControl<T, Q> control, T state,
+            int beamWidth, Func<T, float> rank, int filterWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -119,7 +128,9 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoBeamSearch<T, Q>(ISearchControl<T, Q> control, PriorityBiLevelFIFOCollection<T> searchState, int beamWidth, Func<T, float> rank, int filterWidth)
+        public static void DoBeamSearch<T, Q>(ISearchControl<T, Q> control,
+            PriorityBiLevelFIFOCollection<T> searchState, int beamWidth,
+            Func<T, float> rank, int filterWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -156,7 +167,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
+        public static void DoBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state,
+            int beamWidth, Func<T, float> rank, int filterWidth)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -220,7 +232,9 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoBeamSearch<T, C, Q>(ISearchControl<T, Q> control, PriorityBiLevelFIFOCollection<T> searchState, int beamWidth, Func<T, float> rank, int filterWidth)
+        public static void DoBeamSearch<T, C, Q>(ISearchControl<T, Q> control,
+            PriorityBiLevelFIFOCollection<T> searchState, int beamWidth,
+            Func<T, float> rank, int filterWidth)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -256,7 +270,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, Q>> RakeSearchAsync<T, Q>(this SearchControl<T, Q> control, int rakeWidth)
+        public static Task<SearchControl<T, Q>> RakeSearchAsync<T, Q>(
+            this SearchControl<T, Q> control, int rakeWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -272,14 +287,17 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static SearchControl<T, Q> RakeSearch<T, Q>(this SearchControl<T, Q> control, int rakeWidth)
+        public static SearchControl<T, Q> RakeSearch<T, Q>(
+            this SearchControl<T, Q> control, int rakeWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             var (_, rake) = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
-            while (rake.TryGetNext(out var next) && !control.ShouldStop())
+            var i = 0;
+            while (i < rakeWidth && rake.TryGetNext(out var next) && !control.ShouldStop())
             {
                 Algorithms.DoDepthSearch(control, next, 1);
+                i++;
             }
             return control;
         }
@@ -294,7 +312,8 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, C, Q>> RakeSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth)
+        public static Task<SearchControl<T, C, Q>> RakeSearchAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int rakeWidth)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -311,14 +330,17 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static SearchControl<T, C, Q> RakeSearch<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth)
+        public static SearchControl<T, C, Q> RakeSearch<T, C, Q>(
+            this SearchControl<T, C, Q> control, int rakeWidth)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             var (_, rake) = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
-            while (rake.TryGetNext(out var next) && !control.ShouldStop())
+            var i = 0;
+            while (i < rakeWidth && rake.TryGetNext(out var next) && !control.ShouldStop())
             {
                 Algorithms.DoDepthSearch<T, C, Q>(control, next, filterWidth: 1);
+                i++;
             }
             return control;
         }
@@ -335,7 +357,9 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, Q>> RakeAndBeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+        public static Task<SearchControl<T, Q>> RakeAndBeamSearchAsync<T, Q>(
+            this SearchControl<T, Q> control, int rakeWidth, int beamWidth,
+            Func<T, float> rank, int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -354,14 +378,18 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static SearchControl<T, Q> RakeAndBeamSearch<T, Q>(this SearchControl<T, Q> control, int rakeWidth, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+        public static SearchControl<T, Q> RakeAndBeamSearch<T, Q>(
+            this SearchControl<T, Q> control, int rakeWidth, int beamWidth,
+            Func<T, float> rank, int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             var (_, rake) = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
-            while (rake.TryGetNext(out var next) && !control.ShouldStop())
+            var i = 0;
+            while (i < rakeWidth && rake.TryGetNext(out var next) && !control.ShouldStop())
             {
                 DoBeamSearch(control, next, beamWidth, rank, filterWidth);
+                i++;
             }
             return control;
         }
@@ -379,7 +407,9 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, C, Q>> RakeAndBeamSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+        public static Task<SearchControl<T, C, Q>> RakeAndBeamSearchAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth,
+            Func<T, float> rank, int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -399,14 +429,18 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
-        public static SearchControl<T, C, Q> RakeAndBeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+        public static SearchControl<T, C, Q> RakeAndBeamSearch<T, C, Q>(
+            this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth,
+            Func<T, float> rank, int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             var (_, rake) = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
-            while (rake.TryGetNext(out var next) && !control.ShouldStop())
+            var i = 0;
+            while (i < rakeWidth && rake.TryGetNext(out var next) && !control.ShouldStop())
             {
                 DoBeamSearch<T, C, Q>(control, next, beamWidth, rank, filterWidth);
+                i++;
             }
             return control;
         }
@@ -427,7 +461,9 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
-        public static Task<SearchControl<T, Q>> PilotMethodAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth = 1, Func<T, float> rank = null, int filterWidth = 1)
+        public static Task<SearchControl<T, Q>> PilotMethodAsync<T, Q>(
+            this SearchControl<T, Q> control, int beamWidth = 1,
+            Func<T, float> rank = null, int filterWidth = 1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -450,7 +486,9 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
-        public static SearchControl<T, Q> PilotMethod<T, Q>(this SearchControl<T, Q> control, int beamWidth = 1, Func<T, float> rank = null, int filterWidth = 1)
+        public static SearchControl<T, Q> PilotMethod<T, Q>(
+            this SearchControl<T, Q> control, int beamWidth = 1,
+            Func<T, float> rank = null, int filterWidth = 1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -476,7 +514,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns></returns>
-        public static void DoPilotMethod<T, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
+        public static void DoPilotMethod<T, Q>(ISearchControl<T, Q> control, T state,
+        int beamWidth, Func<T, float> rank, int filterWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -538,7 +577,9 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
-        public static Task<SearchControl<T, C, Q>> PilotMethodAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = 1, Func<T, float> rank = null, int filterWidth = 1)
+        public static Task<SearchControl<T, C, Q>> PilotMethodAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int beamWidth = 1,
+            Func<T, float> rank = null, int filterWidth = 1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -562,7 +603,9 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
-        public static SearchControl<T, C, Q> PilotMethod<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth = 1, Func<T, float> rank = null, int filterWidth = 1)
+        public static SearchControl<T, C, Q> PilotMethod<T, C, Q>(
+            this SearchControl<T, C, Q> control, int beamWidth = 1,
+            Func<T, float> rank = null, int filterWidth = 1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -589,7 +632,8 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns></returns>
-        public static void DoPilotMethod<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
+        public static void DoPilotMethod<T, C, Q>(ISearchControl<T, Q> control, T state,
+        int beamWidth, Func<T, float> rank, int filterWidth)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -673,7 +717,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The instance that performs the runtim control and tracking</returns>
-        public static Task<SearchControl<T, Q>> NaiveLDSearchAsync<T, Q>(this SearchControl<T, Q> control, int maxDiscrepancy)
+        public static Task<SearchControl<T, Q>> NaiveLDSearchAsync<T, Q>(
+            this SearchControl<T, Q> control, int maxDiscrepancy)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -708,7 +753,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The instance that performs the runtim control and tracking</returns>
-        public static SearchControl<T, Q> NaiveLDSearch<T, Q>(this SearchControl<T, Q> control, int maxDiscrepancy)
+        public static SearchControl<T, Q> NaiveLDSearch<T, Q>(
+            this SearchControl<T, Q> control, int maxDiscrepancy)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -745,7 +791,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoNaiveLDSearch<T, Q>(ISearchControl<T, Q> control, T state, int maxDiscrepancy)
+        public static void DoNaiveLDSearch<T, Q>(ISearchControl<T, Q> control, T state,
+            int maxDiscrepancy)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -799,7 +846,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The instance that performs the runtim control and tracking</returns>
-        public static Task<SearchControl<T, C, Q>> NaiveLDSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int maxDiscrepancy)
+        public static Task<SearchControl<T, C, Q>> NaiveLDSearchAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int maxDiscrepancy)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -833,7 +881,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The instance that performs the runtim control and tracking</returns>
-        public static SearchControl<T, C, Q> NaiveLDSearch<T, C, Q>(this SearchControl<T, C, Q> control, int maxDiscrepancy)
+        public static SearchControl<T, C, Q> NaiveLDSearch<T, C, Q>(
+            this SearchControl<T, C, Q> control, int maxDiscrepancy)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -870,7 +919,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoNaiveLDSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int maxDiscrepancy)
+        public static void DoNaiveLDSearch<T, C, Q>(ISearchControl<T, Q> control, T state,
+            int maxDiscrepancy)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -936,7 +986,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static Task<SearchControl<T, Q>> AnytimeLDSearchAsync<T, Q>(this SearchControl<T, Q> control, int maxDiscrepancy)
+        public static Task<SearchControl<T, Q>> AnytimeLDSearchAsync<T, Q>(
+            this SearchControl<T, Q> control, int maxDiscrepancy)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -969,7 +1020,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static SearchControl<T, Q> AnytimeLDSearch<T, Q>(this SearchControl<T, Q> control, int maxDiscrepancy)
+        public static SearchControl<T, Q> AnytimeLDSearch<T, Q>(
+            this SearchControl<T, Q> control, int maxDiscrepancy)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -1005,7 +1057,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoAnytimeLDSearch<T, Q>(ISearchControl<T, Q> control, T state, int maxDiscrepancy)
+        public static void DoAnytimeLDSearch<T, Q>(ISearchControl<T, Q> control, T state,
+            int maxDiscrepancy)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -1066,7 +1119,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static Task<SearchControl<T, C, Q>> AnytimeLDSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int maxDiscrepancy)
+        public static Task<SearchControl<T, C, Q>> AnytimeLDSearchAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int maxDiscrepancy)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -1101,7 +1155,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static SearchControl<T, C, Q> AnytimeLDSearch<T, C, Q>(this SearchControl<T, C, Q> control, int maxDiscrepancy)
+        public static SearchControl<T, C, Q> AnytimeLDSearch<T, C, Q>(
+            this SearchControl<T, C, Q> control, int maxDiscrepancy)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -1139,7 +1194,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoAnytimeLDSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int maxDiscrepancy)
+        public static void DoAnytimeLDSearch<T, C, Q>(ISearchControl<T, Q> control, T state,
+            int maxDiscrepancy)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -1197,7 +1253,9 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static Task<SearchControl<T, Q>> MonotonicBeamSearchAsync<T, Q>(this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+        public static Task<SearchControl<T, Q>> MonotonicBeamSearchAsync<T, Q>(
+            this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -1223,7 +1281,9 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static SearchControl<T, Q> MonotonicBeamSearch<T, Q>(this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+        public static SearchControl<T, Q> MonotonicBeamSearch<T, Q>(
+            this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -1251,7 +1311,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoMonotonicBeamSearch<T, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
+        public static void DoMonotonicBeamSearch<T, Q>(ISearchControl<T, Q> control, T state,
+            int beamWidth, Func<T, float> rank, int filterWidth)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -1342,7 +1403,9 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static Task<SearchControl<T, C, Q>> MonotonicBeamSearchAsync<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+        public static Task<SearchControl<T, C, Q>> MonotonicBeamSearchAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -1369,7 +1432,9 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
-        public static SearchControl<T, C, Q> MonotonicBeamSearch<T, C, Q>(this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank, int filterWidth = int.MaxValue)
+        public static SearchControl<T, C, Q> MonotonicBeamSearch<T, C, Q>(
+            this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -1397,7 +1462,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoMonotonicBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth)
+        public static void DoMonotonicBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state,
+            int beamWidth, Func<T, float> rank, int filterWidth)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -1499,19 +1565,23 @@ namespace TreesearchLib
 
     public static class HeuristicStateExtensions
     {
-        public static Task<TState> BeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                 int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
-                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static Task<TState> BeamSearchAsync<TState, TQuality>(
+            this IState<TState, TQuality> state, int beamWidth, Func<TState, float> rank,
+            int filterWidth = int.MaxValue, TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => BeamSearch((TState)state, rank, beamWidth, filterWidth, runtime, nodelimit, callback, token));
+            return Task.Run(() => BeamSearch((TState)state, beamWidth, rank, filterWidth,
+                runtime, nodelimit, callback, token)
+            );
         }
-        public static TState BeamSearch<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
-                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState BeamSearch<TState, TQuality>(
+            this IState<TState, TQuality> state, int beamWidth, Func<TState, float> rank,
+            int filterWidth = int.MaxValue, TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
@@ -1522,315 +1592,391 @@ namespace TreesearchLib
             return control.BeamSearch(beamWidth, rank, filterWidth).BestQualityState;
         }
 
-        public static Task<TState> BeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
-                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static Task<TState> BeamSearchAsync<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => BeamSearch<TState, TChoice, TQuality>((TState)state, rank, beamWidth, filterWidth, runtime, nodelimit, callback, token));
+            return Task.Run(() => BeamSearch<TState, TChoice, TQuality>(
+                (TState)state, beamWidth, rank, filterWidth, runtime, nodelimit,
+                callback, token)
+            );
         }
 
-        public static TState BeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
-                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState BeamSearch<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.BeamSearch(beamWidth, rank, filterWidth).BestQualityState;
         }
 
-        public static Task<TState> RakeSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, int rakeWidth = 100,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static Task<TState> RakeSearchAsync<TState, TQuality>(
+            this IState<TState, TQuality> state, int rakeWidth,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => RakeSearch((TState)state, rakeWidth, runtime, nodelimit, callback, token));
+            return Task.Run(() => RakeSearch((TState)state, rakeWidth, runtime,
+                nodelimit, callback, token)
+            );
         }
 
-        public static TState RakeSearch<TState, TQuality>(this IState<TState, TQuality> state, int rakeWidth = 100,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState RakeSearch<TState, TQuality>(
+            this IState<TState, TQuality> state, int rakeWidth,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.RakeSearch(rakeWidth).BestQualityState;
         }
 
-        public static Task<TState> RakeSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int rakeWidth = 100,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static Task<TState> RakeSearchAsync<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int rakeWidth,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => RakeSearch<TState, TChoice, TQuality>((TState)state, rakeWidth, runtime, nodelimit, callback, token));
+            return Task.Run(() => RakeSearch<TState, TChoice, TQuality>(
+                (TState)state, rakeWidth, runtime, nodelimit, callback, token)
+            );
         }
 
-        public static TState RakeSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int rakeWidth = 100,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState RakeSearch<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int rakeWidth,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.RakeSearch(rakeWidth).BestQualityState;
         }
 
-        public static Task<TState> RakeAndBeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static Task<TState> RakeAndBeamSearchAsync<TState, TQuality>(
+            this IState<TState, TQuality> state, int rakeWidth, int beamWidth, 
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => RakeAndBeamSearch((TState)state, rank, rakeWidth, beamWidth, filterWidth, runtime, nodelimit, callback, token));
+            return Task.Run(() => RakeAndBeamSearch((TState)state, rakeWidth,
+                beamWidth, rank, filterWidth, runtime, nodelimit, callback, token)
+            );
         }
 
-        public static TState RakeAndBeamSearch<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState RakeAndBeamSearch<TState, TQuality>(
+            this IState<TState, TQuality> state, int rakeWidth, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.RakeAndBeamSearch(rakeWidth, beamWidth, rank, filterWidth).BestQualityState;
+            return control.RakeAndBeamSearch(rakeWidth, beamWidth, rank,
+                filterWidth).BestQualityState;
         }
 
-        public static Task<TState> RakeAndBeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static Task<TState> RakeAndBeamSearchAsync<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int rakeWidth, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => RakeAndBeamSearch<TState, TChoice, TQuality>((TState)state, rank, rakeWidth, beamWidth, filterWidth, runtime, nodelimit, callback, token));
+            return Task.Run(() => RakeAndBeamSearch<TState, TChoice, TQuality>(
+                (TState)state, rakeWidth, beamWidth, rank, filterWidth, runtime,
+                nodelimit, callback, token)
+            );
         }
 
-        public static TState RakeAndBeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int rakeWidth = 100, int beamWidth = 100, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState RakeAndBeamSearch<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int rakeWidth, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.RakeAndBeamSearch(rakeWidth, beamWidth, rank, filterWidth).BestQualityState;
+            return control.RakeAndBeamSearch(rakeWidth, beamWidth,
+                rank, filterWidth).BestQualityState;
         }
 
-        public static Task<TState> PilotMethodAsync<TState, TQuality>(this IState<TState, TQuality> state,
-                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static Task<TState> PilotMethodAsync<TState, TQuality>(
+            this IState<TState, TQuality> state, int beamWidth = 1,
+            Func<TState, float> rank = null, int filterWidth = 1,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => PilotMethod((TState)state, beamWidth, rank, filterWidth, runtime, nodelimit, callback, token));
+            return Task.Run(() => PilotMethod((TState)state, beamWidth, rank,
+                filterWidth, runtime, nodelimit, callback, token)
+            );
         }
 
-        public static TState PilotMethod<TState, TQuality>(this IState<TState, TQuality> state,
-                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState PilotMethod<TState, TQuality>(
+            this IState<TState, TQuality> state, int beamWidth = 1,
+            Func<TState, float> rank = null, int filterWidth = 1,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
-            if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
-            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
-            if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.PilotMethod(beamWidth, rank, filterWidth).BestQualityState;
-        }
-
-        public static Task<TState> PilotMethodAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state,
-                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
-            where TState : class, IMutableState<TState, TChoice, TQuality>
-            where TQuality : struct, IQuality<TQuality>
-        {
-            return Task.Run(() => PilotMethod<TState, TChoice, TQuality>((TState)state, beamWidth, rank, filterWidth, runtime, nodelimit, callback, token));
-        }
-
-        public static TState PilotMethod<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state,
-                int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = int.MaxValue,
-                TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
-            where TState : class, IMutableState<TState, TChoice, TQuality>
-            where TQuality : struct, IQuality<TQuality>
-        {
-            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.PilotMethod(beamWidth, rank, filterWidth).BestQualityState;
         }
 
-        public static Task<TState> NaiveLDSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, int maxDiscrepancy = 1,
-                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
-            where TState : IState<TState, TQuality>
+        public static Task<TState> PilotMethodAsync<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int beamWidth = 1,
+            Func<TState, float> rank = null, int filterWidth = 1,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
+            where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => NaiveLDSearch(state, maxDiscrepancy, seed, runtime, nodelimit, callback, token));
+            return Task.Run(() => PilotMethod<TState, TChoice, TQuality>(
+                (TState)state, beamWidth, rank, filterWidth, runtime,
+                nodelimit, callback, token)
+            );
         }
 
-        public static TState NaiveLDSearch<TState, TQuality>(this IState<TState, TQuality> state, int maxDiscrepancy = 1,
-                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState PilotMethod<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int beamWidth = 1,
+            Func<TState, float> rank = null, int filterWidth = 1,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
+            where TState : class, IMutableState<TState, TChoice, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
+            if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
+            if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
+            if (callback != null) control = control.WithImprovementCallback(callback);
+            return control.PilotMethod(beamWidth, rank, filterWidth).BestQualityState;
+        }
+
+        public static Task<TState> NaiveLDSearchAsync<TState, TQuality>(
+            this IState<TState, TQuality> state, int maxDiscrepancy,
+            int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
+            return Task.Run(() => NaiveLDSearch(state, maxDiscrepancy, seed, runtime,
+                nodelimit, callback, token)
+            );
+        }
+
+        public static TState NaiveLDSearch<TState, TQuality>(
+            this IState<TState, TQuality> state, int maxDiscrepancy,
+            int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
+            where TState : IState<TState, TQuality>
+            where TQuality : struct, IQuality<TQuality>
+        {
+            var control = SearchControl<TState, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.NaiveLDSearch(maxDiscrepancy).BestQualityState;
         }
 
-        public static Task<TState> NaiveLDSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int maxDiscrepancy = 1,
-                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static Task<TState> NaiveLDSearchAsync<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int maxDiscrepancy,
+            int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => NaiveLDSearch(state, maxDiscrepancy, seed, runtime, nodelimit, callback, token));
+            return Task.Run(() => NaiveLDSearch(state, maxDiscrepancy, seed,
+                runtime, nodelimit, callback, token)
+            );
         }
 
-        public static TState NaiveLDSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int maxDiscrepancy = 1,
-                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState NaiveLDSearch<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int maxDiscrepancy,
+            int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.NaiveLDSearch(maxDiscrepancy).BestQualityState;
         }
 
-        public static Task<TState> AnytimeLDSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, int maxDiscrepancy = 1,
-                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static Task<TState> AnytimeLDSearchAsync<TState, TQuality>(
+            this IState<TState, TQuality> state, int maxDiscrepancy,
+            int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => AnytimeLDSearch(state, maxDiscrepancy, seed, runtime, nodelimit, callback, token));
+            return Task.Run(() => AnytimeLDSearch(state, maxDiscrepancy, seed,
+                runtime, nodelimit, callback, token)
+            );
         }
 
-        public static TState AnytimeLDSearch<TState, TQuality>(this IState<TState, TQuality> state, int maxDiscrepancy = 1,
-                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState AnytimeLDSearch<TState, TQuality>(
+            this IState<TState, TQuality> state, int maxDiscrepancy,
+            int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.AnytimeLDSearch(maxDiscrepancy).BestQualityState;
         }
 
-        public static Task<TState> AnytimeLDSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int maxDiscrepancy = 1,
-                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static Task<TState> AnytimeLDSearchAsync<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int maxDiscrepancy,
+            int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => AnytimeLDSearch(state, maxDiscrepancy, seed, runtime, nodelimit, callback, token));
+            return Task.Run(() => AnytimeLDSearch(state, maxDiscrepancy, seed,
+                runtime, nodelimit, callback, token)
+            );
         }
 
-        public static TState AnytimeLDSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, int maxDiscrepancy = 1,
-                int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
-                QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState AnytimeLDSearch<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int maxDiscrepancy,
+            int? seed = null, TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TChoice, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.NaiveLDSearch(maxDiscrepancy).BestQualityState;
         }
 
-        public static Task<TState> MonotonicBeamSearchAsync<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                 int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
-                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static Task<TState> MonotonicBeamSearchAsync<TState, TQuality>(
+            this IState<TState, TQuality> state, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => MonotonicBeamSearch((TState)state, rank, beamWidth, filterWidth, runtime, nodelimit, callback, token));
+            return Task.Run(() => MonotonicBeamSearch((TState)state, beamWidth, rank,
+                filterWidth, runtime, nodelimit, callback, token)
+            );
         }
-        public static TState MonotonicBeamSearch<TState, TQuality>(this IState<TState, TQuality> state, Func<TState, float> rank,
-                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
-                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState MonotonicBeamSearch<TState, TQuality>(
+            this IState<TState, TQuality> state, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            var control = SearchControl<TState, TQuality>.Start((TState)state).WithCancellationToken(token);
+            var control = SearchControl<TState, TQuality>.Start((TState)state)
+                .WithCancellationToken(token);
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             return control.MonotonicBeamSearch(beamWidth, rank, filterWidth).BestQualityState;
         }
 
-        public static Task<TState> MonotonicBeamSearchAsync<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
-                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static Task<TState> MonotonicBeamSearchAsync<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => MonotonicBeamSearch<TState, TChoice, TQuality>((TState)state, rank, beamWidth, filterWidth, runtime, nodelimit, callback, token));
+            return Task.Run(() => MonotonicBeamSearch<TState, TChoice, TQuality>(
+                (TState)state, beamWidth, rank, filterWidth, runtime, nodelimit,
+                callback, token)
+            );
         }
 
-        public static TState MonotonicBeamSearch<TState, TChoice, TQuality>(this IMutableState<TState, TChoice, TQuality> state, Func<TState, float> rank,
-                int beamWidth = 100, int filterWidth = int.MaxValue, TimeSpan? runtime = null,
-                long? nodelimit = null, QualityCallback<TState, TQuality> callback = null,
-                CancellationToken token = default(CancellationToken))
+        public static TState MonotonicBeamSearch<TState, TChoice, TQuality>(
+            this IMutableState<TState, TChoice, TQuality> state, int beamWidth,
+            Func<TState, float> rank, int filterWidth = int.MaxValue,
+            TimeSpan? runtime = null, long? nodelimit = null,
+            QualityCallback<TState, TQuality> callback = null,
+            CancellationToken token = default(CancellationToken))
             where TState : class, IMutableState<TState, TChoice, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
