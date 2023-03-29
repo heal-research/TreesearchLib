@@ -10,12 +10,13 @@ Check out the SampleApp to see implementations of the following problems:
  * [Knapsack](src/SampleApp/Knapsack.cs) - the famous {0, 1}-Knapsack, implemented using reversible search (allowing to undo moves), as well as non-reversible
  * [TSP](src/SampleApp/TSP.cs) - the Berlin52 instance of the TSPLIB
  * [SchedulingProblem](src/SampleApp/SchedulingProblem.cs) - a very simple scheduling problem
+ * [Tower of Hanoi](src/SampleApp/TowerOfHanoi.cs) - the classic Tower of Hanoi problem
 
 These samples should give you an idea on how to use the framework for problem modeling.
 
 The algorithms that are included are:
 
- * Branch and bound (depth-first search), sequential and parallel
+ * Depth-first search / branch and bound, sequential and parallel
  * Breadth-first search, sequential and parallel
  * Limited Discrepancy Search, sequential only
  * Beam Search, sequental and parallel

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using TreesearchLib;
 
 namespace SampleApp
@@ -17,8 +18,14 @@ namespace SampleApp
             TravelingSalesman();
             Console.WriteLine("========= SchedulingProblem =============");
             SchedulingProblem();
+            Console.WriteLine("==========    TowerOfHanoi     ==========");
+            TowerOfHanoi();
         }
 
+        /// <summary>
+        /// This example shows how to use wrap a reversible-search into non-reversible and shows the use
+        /// of improvement callbacks.
+        /// </summary>
         private static void ChooseSmallestProblem()
         {
             var size = 10;
@@ -38,6 +45,9 @@ namespace SampleApp
             var solution = new ChooseSmallestProblem(size).DepthFirst();
         }
 
+        /// <summary>
+        /// This example shows performances of every method applied to the knapsack problem in both reversible and non-reversible search.
+        /// </summary>
         private static void KnapsackProblem()
         {
             var size = 30;
@@ -181,6 +191,11 @@ namespace SampleApp
             Console.WriteLine($"{"Parallel BreadthFirst non-reversible",55} {resultParNoUndoBFS.BestQuality,12} {resultParNoUndoBFS.VisitedNodes,6} ({(resultParNoUndoBFS.VisitedNodes / resultParNoUndoBFS.Elapsed.TotalSeconds),12:F2} nodes/sec)");
         }
 
+        /// <summary>
+        /// This example shows different methods to apply to the traveling salesman problem and their performance.
+        /// Also, it shows that regular beam search is non-monotonic and while monotonic beam search is monotonic,
+        /// it doesn't mean that it is always better than regular beam search.
+        /// </summary>
         private static void TravelingSalesman()
         {
             var tsp = new TSP(Berlin52.GetDistances());
@@ -233,6 +248,10 @@ namespace SampleApp
             Console.WriteLine($"ParallelPilotMethod(16) {resultParallelPilot.BestQuality} {resultParallelPilot.VisitedNodes} ({(resultParallelPilot.VisitedNodes / resultParallelPilot.Elapsed.TotalSeconds):F2} nodes/sec)");
         }
 
+        /// <summary>
+        /// This example uses different objectives. The way GetChoices() is implemented highly influences the results.
+        /// In the given way, the jobs are distributed equally among the machines.
+        /// </summary>
         private static void SchedulingProblem()
         {
             // generate sample data for jobs and machines
@@ -297,5 +316,25 @@ namespace SampleApp
                 }
             }
         }
+
+        /// <summary>
+        /// This example shows how to terminate a search early using a cancellation token
+        /// and also to use the upper bound / depth limit to limit depth-first search.
+        /// </summary>
+        private static void TowerOfHanoi()
+        {
+            var hanoi = new TowerOfHanoi(3, 3);
+            using (var cts = new CancellationTokenSource())
+            {
+                var resultBFS = Minimize.Start(hanoi)
+                    .WithCancellationToken(cts.Token)
+                    .WithImprovementCallback((c, s, q) => cts.Cancel() /* terminate among first solution -> optimal due to BFS*/)
+                    .BreadthFirst();
+                Console.WriteLine($"BreadthFirst: {resultBFS.BestQuality} {resultBFS.VisitedNodes} ({(resultBFS.VisitedNodes / resultBFS.Elapsed.TotalSeconds):F2} nodes/sec)");
+            }
+            var resultDFS = Minimize.Start(hanoi)
+                .WithUpperBound(new Minimize(10)) // necessary to prevent infinite node expansion
+                .DepthFirst(/*depthLimit: 10*/); // alternatively, a depth-limit may be given here
+            Console.WriteLine($"DepthFirst: {resultDFS.BestQuality} {resultDFS.VisitedNodes} ({(resultDFS.VisitedNodes / resultDFS.Elapsed.TotalSeconds):F2} nodes/sec)");        }
     }
 }
