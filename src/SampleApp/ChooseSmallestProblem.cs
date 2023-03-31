@@ -50,9 +50,14 @@ namespace SampleApp
                 current = choicesMade.Peek();
             }
             var rng = new Random(current);
+            var chosen = new HashSet<int>();
             for (int i = 0; i < rng.Next(minChoices, maxChoices); i++)
             {
-                yield return rng.Next(current + 1, current + maxDistance);
+                var choice = rng.Next(current + 1, current + maxDistance);
+                if (chosen.Add(choice))
+                {
+                    yield return choice;
+                }
             }
 
         }
@@ -65,6 +70,15 @@ namespace SampleApp
         public override string ToString()
         {
             return $"ChooseSmallestProblem [{string.Join(", ", this.choicesMade.Reverse())}]";
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is ChooseSmallestProblem other))
+            {
+                return false;
+            }
+            return this.size == other.size && this.choicesMade.SequenceEqual(other.choicesMade);
         }
     }
 }

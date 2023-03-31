@@ -70,7 +70,7 @@ namespace SampleApp
 
         public IEnumerable<int> GetChoices()
         {
-            return Remaining.Select(v => (City: v, Distance: Distances[Tour[Index-1], v])).OrderBy(x => x.Distance).Select(x => x.City);
+            return Remaining.Select(v => (City: v, Distance: Distances[Tour[Index-1], v])).OrderBy(x => x.Distance).ThenBy(x => x.City).Select(x => x.City);
         }
     }
 

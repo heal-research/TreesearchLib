@@ -30,6 +30,11 @@ namespace SampleApp
         {
             var size = 10;
 
+            // You would perform that test in your unit tests, not as part of regular use
+            // EqualityComparer<T>.Default assumes that T implements IEquatable<T> or overrides Object.Equals
+            var testResult = new ChooseSmallestProblem(size).Test<ChooseSmallestProblem, int, Minimize>(EqualityComparer<int>.Default);
+            Console.WriteLine($"Is ChooseSmallestProblem implemented correctly: {testResult}");
+
             // Ability to start with the respective quality and build a configuration, finally call an algorithm
             var control = Minimize.Start(new ChooseSmallestProblem(size)).WithUpperBound(new Minimize(int.MaxValue))
                 .WithImprovementCallback((ctrl, state, quality) => Console.WriteLine($"Found new best solution with {quality} after {ctrl.Elapsed}"))
@@ -69,6 +74,11 @@ namespace SampleApp
 
             // The knapsack implementation aims to provide efficient states for reversible search (only DFS), as well as for non-reversible search
             var knapsack = new Knapsack(profits, weights, capacity);
+
+            // You would perform that test in your unit tests, not as part of regular use
+            // EqualityComparer<T>.Default assumes that T implements IEquatable<T> or overrides Object.Equals
+            var testResult = knapsack.Test<Knapsack, bool, Maximize>(EqualityComparer<bool>.Default);
+            Console.WriteLine($"Is Knapsack implemented correctly: {testResult}");
 
             var resultBS10 = Maximize.Start(knapsack).BeamSearch(10, state => -state.Bound.Value);
             Console.WriteLine($"{"BeamSearch(10)",55} {resultBS10.BestQuality,12} {resultBS10.VisitedNodes,6} ({(resultBS10.VisitedNodes / resultBS10.Elapsed.TotalSeconds),12:F2} nodes/sec)");
@@ -130,7 +140,12 @@ namespace SampleApp
             Console.WriteLine($"{"Parallel BFSearch reversible",55} {resultParBFS.BestQuality,12} {resultParBFS.VisitedNodes,6} ({(resultParBFS.VisitedNodes / resultParBFS.Elapsed.TotalSeconds),12:F2} nodes/sec)");
             
             var knapsackNoUndo = new KnapsackNoUndo(profits, weights, capacity);
-            
+
+            // You would perform that test in your unit tests, not as part of regular use
+            // EqualityComparer<T>.Default assumes that T implements IEquatable<T> or overrides Object.Equals
+            testResult = knapsackNoUndo.Test<KnapsackNoUndo, Maximize>(EqualityComparer<KnapsackNoUndo>.Default);
+            Console.WriteLine($"Is KnapsackNoUndo correctly implemented: {testResult}");
+
             var resultNoUndoBS10 = Maximize.Start(knapsackNoUndo).BeamSearch(10, state => -state.Bound.Value);
             Console.WriteLine($"{"BeamSearch(10) non-reversible",55} {resultNoUndoBS10.BestQuality,12} {resultNoUndoBS10.VisitedNodes,6} ({(resultNoUndoBS10.VisitedNodes / resultNoUndoBS10.Elapsed.TotalSeconds),12:F2} nodes/sec)");
             var resultParNoUndoBS10 = Maximize.Start(knapsackNoUndo).ParallelBeamSearch(10, state => -state.Bound.Value);
@@ -199,6 +214,11 @@ namespace SampleApp
         private static void TravelingSalesman()
         {
             var tsp = new TSP(Berlin52.GetDistances());
+
+            // You would perform that test in your unit tests, not as part of regular use
+            // EqualityComparer<T>.Default assumes that T implements IEquatable<T> or overrides Object.Equals
+            var testResult = tsp.Test<TSP, int, Minimize>(EqualityComparer<int>.Default);
+            Console.WriteLine($"Is TSP implemented correctly: {testResult}");
             
             var resultdf1 = Minimize.Start(tsp).DepthFirst(1);
             Console.WriteLine($"DepthFirst(1) {resultdf1.BestQuality} {resultdf1.VisitedNodes} ({(resultdf1.VisitedNodes / resultdf1.Elapsed.TotalSeconds):F2} nodes/sec)");
@@ -272,6 +292,12 @@ namespace SampleApp
             }).ToList();
 
             var state = new SchedulingProblem(SampleApp.SchedulingProblem.ObjectiveType.Makespan, jobs, machines);
+            
+            // You would perform that test in your unit tests, not as part of regular use
+            // EqualityComparer<T>.Default assumes that T implements IEquatable<T> or overrides Object.Equals
+            var testResult = state.Test<SchedulingProblem, ScheduleChoice, Minimize>(EqualityComparer<ScheduleChoice>.Default);
+            Console.WriteLine($"Is SchedulingProblem with Makespan implemented correctly: {testResult}");
+
             var control = Minimize.Start(state).DepthFirst();
             var result = control.BestQualityState;
             Console.WriteLine("===== Makespan =====");
@@ -324,6 +350,12 @@ namespace SampleApp
         private static void TowerOfHanoi()
         {
             var hanoi = new TowerOfHanoi(3, 3);
+
+            // You would perform that test in your unit tests, not as part of regular use
+            // EqualityComparer<T>.Default assumes that T implements IEquatable<T> or overrides Object.Equals
+            var testResult = hanoi.Test<TowerOfHanoi, (int, int), Minimize>(EqualityComparer<(int, int)>.Default);
+            Console.WriteLine($"Is TowerOfHanoi implemented correctly: {testResult}");
+
             using (var cts = new CancellationTokenSource())
             {
                 var resultBFS = Minimize.Start(hanoi)

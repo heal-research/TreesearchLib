@@ -169,6 +169,17 @@ namespace SampleApp
             }
             PreviousMakespan = state.Makespan;
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is ScheduleChoice other)
+            {
+                return Job.Id == other.Job.Id && Machine.Id == other.Machine.Id
+                    && ScheduledDate == other.ScheduledDate && PreviousAvailableTime == other.PreviousAvailableTime
+                    && PreviousMakespan == other.PreviousMakespan;
+            }
+            return false;
+        }
     }
 
 }

@@ -235,5 +235,24 @@ namespace SampleApp
         {
             return $"Items: {string.Join(", ", Decision.Select((v, i) => (i, v)).Where(x => x.v).Select(x => x.i))}";
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is KnapsackNoUndo other)
+            {
+                if (!Profits.SequenceEqual(other.Profits)) return false;
+                if (!Weights.SequenceEqual(other.Weights)) return false;
+                if (Capacity != other.Capacity) return false;
+                if (TotalWeight != other.TotalWeight) return false;
+                if (TotalProfit != other.TotalProfit) return false;
+                if (Decision.Length != other.Decision.Length) return false;
+                for (var i = 0; i < Decision.Length; i++)
+                {
+                    if (Decision[i] != other.Decision[i]) return false;
+                }
+                return true;
+            }
+            return false;
+        }
     }
 }

@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>TreesearchLib.snk</AssemblyOriginatorKeyFile>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
     <Authors>Sebastian Leitner, Andreas Beham</Authors>
     <Description>TreesearchLib is a framework for modeling optimization problems that are to be solved by constructive heuristics.
     It includes a number of algorithms: exhaustive depth-first and breadth-first search, limited discrepancy search, the PILOT method, Beam search, Monotonic beam search, Rake search, and Monte Carlo Tree Search.</Description>
@@ -13,17 +13,12 @@
     <Copyright>Sebastian Leitner, Andreas Beham</Copyright>
     <PackageProjectUrl>https://github.com/heal-research/TreesearchLib</PackageProjectUrl>
     <PackageReleaseNotes>
-    Bugfix release for 1.1.0.
+    Feature release: Adds a new Validator class that can be used to check whether a given state is implemented correctly.
 
-    * Changes some default parameters, especially FilterWidth = 1 for some PilotMethod calls.
-      It was previously configured to perform a full exhaustive search as lookahead by default.
-    * Rearranged some parameters.
-      The extension methods on IState used a different ordering than those on ISearchControl
-    * Fix issues with ParallelRakeSearch running very long in case of large branching factors.
-      It performed a depth-first line for all states returned by the breadth-first pre-exploration
-    * Removed nodesReached parameter from ParallelBreadthSearch.
-      It would be too much effort to track this between threads. Only DoBreadthSearch may be used to
-      run until a certain number of nodes have been reached.
+    Sometimes subtle errors in Clone(), GetBranches(), GetChoices(), Apply(), and UndoLast() lead to unexpected and inexplicable results.
+    A `Test` extension method has been added to the IMutableState and IState interface. This can be called as part of a unit test to
+    check whether there is a potential problem in the implementation. Of course, this test does not guarantee correctness of the
+    implementation, but several potential problems can be detected.
     </PackageReleaseNotes>
     <NeutralLanguage />
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -50,7 +45,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="OptimizedPriorityQueue" Version="5.1.0" />
-    <PackageReference Include="System.ValueTuple" Version="4.3.1" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
 
 </Project>
