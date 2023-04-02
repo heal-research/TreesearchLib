@@ -50,7 +50,7 @@ namespace TreesearchLib
             where Q : struct, IQuality<Q>
         {
             var lastDepth = -1;
-            while (!control.ShouldStop() && backtracks < backtrackLimit && searchState.TryGetNext(out var c))
+            while (!control.ShouldStop() && backtracks <= backtrackLimit && searchState.TryGetNext(out var c))
             {
                 var (depth, currentState) = c;
                 if (lastDepth < 0)
@@ -59,6 +59,12 @@ namespace TreesearchLib
                 }
                 else if (depth < lastDepth)
                 {
+                    if (backtracks == backtrackLimit)
+                    {
+                        // no more back tracking allowed
+                        searchState.Store((depth, currentState)); // push back
+                        break;
+                    }
                     backtracks++;
                 }
                 foreach (var next in currentState.GetBranches().Take(filterWidth).Reverse())
@@ -135,11 +141,17 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            while (!control.ShouldStop() && backtracks < backtrackLimit && searchState.TryGetNext(out var next))
+            while (!control.ShouldStop() && backtracks <= backtrackLimit && searchState.TryGetNext(out var next))
             {
                 var (nextDepth, choice) = next;
                 if (nextDepth < depth)
                 {
+                    if (backtracks == backtrackLimit)
+                    {
+                        // no more back tracking allowed
+                        searchState.Store((nextDepth, choice)); // push back
+                        break;
+                    }
                     backtracks++;
                     do
                     {

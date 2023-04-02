@@ -12,12 +12,16 @@ namespace SampleApp
         {
             Console.WriteLine("========= ChooseSmallestProblem =========");
             ChooseSmallestProblem();
+            Console.WriteLine();
             Console.WriteLine("=========    KnapsackProblem    =========");
             KnapsackProblem();
+            Console.WriteLine();
             Console.WriteLine("======= TravelingSalesmanProblem ========");
             TravelingSalesman();
+            Console.WriteLine();
             Console.WriteLine("========= SchedulingProblem =============");
             SchedulingProblem();
+            Console.WriteLine();
             Console.WriteLine("==========    TowerOfHanoi     ==========");
             TowerOfHanoi();
         }
@@ -107,22 +111,22 @@ namespace SampleApp
             var resultParRS100 = Maximize.Start(knapsack).ParallelRakeSearch(100);
             Console.WriteLine($"{"ParallelRakeSearch(100)",55} {resultParRS100.BestQuality,12} {resultParRS100.VisitedNodes,6} ({(resultParRS100.VisitedNodes / resultParRS100.Elapsed.TotalSeconds),12:F2} nodes/sec)");
 
-            var resultRBS1010 = Maximize.Start(knapsack).RakeAndBeamSearch(10, 10, state => -state.Bound.Value);
+            var resultRBS1010 = Maximize.Start(knapsack).RakeSearch(10, lookahead: LA.BeamSearchLookahead<Knapsack, bool, Maximize>(beamWidth: 10, rank: state => -state.Bound.Value));
             Console.WriteLine($"{"RakeAndBeamSearch(10,10)",55} {resultRBS1010.BestQuality,12} {resultRBS1010.VisitedNodes,6} ({(resultRBS1010.VisitedNodes / resultRBS1010.Elapsed.TotalSeconds),12:F2} nodes/sec)");
-            var resultParRBS1010 = Maximize.Start(knapsack).ParallelRakeAndBeamSearch(10, 10, state => -state.Bound.Value);
+            var resultParRBS1010 = Maximize.Start(knapsack).ParallelRakeSearch(10, lookahead: LA.BeamSearchLookahead<Knapsack, bool, Maximize>(beamWidth: 10, rank: state => -state.Bound.Value));
             Console.WriteLine($"{"ParallelRakeAndBeamSearch(10,10)",55} {resultParRBS1010.BestQuality,12} {resultParRBS1010.VisitedNodes,6} ({(resultParRBS1010.VisitedNodes / resultParRBS1010.Elapsed.TotalSeconds),12:F2} nodes/sec)");
-            var resultRBS100100 = Maximize.Start(knapsack).RakeAndBeamSearch(100, 100, state => -state.Bound.Value);
+            var resultRBS100100 = Maximize.Start(knapsack).RakeSearch(100, lookahead: LA.BeamSearchLookahead<Knapsack, bool, Maximize>(beamWidth: 100, rank: state => -state.Bound.Value));
             Console.WriteLine($"{"RakeAndBeamSearch(100,100)",55} {resultRBS100100.BestQuality,12} {resultRBS100100.VisitedNodes,6} ({(resultRBS100100.VisitedNodes / resultRBS100100.Elapsed.TotalSeconds),12:F2} nodes/sec)");
-            var resultParRBS100100 = Maximize.Start(knapsack).ParallelRakeAndBeamSearch(100, 100, state => -state.Bound.Value);
+            var resultParRBS100100 = Maximize.Start(knapsack).ParallelRakeSearch(100, lookahead: LA.BeamSearchLookahead<Knapsack, bool, Maximize>(beamWidth: 100, rank: state => -state.Bound.Value));
             Console.WriteLine($"{"ParallelRakeAndBeamSearch(100,100)",55} {resultParRBS100100.BestQuality,12} {resultParRBS100100.VisitedNodes,6} ({(resultParRBS100100.VisitedNodes / resultParRBS100100.Elapsed.TotalSeconds),12:F2} nodes/sec)");
 
             var resultPM = Maximize.Start(knapsack).PilotMethod();
             Console.WriteLine($"{"Pilot Method",55} {resultPM.BestQuality,12} {resultPM.VisitedNodes,6} ({(resultPM.VisitedNodes / resultPM.Elapsed.TotalSeconds),12:F2} nodes/sec)");
             var resultParPM = Maximize.Start(knapsack).ParallelPilotMethod();
             Console.WriteLine($"{"Parallel Pilot Method",55} {resultParPM.BestQuality,12} {resultParPM.VisitedNodes,6} ({(resultParPM.VisitedNodes / resultParPM.Elapsed.TotalSeconds),12:F2} nodes/sec)");
-            var resultPMBS10 = Maximize.Start(knapsack).PilotMethod(beamWidth: 10, rank: ksp => -ksp.Bound.Value, filterWidth: int.MaxValue);
+            var resultPMBS10 = Maximize.Start(knapsack).PilotMethod(lookahead: LA.BeamSearchLookahead<Knapsack, bool, Maximize>(beamWidth: 10, rank: ksp => -ksp.Bound.Value));
             Console.WriteLine($"{"Pilot Method with Beam Search(10)",55} {resultPMBS10.BestQuality,12} {resultPMBS10.VisitedNodes,6} ({(resultPMBS10.VisitedNodes / resultPMBS10.Elapsed.TotalSeconds),12:F2} nodes/sec)");
-            var resultParPMBS10 = Maximize.Start(knapsack).ParallelPilotMethod(beamWidth: 10, rank: ksp => -ksp.Bound.Value, filterWidth: int.MaxValue);
+            var resultParPMBS10 = Maximize.Start(knapsack).ParallelPilotMethod(lookahead: LA.BeamSearchLookahead<Knapsack, bool, Maximize>(beamWidth: 10, rank: ksp => -ksp.Bound.Value));
             Console.WriteLine($"{"Parallel Pilot Method with Beam Search(10)",55} {resultParPMBS10.BestQuality,12} {resultParPMBS10.VisitedNodes,6} ({(resultParPMBS10.VisitedNodes / resultParPMBS10.Elapsed.TotalSeconds),12:F2} nodes/sec)");
 
             var resultNaiveLD = Maximize.Start(knapsack).NaiveLDSearch(3);
@@ -173,22 +177,22 @@ namespace SampleApp
             var resultParNoUndoRS100 = Maximize.Start(knapsackNoUndo).ParallelRakeSearch(100);
             Console.WriteLine($"{"Parallel RakeSearch(100) non-reversible",55} {resultParNoUndoRS100.BestQuality,12} {resultParNoUndoRS100.VisitedNodes,6} ({(resultParNoUndoRS100.VisitedNodes / resultParNoUndoRS100.Elapsed.TotalSeconds),12:F2} nodes/sec)");
 
-            var resultNoUndoRBS1010 = Maximize.Start(knapsackNoUndo).RakeAndBeamSearch(10, 10, state => -state.Bound.Value);
+            var resultNoUndoRBS1010 = Maximize.Start(knapsackNoUndo).RakeSearch(10, lookahead: LA.BeamSearchLookahead<KnapsackNoUndo, Maximize>(beamWidth: 10, rank: state => -state.Bound.Value));
             Console.WriteLine($"{"RakeAndBeamSearch(10,10) non-reversible",55} {resultNoUndoRBS1010.BestQuality,12} {resultNoUndoRBS1010.VisitedNodes,6} ({(resultNoUndoRBS1010.VisitedNodes / resultNoUndoRBS1010.Elapsed.TotalSeconds),12:F2} nodes/sec)");
-            var resultParNoUndoRBS1010 = Maximize.Start(knapsackNoUndo).ParallelRakeAndBeamSearch(10, 10, state => -state.Bound.Value);
+            var resultParNoUndoRBS1010 = Maximize.Start(knapsackNoUndo).ParallelRakeSearch(10, lookahead: LA.BeamSearchLookahead<KnapsackNoUndo, Maximize>(beamWidth: 10, rank: state => -state.Bound.Value));
             Console.WriteLine($"{"Parallel RakeAndBeamSearch(10,10) non-reversible",55} {resultParNoUndoRBS1010.BestQuality,12} {resultParNoUndoRBS1010.VisitedNodes,6} ({(resultParNoUndoRBS1010.VisitedNodes / resultParNoUndoRBS1010.Elapsed.TotalSeconds),12:F2} nodes/sec)");
-            var resultNoUndoRBS100100 = Maximize.Start(knapsackNoUndo).RakeAndBeamSearch(100, 100, state => -state.Bound.Value);
+            var resultNoUndoRBS100100 = Maximize.Start(knapsackNoUndo).RakeSearch(100, lookahead: LA.BeamSearchLookahead<KnapsackNoUndo, Maximize>(beamWidth: 100, rank: state => -state.Bound.Value));
             Console.WriteLine($"{"RakeAndBeamSearch(100,100) non-reversible",55} {resultNoUndoRBS100100.BestQuality,12} {resultNoUndoRBS100100.VisitedNodes,6} ({(resultNoUndoRBS100100.VisitedNodes / resultNoUndoRBS100100.Elapsed.TotalSeconds),12:F2} nodes/sec)");
-            var resultParNoUndoRBS100100 = Maximize.Start(knapsackNoUndo).ParallelRakeAndBeamSearch(100, 100, state => -state.Bound.Value);
+            var resultParNoUndoRBS100100 = Maximize.Start(knapsackNoUndo).ParallelRakeSearch(100, lookahead: LA.BeamSearchLookahead<KnapsackNoUndo, Maximize>(beamWidth: 100, rank: state => -state.Bound.Value));
             Console.WriteLine($"{"Parallel RakeAndBeamSearch(100,100) non-reversible",55} {resultParNoUndoRBS100100.BestQuality,12} {resultParNoUndoRBS100100.VisitedNodes,6} ({(resultParNoUndoRBS100100.VisitedNodes / resultParNoUndoRBS100100.Elapsed.TotalSeconds),12:F2} nodes/sec)");
 
             var resultNoUndoPM = Maximize.Start(knapsackNoUndo).PilotMethod();
             Console.WriteLine($"{"PilotMethod non-reversible",55} {resultNoUndoPM.BestQuality,12} {resultNoUndoPM.VisitedNodes,6} ({(resultNoUndoPM.VisitedNodes / resultNoUndoPM.Elapsed.TotalSeconds),12:F2} nodes/sec)");
             var resultParNoUndoPM = Maximize.Start(knapsackNoUndo).ParallelPilotMethod();
             Console.WriteLine($"{"Parallel PilotMethod non-reversible",55} {resultParNoUndoPM.BestQuality,12} {resultParNoUndoPM.VisitedNodes,6} ({(resultParNoUndoPM.VisitedNodes / resultParNoUndoPM.Elapsed.TotalSeconds),12:F2} nodes/sec)");
-            var resultNoUndoPMBS10 = Maximize.Start(knapsackNoUndo).PilotMethod(10, state => -state.Bound.Value, filterWidth: int.MaxValue);
+            var resultNoUndoPMBS10 = Maximize.Start(knapsackNoUndo).PilotMethod(lookahead: LA.BeamSearchLookahead<KnapsackNoUndo, Maximize>(beamWidth: 10, rank: state => -state.Bound.Value));
             Console.WriteLine($"{"PilotMethod with BeamSearch(10) non-reversible",55} {resultNoUndoPMBS10.BestQuality,12} {resultNoUndoPMBS10.VisitedNodes,6} ({(resultNoUndoPMBS10.VisitedNodes / resultNoUndoPMBS10.Elapsed.TotalSeconds),12:F2} nodes/sec)");
-            var resultParNoUndoPMBS10 = Maximize.Start(knapsackNoUndo).ParallelPilotMethod(10, state => -state.Bound.Value, filterWidth: int.MaxValue);
+            var resultParNoUndoPMBS10 = Maximize.Start(knapsackNoUndo).ParallelPilotMethod(lookahead: LA.BeamSearchLookahead<KnapsackNoUndo, Maximize>(beamWidth: 10, rank: state => -state.Bound.Value, filterWidth: int.MaxValue));
             Console.WriteLine($"{"Parallel PilotMethod with BeamSearch(10) non-reversible",55} {resultParNoUndoPMBS10.BestQuality,12} {resultParNoUndoPMBS10.VisitedNodes,6} ({(resultParNoUndoPMBS10.VisitedNodes / resultParNoUndoPMBS10.Elapsed.TotalSeconds),12:F2} nodes/sec)");
 
             var resultNoUndoLD = Maximize.Start(knapsackNoUndo).NaiveLDSearch(3);
@@ -247,7 +251,7 @@ namespace SampleApp
             var resultParRS100 = Minimize.Start(tsp).ParallelRakeSearch(100);
             Console.WriteLine($"ParallelRakeSearch(100) {resultParRS100.BestQuality} {resultParRS100.VisitedNodes} ({(resultParRS100.VisitedNodes / resultParRS100.Elapsed.TotalSeconds):F2} nodes/sec)");
 
-            var resultPM = Minimize.Start(tsp).PilotMethod(rank: state => state.Bound.Value);
+            var resultPM = Minimize.Start(tsp).PilotMethod(lookahead: LA.DFSLookahead<TSP, int, Minimize>(filterWidth: 2, backtrackLimit: 1000));
             Console.WriteLine($"Pilot Method {resultPM.BestQuality} {resultPM.VisitedNodes} ({(resultPM.VisitedNodes / resultPM.Elapsed.TotalSeconds):F2} nodes/sec)");
             
             var resultAnytimeLD = Minimize.Start(tsp).AnytimeLDSearch(3);
@@ -256,16 +260,21 @@ namespace SampleApp
             var resultParallelDF = Minimize.Start(tsp)
                 .WithRuntimeLimit(TimeSpan.FromSeconds(5))
                 .ParallelDepthFirst(filterWidth: 2);
-            Console.WriteLine($"ParallelDepthFirst(16) {resultParallelDF.BestQuality} {resultParallelDF.VisitedNodes} ({(resultParallelDF.VisitedNodes / resultParallelDF.Elapsed.TotalSeconds):F2} nodes/sec)");
+            Console.WriteLine($"ParallelDepthFirst(2) {resultParallelDF.BestQuality} {resultParallelDF.VisitedNodes} ({(resultParallelDF.VisitedNodes / resultParallelDF.Elapsed.TotalSeconds):F2} nodes/sec)");
 
             var resultParallelBS100 = Minimize.Start(tsp)
-                .ParallelBeamSearch(100, state => state.Bound.Value, 3);
+                .ParallelBeamSearch(100, state => state.Bound.Value, filterWidth: 3);
             Console.WriteLine($"ParallelBeamSearch(100,3) {resultParallelBS100.BestQuality} {resultParallelBS100.VisitedNodes} ({(resultParallelBS100.VisitedNodes / resultParallelBS100.Elapsed.TotalSeconds):F2} nodes/sec)");
 
             var resultParallelPilot = Minimize.Start(tsp)
                 .WithRuntimeLimit(TimeSpan.FromSeconds(5))
-                .ParallelPilotMethod(filterWidth: 2);
-            Console.WriteLine($"ParallelPilotMethod(16) {resultParallelPilot.BestQuality} {resultParallelPilot.VisitedNodes} ({(resultParallelPilot.VisitedNodes / resultParallelPilot.Elapsed.TotalSeconds):F2} nodes/sec)");
+                .ParallelPilotMethod(lookahead: LA.DFSLookahead<TSP, int, Minimize>(filterWidth: 2, backtrackLimit: 1000));
+            Console.WriteLine($"ParallelPilotMethod(DFS(2, 1000)) {resultParallelPilot.BestQuality} {resultParallelPilot.VisitedNodes} ({(resultParallelPilot.VisitedNodes / resultParallelPilot.Elapsed.TotalSeconds):F2} nodes/sec)");
+            
+            var resultParallelPilotLD = Minimize.Start(tsp)
+                .WithRuntimeLimit(TimeSpan.FromSeconds(5))
+                .ParallelPilotMethod(lookahead: LA.LDSearchLookahead<TSP, int, Minimize>(maxDiscrepancy: 2));
+            Console.WriteLine($"ParallelPilotMethod(LD(2)) {resultParallelPilotLD.BestQuality} {resultParallelPilotLD.VisitedNodes} ({(resultParallelPilotLD.VisitedNodes / resultParallelPilotLD.Elapsed.TotalSeconds):F2} nodes/sec)");
         }
 
         /// <summary>

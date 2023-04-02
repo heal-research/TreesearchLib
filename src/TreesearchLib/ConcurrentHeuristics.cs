@@ -13,99 +13,6 @@ namespace TreesearchLib
         /// </summary>
         /// <remarks>This is the concurrent version</remarks>
         /// <param name="control">The runtime control and tracking</param>
-        /// <param name="beamWidth">The maximum number of parallel traces</param>
-        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
-        /// <param name="filterWidth">The maximum number of descendents per node</param>
-        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
-        /// <typeparam name="T">The state type</typeparam>
-        /// <typeparam name="Q">The quality type</typeparam>
-        /// <returns>The runtime control and tracking instance after the search</returns>
-        public static Task<SearchControl<T, Q>> ParallelBeamSearchAsync<T, Q>(
-            this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank,
-            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
-            where T : IState<T, Q>
-            where Q : struct, IQuality<Q>
-        {
-            return Task.Run(() => ParallelBeamSearch(control, beamWidth, rank,
-                filterWidth, maxDegreeOfParallelism));
-        }
-
-        /// <summary>
-        /// Beam search uses several parallel traces. When called with a rank function, all nodes of the next layer are gathered
-        /// and then sorted by the rank function (using a stable sort).
-        /// </summary>
-        /// <remarks>This is the concurrent version</remarks>
-        /// <param name="control">The runtime control and tracking</param>
-        /// <param name="beamWidth">The maximum number of parallel traces</param>
-        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
-        /// <param name="filterWidth">The maximum number of descendents per node</param>
-        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
-        /// <typeparam name="T">The state type</typeparam>
-        /// <typeparam name="Q">The quality type</typeparam>
-        /// <returns>The runtime control and tracking instance after the search</returns>
-        public static SearchControl<T, Q> ParallelBeamSearch<T, Q>(
-            this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank,
-            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
-            where T : IState<T, Q>
-            where Q : struct, IQuality<Q>
-        {
-            DoParallelBeamSearch(control, control.InitialState, beamWidth, rank,
-                filterWidth, maxDegreeOfParallelism);
-            return control;
-        }
-
-        /// <summary>
-        /// Beam search uses several parallel traces. When called with a rank function, all nodes of the next layer are gathered
-        /// and then sorted by the rank function (using a stable sort).
-        /// </summary>
-        /// <remarks>This is the concurrent version</remarks>
-        /// <param name="control">The runtime control and tracking</param>
-        /// <param name="beamWidth">The maximum number of parallel traces</param>
-        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
-        /// <param name="filterWidth">The maximum number of descendents per node</param>
-        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
-        /// <typeparam name="T">The state type</typeparam>
-        /// <typeparam name="Q">The quality type</typeparam>
-        /// <returns>The runtime control and tracking instance after the search</returns>
-        public static Task<SearchControl<T, C, Q>> ParallelBeamSearchAsync<T, C, Q>(
-            this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank,
-            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
-            where T : class, IMutableState<T, C, Q>
-            where Q : struct, IQuality<Q>
-        {
-            return Task.Run(() => ParallelBeamSearch(control, beamWidth, rank,
-                filterWidth, maxDegreeOfParallelism));
-        }
-
-        /// <summary>
-        /// Beam search uses several parallel traces. When called with a rank function, all nodes of the next layer are gathered
-        /// and then sorted by the rank function (using a stable sort).
-        /// </summary>
-        /// <remarks>This is the concurrent version</remarks>
-        /// <param name="control">The runtime control and tracking</param>
-        /// <param name="beamWidth">The maximum number of parallel traces</param>
-        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
-        /// <param name="filterWidth">The maximum number of descendents per node</param>
-        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
-        /// <typeparam name="T">The state type</typeparam>
-        /// <typeparam name="Q">The quality type</typeparam>
-        /// <returns>The runtime control and tracking instance after the search</returns>
-        public static SearchControl<T, C, Q> ParallelBeamSearch<T, C, Q>(
-            this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank,
-            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
-            where T : class, IMutableState<T, C, Q>
-            where Q : struct, IQuality<Q>
-        {
-            DoParallelBeamSearch<T, C, Q>(control, control.InitialState, beamWidth,
-                rank, filterWidth, maxDegreeOfParallelism);
-            return control;
-        }
-        /// <summary>
-        /// Beam search uses several parallel traces. When called with a rank function, all nodes of the next layer are gathered
-        /// and then sorted by the rank function (using a stable sort).
-        /// </summary>
-        /// <remarks>This is the concurrent version</remarks>
-        /// <param name="control">The runtime control and tracking</param>
         /// <param name="state">The state to start the search from</param>
         /// <param name="beamWidth">The maximum number of parallel traces</param>
         /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
@@ -114,8 +21,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoParallelBeamSearch<T, Q>(ISearchControl<T, Q> control, T state,
-            int beamWidth, Func<T, float> rank, int filterWidth, int maxDegreeOfParallelism)
+        public static void ParallelBeamSearch<T, Q>(ISearchControl<T, Q> control, T state,
+                int beamWidth, Func<T, float> rank, int filterWidth, int maxDegreeOfParallelism)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -194,7 +101,8 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoParallelBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int beamWidth, Func<T, float> rank, int filterWidth, int maxDegreeOfParallelism)
+        public static void ParallelBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state,
+                int beamWidth, Func<T, float> rank, int filterWidth, int maxDegreeOfParallelism)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -262,38 +170,24 @@ namespace TreesearchLib
         /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
         /// </summary>
         /// <param name="control">The runtime control and tracking</param>
+        /// <param name="state">The state to start the search from</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
-        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
-        /// <typeparam name="T">The state type</typeparam>
-        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
-        /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, Q>> ParallelRakeSearchAsync<T, Q>(
-            this SearchControl<T, Q> control, int rakeWidth, int maxDegreeOfParallelism = -1)
-            where T : IState<T, Q>
-            where Q : struct, IQuality<Q>
-        {
-            return Task.Run(() => ParallelRakeSearch(control, rakeWidth, maxDegreeOfParallelism));
-        }
-
-        /// <summary>
-        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
-        /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
-        /// </summary>
-        /// <param name="control">The runtime control and tracking</param>
-        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <param name="lookahead">The lookahead method to use</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, Q> ParallelRakeSearch<T, Q>(
-            this SearchControl<T, Q> control, int rakeWidth, int maxDegreeOfParallelism = -1)
+                this SearchControl<T, Q> control, T state, int rakeWidth,
+                Lookahead<T, Q> lookahead, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             if (rakeWidth <= 0) throw new ArgumentException($"{rakeWidth} needs to be greater or equal than 1", nameof(rakeWidth));
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
-            
-            var (_, rake) = Algorithms.BreadthSearch(control, control.InitialState, depth: 0, int.MaxValue, int.MaxValue, rakeWidth);
+            if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
+
+            var (_, rake) = Algorithms.BreadthSearch(control, state, depth: 0, int.MaxValue, int.MaxValue, rakeWidth);
             var remainingTime = control.Runtime - control.Elapsed;
             var remainingNodes = control.NodeLimit - control.VisitedNodes;
             if (control.ShouldStop() || remainingTime < TimeSpan.Zero || remainingNodes <= 0)
@@ -315,7 +209,8 @@ namespace TreesearchLib
                         localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
                     }
                 }
-                Algorithms.DepthSearch(localControl, next, depth: 0, backtracks: 0, filterWidth: 1, depthLimit: int.MaxValue, backtrackLimit: long.MaxValue);
+                lookahead(localControl, next);
+                localControl.Finish();
                 lock (locker)
                 {
                     control.Merge(localControl);
@@ -330,40 +225,25 @@ namespace TreesearchLib
         /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
         /// </summary>
         /// <param name="control">The runtime control and tracking</param>
+        /// <param name="state">The state to start the search from</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
-        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
-        /// <typeparam name="T">The state type</typeparam>
-        /// <typeparam name="C">The choice type</typeparam>
-        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
-        /// <returns>The runtime control instance</returns>
-        public static Task<SearchControl<T, C, Q>> ParallelRakeSearchAsync<T, C, Q>(
-            this SearchControl<T, C, Q> control, int rakeWidth, int maxDegreeOfParallelism = -1)
-            where T : class, IMutableState<T, C, Q>
-            where Q : struct, IQuality<Q>
-        {
-            return Task.Run(() => ParallelRakeSearch(control, rakeWidth, maxDegreeOfParallelism));
-        }
-
-        /// <summary>
-        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
-        /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
-        /// </summary>
-        /// <param name="control">The runtime control and tracking</param>
-        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <param name="lookahead">The lookahead method to use</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, C, Q> ParallelRakeSearch<T, C, Q>(
-            this SearchControl<T, C, Q> control, int rakeWidth, int maxDegreeOfParallelism = -1)
+                this SearchControl<T, C, Q> control, T state, int rakeWidth,
+                Lookahead<T, C, Q> lookahead, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             if (rakeWidth <= 0) throw new ArgumentException($"{rakeWidth} needs to be greater or equal than 1", nameof(rakeWidth));
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
-            
-            var (_, rake) = Algorithms.BreadthSearch<T, C, Q>(control, (T)control.InitialState.Clone(), depth: 0, int.MaxValue, int.MaxValue, rakeWidth);
+            if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
+
+            var (_, rake) = Algorithms.BreadthSearch<T, C, Q>(control, state, depth: 0, int.MaxValue, int.MaxValue, rakeWidth);
             var remainingTime = control.Runtime - control.Elapsed;
             var remainingNodes = control.NodeLimit - control.VisitedNodes;
             if (control.ShouldStop() || remainingTime < TimeSpan.Zero || remainingNodes <= 0) // the last two are just safety checks, control.ShouldStop() should terminate in these cases too
@@ -385,13 +265,362 @@ namespace TreesearchLib
                         localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
                     }
                 }
-                Algorithms.DepthSearch<T, C, Q>(localControl, next, depth: 0, backtracks: 0, filterWidth: 1, depthLimit: int.MaxValue, backtrackLimit: long.MaxValue);
+                lookahead(localControl, next);
+                localControl.Finish();
                 lock (locker)
                 {
                     control.Merge(localControl);
                     remainingNodes = control.NodeLimit - control.VisitedNodes;
                 }
             });
+            return control;
+        }
+
+        /// <summary>
+        /// In the PILOT method a lookahead is performed to determine the most promising branch to continue.
+        /// In this implementation, an efficient beam search may be used for the lookahead.
+        /// The lookahead depth is not configurable, instead a full solution must be achieved.
+        /// </summary>
+        /// <remarks>
+        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// https://doi.org/10.1007/s10479-005-2060-2
+        /// </remarks>
+        /// <param name="control">Runtime control and best solution tracking.</param>
+        /// <param name="state">The state from which the pilot method should start operating</param>
+        /// <param name="lookahead">The lookahead method to use</param>
+        /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The type of the objective</typeparam>
+        /// <returns></returns>
+        public static void ParallelPilotMethod<T, Q>(ISearchControl<T, Q> control,
+                T state, Lookahead<T, Q> lookahead, int filterWidth, int maxDegreeOfParallelism)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
+            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} is not a valid value for {nameof(maxDegreeOfParallelism)}", nameof(maxDegreeOfParallelism));
+            if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
+
+            var remainingTime = control.Runtime - control.Elapsed;
+            var remainingNodes = control.NodeLimit - control.VisitedNodes;
+            var locker = new object();
+            while (true)
+            {
+                var branches = state.GetBranches().ToList();
+                if (branches.Count == 0) return;
+                T bestBranch = branches[0]; // default first branch
+                Q? bestBranchQuality = null;
+                Parallel.ForEach(branches,
+                    new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism },
+                    next =>
+                    {
+                        Q? quality = default;
+                        if (next.IsTerminal)
+                        {
+                            // no lookahead required
+                            quality = next.Quality;
+                        } else
+                        {
+                            var localControl = SearchControl<T, Q>.Start(next)
+                                .WithCancellationToken(control.Cancellation)
+                                .WithRuntimeLimit(remainingTime); // each thread gets the same time
+                            lock (locker)
+                            {
+                                localControl = localControl.WithNodeLimit(remainingNodes);
+                            }
+                            lookahead(localControl, next);
+                            localControl.Finish();
+                            if (localControl.BestQuality.HasValue) quality = localControl.BestQuality;
+                            lock (locker)
+                            {
+                                control.Merge(localControl);
+                                remainingNodes = control.NodeLimit - control.VisitedNodes;
+                            }
+                        }
+
+                        if (!quality.HasValue) return; // no solution achieved
+                        lock (locker)
+                        {
+                            if (!bestBranchQuality.HasValue || quality.Value.IsBetter(bestBranchQuality.Value))
+                            {
+                                bestBranch = next;
+                                bestBranchQuality = quality;
+                            }
+                        }
+                    }
+                );
+                state = bestBranch;
+                if (state.IsTerminal) return;
+            }
+        }
+
+        /// <summary>
+        /// In the PILOT method a lookahead is performed to determine the most promising branch to continue.
+        /// In this implementation, an efficient beam search may be used for the lookahead.
+        /// The lookahead depth is not configurable, instead a full solution must be achieved.
+        /// </summary>
+        /// <remarks>
+        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// https://doi.org/10.1007/s10479-005-2060-2
+        /// </remarks>
+        /// <param name="control">Runtime control and best solution tracking.</param>
+        /// <param name="state">The state from which the pilot method should start operating</param>
+        /// <param name="lookahead">The lookahead method to use</param>
+        /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="C">The choice type</typeparam>
+        /// <typeparam name="Q">The type of the objective</typeparam>
+        /// <returns></returns>
+        public static void ParallelPilotMethod<T, C, Q>(ISearchControl<T, Q> control,
+                T state, Lookahead<T, C, Q> lookahead, int filterWidth, int maxDegreeOfParallelism)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
+            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{nameof(maxDegreeOfParallelism)} needs to be -1 or greater or equal to 1", nameof(maxDegreeOfParallelism));
+            if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
+
+            var remainingTime = control.Runtime - control.Elapsed;
+            var remainingNodes = control.NodeLimit - control.VisitedNodes;
+            var locker = new object();
+            while (true)
+            {
+                var branches = state.GetChoices().Select(c => { var clone = (T)state.Clone(); clone.Apply(c); return clone; }).ToList();
+                if (branches.Count == 0) return;
+                T bestBranch = branches[0];
+                Q? bestBranchQuality = null;
+                Parallel.ForEach(branches,
+                    new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism },
+                    next =>
+                    {
+                        Q? quality = default;
+                        if (next.IsTerminal)
+                        {
+                            // no lookahead required
+                            quality = next.Quality;
+                        } else
+                        {
+                            var localControl = SearchControl<T, C, Q>.Start(next)
+                                .WithCancellationToken(control.Cancellation)
+                                .WithRuntimeLimit(remainingTime); // each thread gets the same time
+                            lock (locker)
+                            {
+                                localControl = localControl.WithNodeLimit(remainingNodes);
+                            }
+                            lookahead(localControl, next);
+                            localControl.Finish();
+                            if (localControl.BestQuality.HasValue) quality = localControl.BestQuality;
+                            lock (locker)
+                            {
+                                control.Merge(localControl);
+                                remainingNodes = control.NodeLimit - control.VisitedNodes;
+                            }
+                        }
+
+                        if (!quality.HasValue) return; // no solution achieved
+                        lock (locker)
+                        {
+                            if (!bestBranchQuality.HasValue || quality.Value.IsBetter(bestBranchQuality.Value))
+                            {
+                                bestBranch = next;
+                                bestBranchQuality = quality;
+                            }
+                        }
+                    }
+                );
+                state = bestBranch;
+                if (state.IsTerminal) return;
+            }
+        }
+    }
+
+    public static class ConcurrentHeuristicExtensions
+    {
+        /// <summary>
+        /// Beam search uses several parallel traces. When called with a rank function, all nodes of the next layer are gathered
+        /// and then sorted by the rank function (using a stable sort).
+        /// </summary>
+        /// <remarks>This is the concurrent version</remarks>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
+        /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns>The runtime control and tracking instance after the search</returns>
+        public static Task<SearchControl<T, Q>> ParallelBeamSearchAsync<T, Q>(
+            this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            return Task.Run(() => ParallelBeamSearch(control, beamWidth, rank,
+                filterWidth, maxDegreeOfParallelism));
+        }
+
+        /// <summary>
+        /// Beam search uses several parallel traces. When called with a rank function, all nodes of the next layer are gathered
+        /// and then sorted by the rank function (using a stable sort).
+        /// </summary>
+        /// <remarks>This is the concurrent version</remarks>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
+        /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns>The runtime control and tracking instance after the search</returns>
+        public static SearchControl<T, Q> ParallelBeamSearch<T, Q>(
+            this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            ConcurrentHeuristics.ParallelBeamSearch(control, control.InitialState, beamWidth, rank,
+                filterWidth, maxDegreeOfParallelism);
+            return control;
+        }
+
+        /// <summary>
+        /// Beam search uses several parallel traces. When called with a rank function, all nodes of the next layer are gathered
+        /// and then sorted by the rank function (using a stable sort).
+        /// </summary>
+        /// <remarks>This is the concurrent version</remarks>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
+        /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns>The runtime control and tracking instance after the search</returns>
+        public static Task<SearchControl<T, C, Q>> ParallelBeamSearchAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            return Task.Run(() => ParallelBeamSearch(control, beamWidth, rank,
+                filterWidth, maxDegreeOfParallelism));
+        }
+
+        /// <summary>
+        /// Beam search uses several parallel traces. When called with a rank function, all nodes of the next layer are gathered
+        /// and then sorted by the rank function (using a stable sort).
+        /// </summary>
+        /// <remarks>This is the concurrent version</remarks>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="beamWidth">The maximum number of parallel traces</param>
+        /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
+        /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The quality type</typeparam>
+        /// <returns>The runtime control and tracking instance after the search</returns>
+        public static SearchControl<T, C, Q> ParallelBeamSearch<T, C, Q>(
+            this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank,
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            ConcurrentHeuristics.ParallelBeamSearch<T, C, Q>(control, control.InitialState, beamWidth,
+                rank, filterWidth, maxDegreeOfParallelism);
+            return control;
+        }
+
+        /// <summary>
+        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
+        /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
+        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The runtime control instance</returns>
+        public static Task<SearchControl<T, Q>> ParallelRakeSearchAsync<T, Q>(
+            this SearchControl<T, Q> control, int rakeWidth,
+            Lookahead<T, Q> lookahead = null, int maxDegreeOfParallelism = -1)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            return Task.Run(() => ParallelRakeSearch(control, rakeWidth, lookahead, maxDegreeOfParallelism));
+        }
+
+        /// <summary>
+        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
+        /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
+        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The runtime control instance</returns>
+        public static SearchControl<T, Q> ParallelRakeSearch<T, Q>(
+            this SearchControl<T, Q> control, int rakeWidth, 
+            Lookahead<T, Q> lookahead = null, int maxDegreeOfParallelism = -1)
+            where T : IState<T, Q>
+            where Q : struct, IQuality<Q>
+        {
+            if (rakeWidth <= 0) throw new ArgumentException($"{rakeWidth} needs to be greater or equal than 1", nameof(rakeWidth));
+            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
+            if (lookahead == null) lookahead = LA.DFSLookahead<T, Q>(filterWidth: 1);
+
+            ConcurrentHeuristics.ParallelRakeSearch(control, control.InitialState, rakeWidth, lookahead, maxDegreeOfParallelism);
+            return control;
+        }
+
+        /// <summary>
+        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
+        /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
+        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="C">The choice type</typeparam>
+        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The runtime control instance</returns>
+        public static Task<SearchControl<T, C, Q>> ParallelRakeSearchAsync<T, C, Q>(
+            this SearchControl<T, C, Q> control, int rakeWidth,
+            Lookahead<T, C, Q> lookahead = null, int maxDegreeOfParallelism = -1)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            return Task.Run(() => ParallelRakeSearch(control, rakeWidth, lookahead, maxDegreeOfParallelism));
+        }
+
+        /// <summary>
+        /// Rake search performs a breadth-first search until a level is reached with <paramref name="rakeWidth"/>
+        /// nodes and then from each node a depth-first search by just taking the first branch (i.e., a greedy heuristic).
+        /// </summary>
+        /// <param name="control">The runtime control and tracking</param>
+        /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
+        /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
+        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
+        /// <typeparam name="T">The state type</typeparam>
+        /// <typeparam name="C">The choice type</typeparam>
+        /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
+        /// <returns>The runtime control instance</returns>
+        public static SearchControl<T, C, Q> ParallelRakeSearch<T, C, Q>(
+            this SearchControl<T, C, Q> control, int rakeWidth,
+            Lookahead<T, C, Q> lookahead = null, int maxDegreeOfParallelism = -1)
+            where T : class, IMutableState<T, C, Q>
+            where Q : struct, IQuality<Q>
+        {
+            if (rakeWidth <= 0) throw new ArgumentException($"{rakeWidth} needs to be greater or equal than 1", nameof(rakeWidth));
+            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
+            if (lookahead == null) lookahead = LA.DFSLookahead<T, C, Q>(filterWidth: 1);
+
+            ConcurrentHeuristics.ParallelRakeSearch(control, (T)control.InitialState.Clone(), rakeWidth, lookahead, maxDegreeOfParallelism);
             return control;
         }
 
@@ -408,6 +637,7 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
+        [Obsolete("Use ParallelRakeSearchAsync with BeamSearchLookahead")]
         public static Task<SearchControl<T, Q>> ParallelRakeAndBeamSearchAsync<T, Q>(
             this SearchControl<T, Q> control, int rakeWidth, int beamWidth,
             Func<T, float> rank, int filterWidth = int.MaxValue,
@@ -431,6 +661,7 @@ namespace TreesearchLib
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
+        [Obsolete("Use ParallelRakeSearch with BeamSearchLookahead")]
         public static SearchControl<T, Q> ParallelRakeAndBeamSearch<T, Q>(
             this SearchControl<T, Q> control, int rakeWidth, int beamWidth,
             Func<T, float> rank, int filterWidth = int.MaxValue,
@@ -465,7 +696,7 @@ namespace TreesearchLib
                         localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
                     }
                 }
-                Heuristics.DoBeamSearch<T, Q>(localControl, next, beamWidth, rank, filterWidth, depthLimit: int.MaxValue);
+                Heuristics.BeamSearch<T, Q>(localControl, next, beamWidth, rank, filterWidth, depthLimit: int.MaxValue);
                 lock (locker)
                 {
                     control.Merge(localControl);
@@ -489,6 +720,7 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
+        [Obsolete("Use ParallelRakeSearchAsync with BeamSearchLookahead")]
         public static Task<SearchControl<T, C, Q>> ParallelRakeAndBeamSearchAsync<T, C, Q>(
             this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth,
             Func<T, float> rank, int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
@@ -512,6 +744,7 @@ namespace TreesearchLib
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
+        [Obsolete("Use ParallelRakeSearch with BeamSearchLookahead")]
         public static SearchControl<T, C, Q> ParallelRakeAndBeamSearch<T, C, Q>(
             this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth,
             Func<T, float> rank, int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
@@ -545,7 +778,7 @@ namespace TreesearchLib
                         localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
                     }
                 }
-                Heuristics.DoBeamSearch<T, C, Q>(localControl, next, depth: 0, beamWidth, rank, filterWidth, depthLimit: int.MaxValue);
+                Heuristics.BeamSearch<T, C, Q>(localControl, next, depth: 0, beamWidth, rank, filterWidth, depthLimit: int.MaxValue);
                 lock (locker)
                 {
                     control.Merge(localControl);
@@ -565,20 +798,19 @@ namespace TreesearchLib
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
-        /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
-        /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
+        /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use for the lookahead.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
         public static Task<SearchControl<T, Q>> ParallelPilotMethodAsync<T, Q>(
-            this SearchControl<T, Q> control, int beamWidth = 1, Func<T, float> rank = null,
-            int filterWidth = 1, int maxDegreeOfParallelism = -1)
+            this SearchControl<T, Q> control, Lookahead<T, Q> lookahead = null,
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => ParallelPilotMethod(control, beamWidth, rank, filterWidth,
+            return Task.Run(() => ParallelPilotMethod(control, lookahead, filterWidth,
                 maxDegreeOfParallelism));
         }
 
@@ -592,21 +824,24 @@ namespace TreesearchLib
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
-        /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
-        /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
+        /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use for the search.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
         public static SearchControl<T, Q> ParallelPilotMethod<T, Q>(
-            this SearchControl<T, Q> control, int beamWidth = 1, Func<T, float> rank = null,
-            int filterWidth = 1, int maxDegreeOfParallelism = -1)
+            this SearchControl<T, Q> control, Lookahead<T, Q> lookahead = null,
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
+            if (filterWidth <= 0) throw new ArgumentException("A filter width of 0 or less is not possible");
+            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
+            if (lookahead == null) lookahead = LA.DFSLookahead<T, Q>(filterWidth: 1);
+
             var state = control.InitialState;
-            DoParallelPilotMethod<T, Q>(control, state, beamWidth, rank, filterWidth,
+            ConcurrentHeuristics.ParallelPilotMethod<T, Q>(control, state, lookahead, filterWidth,
                 maxDegreeOfParallelism);
             return control;
         }
@@ -621,105 +856,7 @@ namespace TreesearchLib
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
-        /// <param name="state">The state from which the pilot method should start operating</param>
-        /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
-        /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
-        /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
-        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
-        /// <typeparam name="T">The state type</typeparam>
-        /// <typeparam name="Q">The type of the objective</typeparam>
-        /// <returns></returns>
-        public static void DoParallelPilotMethod<T, Q>(ISearchControl<T, Q> control,
-            T state, int beamWidth, Func<T, float> rank, int filterWidth,
-            int maxDegreeOfParallelism)
-            where T : IState<T, Q>
-            where Q : struct, IQuality<Q>
-        {
-            if (rank != null && beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1 when beam search is used ({nameof(rank)} is non-null)", nameof(beamWidth));
-            if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
-            if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} parameter has no effect if {nameof(filterWidth)} is equal to 1", nameof(beamWidth));
-            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} is not a valid value for {nameof(maxDegreeOfParallelism)}", nameof(maxDegreeOfParallelism));
-
-            var locker = new object();
-            while (true)
-            {
-                T bestBranch = default(T);
-                Q? bestBranchQuality = null;
-                var branches = state.GetBranches().ToList();
-                if (branches.Count == 0) return;
-                Parallel.ForEach(branches,
-                    new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism },
-                    next =>
-                    {
-                        Q? quality = default;
-                        if (next.IsTerminal)
-                        {
-                            // no lookahead required
-                            quality = next.Quality;
-                        } else
-                        {
-                            if (rank == null)
-                            {
-                                // the depth search state is a stack
-                                var searchState = new LIFOCollection<(int depth, T state)>((0, next));
-                                while (!control.ShouldStop() && searchState.Nodes > 0)
-                                {
-                                    var localControl = SearchControl<T, Q>.Start(next).WithRuntimeLimit(TimeSpan.FromSeconds(1));
-                                    Algorithms.DepthSearch<T, Q>(localControl, searchState, backtracks: 0, filterWidth: filterWidth, depthLimit: int.MaxValue, backtrackLimit: long.MaxValue);
-                                    localControl.Finish();
-                                    if (localControl.BestQuality.HasValue) quality = localControl.BestQuality;
-                                    lock (locker)
-                                    {
-                                        control.Merge(localControl);
-                                    }                                    
-                                }
-                            } else
-                            {
-                                // the beam search state is a special collection
-                                var searchState = new PriorityBiLevelFIFOCollection<T>(next);
-                                while (!control.ShouldStop() && searchState.CurrentLayerNodes > 0)
-                                {
-                                    var localControl = SearchControl<T, Q>.Start(next).WithRuntimeLimit(TimeSpan.FromSeconds(1));
-                                    Heuristics.DoBeamSearch(localControl, searchState, depth: 0, beamWidth: beamWidth, rank: rank, filterWidth: filterWidth, depthLimit: int.MaxValue);
-                                    localControl.Finish();
-                                    if (localControl.BestQuality.HasValue) quality = localControl.BestQuality;
-                                    lock (locker)
-                                    {
-                                        control.Merge(localControl);
-                                    }
-                                }
-                            }
-                        }
-
-                        if (!quality.HasValue) return; // no solution achieved
-                        lock (locker)
-                        {
-                            if (!bestBranchQuality.HasValue || quality.Value.IsBetter(bestBranchQuality.Value))
-                            {
-                                bestBranch = next;
-                                bestBranchQuality = quality;
-                            }
-                        }
-                    }
-                );
-                if (!bestBranchQuality.HasValue) return;
-                state = bestBranch;
-                if (state.IsTerminal) return;
-            }
-        }
-
-        /// <summary>
-        /// In the PILOT method a lookahead is performed to determine the most promising branch to continue.
-        /// In this implementation, an efficient beam search may be used for the lookahead.
-        /// The lookahead depth is not configurable, instead a full solution must be achieved.
-        /// </summary>
-        /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
-        /// https://doi.org/10.1007/s10479-005-2060-2
-        /// </remarks>
-        /// <param name="control">Runtime control and best solution tracking.</param>
-        /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
-        /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
+        /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
@@ -727,12 +864,12 @@ namespace TreesearchLib
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
         public static Task<SearchControl<T, C, Q>> ParallelPilotMethodAsync<T, C, Q>(
-            this SearchControl<T, C, Q> control, int beamWidth = 1, Func<T, float> rank = null,
-            int filterWidth = 1, int maxDegreeOfParallelism = -1)
+            this SearchControl<T, C, Q> control, Lookahead<T, C, Q> lookahead = null,
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => ParallelPilotMethod(control, beamWidth, rank, filterWidth,
+            return Task.Run(() => ParallelPilotMethod(control, lookahead, filterWidth,
                 maxDegreeOfParallelism));
         }
 
@@ -755,128 +892,21 @@ namespace TreesearchLib
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
         public static SearchControl<T, C, Q> ParallelPilotMethod<T, C, Q>(
-            this SearchControl<T, C, Q> control, int beamWidth = 1, Func<T, float> rank = null,
-            int filterWidth = 1, int maxDegreeOfParallelism = -1)
+            this SearchControl<T, C, Q> control, Lookahead<T, C, Q> lookahead = null,
+            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
+            if (filterWidth <= 0) throw new ArgumentException("A filter width of 0 or less is not possible");
+            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
+            if (lookahead == null) lookahead = LA.DFSLookahead<T, C, Q>(filterWidth: 1);
+            
             var state = (T)control.InitialState.Clone();
-            DoParallelPilotMethod<T, C, Q>(control, state, beamWidth, rank, filterWidth,
+            ConcurrentHeuristics.ParallelPilotMethod<T, C, Q>(control, state, lookahead, filterWidth,
                 maxDegreeOfParallelism);
             return control;
         }
 
-        /// <summary>
-        /// In the PILOT method a lookahead is performed to determine the most promising branch to continue.
-        /// In this implementation, an efficient beam search may be used for the lookahead.
-        /// The lookahead depth is not configurable, instead a full solution must be achieved.
-        /// </summary>
-        /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
-        /// https://doi.org/10.1007/s10479-005-2060-2
-        /// </remarks>
-        /// <param name="control">Runtime control and best solution tracking.</param>
-        /// <param name="state">The state from which the pilot method should start operating</param>
-        /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
-        /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
-        /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
-        /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
-        /// <typeparam name="T">The state type</typeparam>
-        /// <typeparam name="C">The choice type</typeparam>
-        /// <typeparam name="Q">The type of the objective</typeparam>
-        /// <returns></returns>
-        public static void DoParallelPilotMethod<T, C, Q>(ISearchControl<T, Q> control,
-            T state, int beamWidth, Func<T, float> rank, int filterWidth,
-            int maxDegreeOfParallelism)
-            where T : class, IMutableState<T, C, Q>
-            where Q : struct, IQuality<Q>
-        {
-            if (rank != null && beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1 when beam search is used ({nameof(rank)} is non-null)", nameof(beamWidth));
-            if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
-            if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} parameter has no effect if {nameof(filterWidth)} is equal to 1", nameof(beamWidth));
-            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{nameof(maxDegreeOfParallelism)} needs to be -1 or greater or equal to 1", nameof(maxDegreeOfParallelism));
-
-            var locker = new object();
-            while (true)
-            {
-                T bestBranch = default(T);
-                Q? bestBranchQuality = null;
-                var branches = state.GetChoices().Select(c => { var clone = (T)state.Clone(); clone.Apply(c); return clone; }).ToList();
-                if (branches.Count == 0) return;
-                Parallel.ForEach(branches,
-                    new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism },
-                    next =>
-                    {
-                        Q? quality = default;
-                        if (next.IsTerminal)
-                        {
-                            // no lookahead required
-                            quality = next.Quality;
-                        } else
-                        {
-                            if (rank == null)
-                            {
-                                // the depth search state is a stack
-                                var localDepth = 0;
-                                var searchState = new LIFOCollection<(int depth, C choice)>();
-                                foreach (var choice in next.GetChoices().Take(filterWidth).Reverse()) {
-                                    searchState.Store((localDepth, choice));
-                                }
-                                while (!control.ShouldStop() && searchState.Nodes > 0)
-                                {
-                                    var localControl = SearchControl<T, C, Q>.Start(next).WithRuntimeLimit(TimeSpan.FromSeconds(1));
-                                    (localDepth, _) = Algorithms.DepthSearch<T, C, Q>(localControl, next, searchState, localDepth, backtracks: 0, filterWidth: filterWidth, depthLimit: int.MaxValue, backtrackLimit: long.MaxValue);
-                                    localControl.Finish();
-                                    if (localControl.BestQuality.HasValue) quality = localControl.BestQuality;
-                                    lock (locker)
-                                    {
-                                        control.Merge(localControl);
-                                    }                                    
-                                }
-                                // reset next to the initial state
-                                while (localDepth > 0)
-                                {
-                                    next.UndoLast();
-                                    localDepth--;
-                                }
-                            } else
-                            {
-                                // the beam search state is a special collection
-                                var searchState = new PriorityBiLevelFIFOCollection<T>(next);
-                                while (!control.ShouldStop() && searchState.CurrentLayerNodes > 0)
-                                {
-                                    var localControl = SearchControl<T, C, Q>.Start(next).WithRuntimeLimit(TimeSpan.FromSeconds(1));
-                                    Heuristics.DoBeamSearch<T, C, Q>(localControl, searchState, depth: 0, beamWidth: beamWidth, rank: rank, filterWidth: filterWidth, depthLimit: int.MaxValue);
-                                    localControl.Finish();
-                                    if (localControl.BestQuality.HasValue) quality = localControl.BestQuality;
-                                    lock (locker)
-                                    {
-                                        control.Merge(localControl);
-                                    }
-                                }
-                            }
-                        }
-
-                        if (!quality.HasValue) return; // no solution achieved
-                        lock (locker)
-                        {
-                            if (!bestBranchQuality.HasValue || quality.Value.IsBetter(bestBranchQuality.Value))
-                            {
-                                bestBranch = next;
-                                bestBranchQuality = quality;
-                            }
-                        }
-                    }
-                );
-                if (!bestBranchQuality.HasValue) return;
-                state = bestBranch;
-                if (state.IsTerminal) return;
-            }
-        }
-    }
-
-    public static class ParallelHeuristicStateExtensions
-    {
         public static Task<TState> ParallelBeamSearchAsync<TState, TQuality>(
             this IState<TState, TQuality> state, int beamWidth, Func<TState, float> rank,
             int filterWidth = int.MaxValue, TimeSpan? runtime = null, long? nodelimit = null,
@@ -944,6 +974,7 @@ namespace TreesearchLib
 
         public static Task<TState> ParallelRakeSearchAsync<TState, TQuality>(
             this IState<TState, TQuality> state, int rakeWidth,
+            Lookahead<TState, TQuality> lookahead = null,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -951,12 +982,13 @@ namespace TreesearchLib
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => ParallelRakeSearch((TState)state, rakeWidth,
+            return Task.Run(() => ParallelRakeSearch((TState)state, rakeWidth, lookahead,
                 runtime, nodelimit, callback, token, maxDegreeOfParallelism));
         }
 
         public static TState ParallelRakeSearch<TState, TQuality>(
             this IState<TState, TQuality> state, int rakeWidth,
+            Lookahead<TState, TQuality> lookahead = null,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -969,12 +1001,13 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelRakeSearch(rakeWidth,
+            return control.ParallelRakeSearch(rakeWidth, lookahead,
                 maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
         }
 
         public static Task<TState> ParallelRakeSearchAsync<TState, TChoice, TQuality>(
             this IMutableState<TState, TChoice, TQuality> state, int rakeWidth,
+            Lookahead<TState, TChoice, TQuality> lookahead = null,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -983,13 +1016,14 @@ namespace TreesearchLib
             where TQuality : struct, IQuality<TQuality>
         {
             return Task.Run(() => ParallelRakeSearch<TState, TChoice, TQuality>(
-                (TState)state, rakeWidth, runtime, nodelimit, callback, token,
+                (TState)state, rakeWidth, lookahead, runtime, nodelimit, callback, token,
                 maxDegreeOfParallelism)
             );
         }
 
         public static TState ParallelRakeSearch<TState, TChoice, TQuality>(
             this IMutableState<TState, TChoice, TQuality> state, int rakeWidth,
+            Lookahead<TState, TChoice, TQuality> lookahead = null,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1002,10 +1036,11 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelRakeSearch(rakeWidth,
+            return control.ParallelRakeSearch(rakeWidth, lookahead,
                 maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
         }
 
+        [Obsolete("Use ParallelRakeSearchAsync with BeamSearchLookahead instead")]
         public static Task<TState> ParallelRakeAndBeamSearchAsync<TState, TQuality>(
             this IState<TState, TQuality> state, int rakeWidth, int beamWidth,
             Func<TState, float> rank, int filterWidth = int.MaxValue,
@@ -1022,6 +1057,7 @@ namespace TreesearchLib
             );
         }
 
+        [Obsolete("Use ParallelRakeSearch with BeamSearchLookahead instead")]
         public static TState ParallelRakeAndBeamSearch<TState, TQuality>(
             this IState<TState, TQuality> state, int rakeWidth, int beamWidth,
             Func<TState, float> rank, int filterWidth = int.MaxValue,
@@ -1041,6 +1077,7 @@ namespace TreesearchLib
                 filterWidth, maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
         }
 
+        [Obsolete("Use ParallelRakeSearchAsync with BeamSearchLookahead instead")]
         public static Task<TState> ParallelRakeAndBeamSearchAsync<TState, TChoice, TQuality>(
             this IMutableState<TState, TChoice, TQuality> state, int rakeWidth, int beamWidth,
             Func<TState, float> rank, int filterWidth = int.MaxValue,
@@ -1057,6 +1094,7 @@ namespace TreesearchLib
             );
         }
 
+        [Obsolete("Use ParallelRakeSearch with BeamSearchLookahead instead")]
         public static TState ParallelRakeAndBeamSearch<TState, TChoice, TQuality>(
             this IMutableState<TState, TChoice, TQuality> state, int rakeWidth, int beamWidth,
             Func<TState, float> rank, int filterWidth = int.MaxValue,
@@ -1077,8 +1115,8 @@ namespace TreesearchLib
         }
 
         public static Task<TState> ParallelPilotMethodAsync<TState, TQuality>(
-            this IState<TState, TQuality> state, int beamWidth = 1,
-            Func<TState, float> rank = null, int filterWidth = 1,
+            this IState<TState, TQuality> state, Lookahead<TState, TQuality> lookahead = null,
+            int filterWidth = 1,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1086,14 +1124,14 @@ namespace TreesearchLib
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => ParallelPilotMethod((TState)state, beamWidth, rank,
+            return Task.Run(() => ParallelPilotMethod((TState)state, lookahead,
                 filterWidth, runtime, nodelimit, callback, token, maxDegreeOfParallelism)
             );
         }
 
         public static TState ParallelPilotMethod<TState, TQuality>(
-            this IState<TState, TQuality> state, int beamWidth = 1,
-            Func<TState, float> rank = null, int filterWidth = 1,
+            this IState<TState, TQuality> state, Lookahead<TState, TQuality> lookahead = null,
+            int filterWidth = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1106,13 +1144,14 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelPilotMethod(beamWidth, rank, filterWidth,
+            if (lookahead == null) lookahead = LA.DFSLookahead<TState, TQuality>(filterWidth: 1);
+            return control.ParallelPilotMethod(lookahead, filterWidth,
                 maxDegreeOfParallelism).BestQualityState;
         }
 
         public static Task<TState> ParallelPilotMethodAsync<TState, TChoice, TQuality>(
             this IMutableState<TState, TChoice, TQuality> state,
-            int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = 1,
+            Lookahead<TState, TChoice, TQuality> lookahead = null, int filterWidth = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1121,14 +1160,14 @@ namespace TreesearchLib
             where TQuality : struct, IQuality<TQuality>
         {
             return Task.Run(() => ParallelPilotMethod<TState, TChoice, TQuality>(
-                (TState)state, beamWidth, rank, filterWidth, runtime, nodelimit,
+                (TState)state, lookahead, filterWidth, runtime, nodelimit,
                 callback, token, maxDegreeOfParallelism)
             );
         }
 
         public static TState ParallelPilotMethod<TState, TChoice, TQuality>(
             this IMutableState<TState, TChoice, TQuality> state,
-            int beamWidth = 1, Func<TState, float> rank = null, int filterWidth = 1,
+            Lookahead<TState, TChoice, TQuality> lookahead = null, int filterWidth = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1141,7 +1180,8 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelPilotMethod(beamWidth, rank, filterWidth,
+            if (lookahead == null) lookahead = LA.DFSLookahead<TState, TChoice, TQuality>(filterWidth: 1);
+            return control.ParallelPilotMethod(lookahead, filterWidth,
                 maxDegreeOfParallelism).BestQualityState;
         }
     }
