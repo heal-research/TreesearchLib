@@ -293,7 +293,7 @@ namespace TreesearchLib
             if (rakeWidth <= 0) throw new ArgumentException($"{rakeWidth} needs to be greater or equal than 1", nameof(rakeWidth));
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             
-            var (_, rake) = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
+            var (_, rake) = Algorithms.BreadthSearch(control, control.InitialState, depth: 0, int.MaxValue, int.MaxValue, rakeWidth);
             var remainingTime = control.Runtime - control.Elapsed;
             var remainingNodes = control.NodeLimit - control.VisitedNodes;
             if (control.ShouldStop() || remainingTime < TimeSpan.Zero || remainingNodes <= 0)
@@ -315,7 +315,7 @@ namespace TreesearchLib
                         localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
                     }
                 }
-                Algorithms.DoDepthSearch(localControl, next, 1);
+                Algorithms.DepthSearch(localControl, next, depth: 0, backtracks: 0, filterWidth: 1, depthLimit: int.MaxValue, backtrackLimit: long.MaxValue);
                 lock (locker)
                 {
                     control.Merge(localControl);
@@ -363,7 +363,7 @@ namespace TreesearchLib
             if (rakeWidth <= 0) throw new ArgumentException($"{rakeWidth} needs to be greater or equal than 1", nameof(rakeWidth));
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             
-            var (_, rake) = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)control.InitialState.Clone(), int.MaxValue, int.MaxValue, rakeWidth);
+            var (_, rake) = Algorithms.BreadthSearch<T, C, Q>(control, (T)control.InitialState.Clone(), depth: 0, int.MaxValue, int.MaxValue, rakeWidth);
             var remainingTime = control.Runtime - control.Elapsed;
             var remainingNodes = control.NodeLimit - control.VisitedNodes;
             if (control.ShouldStop() || remainingTime < TimeSpan.Zero || remainingNodes <= 0) // the last two are just safety checks, control.ShouldStop() should terminate in these cases too
@@ -385,7 +385,7 @@ namespace TreesearchLib
                         localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
                     }
                 }
-                Algorithms.DoDepthSearch<T, C, Q>(localControl, next, filterWidth: 1);
+                Algorithms.DepthSearch<T, C, Q>(localControl, next, depth: 0, backtracks: 0, filterWidth: 1, depthLimit: int.MaxValue, backtrackLimit: long.MaxValue);
                 lock (locker)
                 {
                     control.Merge(localControl);
@@ -443,7 +443,7 @@ namespace TreesearchLib
             if (filterWidth <= 0) throw new ArgumentException("A filter width of 0 or less is not possible");
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             
-            var (_, rake) = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
+            var (_, rake) = Algorithms.BreadthSearch(control, control.InitialState, depth: 0, int.MaxValue, int.MaxValue, rakeWidth);
             var remainingTime = control.Runtime - control.Elapsed;
             var remainingNodes = control.NodeLimit - control.VisitedNodes;
             if (control.ShouldStop() || remainingTime < TimeSpan.Zero || remainingNodes <= 0) // the last two are just safety checks, control.ShouldStop() should terminate in these cases too
@@ -465,7 +465,7 @@ namespace TreesearchLib
                         localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
                     }
                 }
-                Heuristics.DoBeamSearch<T, Q>(localControl, next, beamWidth, rank, filterWidth);
+                Heuristics.DoBeamSearch<T, Q>(localControl, next, beamWidth, rank, filterWidth, depthLimit: int.MaxValue);
                 lock (locker)
                 {
                     control.Merge(localControl);
@@ -523,7 +523,7 @@ namespace TreesearchLib
             if (filterWidth <= 0) throw new ArgumentException("A filter width of 0 or less is not possible");
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             
-            var (_, rake) = Algorithms.DoBreadthSearch<T, C, Q>(control, (T)control.InitialState.Clone(), int.MaxValue, int.MaxValue, rakeWidth);
+            var (_, rake) = Algorithms.BreadthSearch<T, C, Q>(control, (T)control.InitialState.Clone(), depth: 0, int.MaxValue, int.MaxValue, rakeWidth);
             var remainingTime = control.Runtime - control.Elapsed;
             var remainingNodes = control.NodeLimit - control.VisitedNodes;
             if (control.ShouldStop() || remainingTime < TimeSpan.Zero || remainingNodes <= 0) // the last two are just safety checks, control.ShouldStop() should terminate in these cases too
@@ -545,7 +545,7 @@ namespace TreesearchLib
                         localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
                     }
                 }
-                Heuristics.DoBeamSearch<T, C, Q>(localControl, next, beamWidth, rank, filterWidth);
+                Heuristics.DoBeamSearch<T, C, Q>(localControl, next, depth: 0, beamWidth, rank, filterWidth, depthLimit: int.MaxValue);
                 lock (locker)
                 {
                     control.Merge(localControl);
@@ -665,7 +665,7 @@ namespace TreesearchLib
                                 while (!control.ShouldStop() && searchState.Nodes > 0)
                                 {
                                     var localControl = SearchControl<T, Q>.Start(next).WithRuntimeLimit(TimeSpan.FromSeconds(1));
-                                    Algorithms.DoDepthSearch(localControl, searchState, filterWidth: filterWidth, depthLimit: int.MaxValue);
+                                    Algorithms.DepthSearch<T, Q>(localControl, searchState, backtracks: 0, filterWidth: filterWidth, depthLimit: int.MaxValue, backtrackLimit: long.MaxValue);
                                     localControl.Finish();
                                     if (localControl.BestQuality.HasValue) quality = localControl.BestQuality;
                                     lock (locker)
@@ -680,7 +680,7 @@ namespace TreesearchLib
                                 while (!control.ShouldStop() && searchState.CurrentLayerNodes > 0)
                                 {
                                     var localControl = SearchControl<T, Q>.Start(next).WithRuntimeLimit(TimeSpan.FromSeconds(1));
-                                    Heuristics.DoBeamSearch(localControl, searchState, beamWidth: beamWidth, rank: rank, filterWidth: filterWidth);
+                                    Heuristics.DoBeamSearch(localControl, searchState, depth: 0, beamWidth: beamWidth, rank: rank, filterWidth: filterWidth, depthLimit: int.MaxValue);
                                     localControl.Finish();
                                     if (localControl.BestQuality.HasValue) quality = localControl.BestQuality;
                                     lock (locker)
@@ -825,7 +825,7 @@ namespace TreesearchLib
                                 while (!control.ShouldStop() && searchState.Nodes > 0)
                                 {
                                     var localControl = SearchControl<T, C, Q>.Start(next).WithRuntimeLimit(TimeSpan.FromSeconds(1));
-                                    localDepth = Algorithms.DoDepthSearch<T, C, Q>(localControl, next, searchState, localDepth, filterWidth: filterWidth, depthLimit: int.MaxValue);
+                                    (localDepth, _) = Algorithms.DepthSearch<T, C, Q>(localControl, next, searchState, localDepth, backtracks: 0, filterWidth: filterWidth, depthLimit: int.MaxValue, backtrackLimit: long.MaxValue);
                                     localControl.Finish();
                                     if (localControl.BestQuality.HasValue) quality = localControl.BestQuality;
                                     lock (locker)
@@ -846,7 +846,7 @@ namespace TreesearchLib
                                 while (!control.ShouldStop() && searchState.CurrentLayerNodes > 0)
                                 {
                                     var localControl = SearchControl<T, C, Q>.Start(next).WithRuntimeLimit(TimeSpan.FromSeconds(1));
-                                    Heuristics.DoBeamSearch<T, C, Q>(localControl, searchState, beamWidth: beamWidth, rank: rank, filterWidth: filterWidth);
+                                    Heuristics.DoBeamSearch<T, C, Q>(localControl, searchState, depth: 0, beamWidth: beamWidth, rank: rank, filterWidth: filterWidth, depthLimit: int.MaxValue);
                                     localControl.Finish();
                                     if (localControl.BestQuality.HasValue) quality = localControl.BestQuality;
                                     lock (locker)

@@ -16,16 +16,17 @@ namespace TreesearchLib
         /// <param name="beamWidth">The maximum number of parallel traces</param>
         /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <param name="depthLimit">The maximum depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
         public static Task<SearchControl<T, Q>> BeamSearchAsync<T, Q>(
             this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank,
-            int filterWidth = int.MaxValue)
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => BeamSearch(control, beamWidth, rank, filterWidth));
+            return Task.Run(() => BeamSearch(control, beamWidth, rank, filterWidth, depthLimit));
         }
 
         /// <summary>
@@ -36,16 +37,17 @@ namespace TreesearchLib
         /// <param name="beamWidth">The maximum number of parallel traces</param>
         /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <param name="depthLimit">The maximum depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
         public static SearchControl<T, Q> BeamSearch<T, Q>(
             this SearchControl<T, Q> control, int beamWidth, Func<T, float> rank,
-            int filterWidth = int.MaxValue)
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            DoBeamSearch(control, control.InitialState, beamWidth, rank, filterWidth);
+            DoBeamSearch(control, control.InitialState, beamWidth, rank, filterWidth, depthLimit);
             return control;
         }
 
@@ -57,16 +59,17 @@ namespace TreesearchLib
         /// <param name="beamWidth">The maximum number of parallel traces</param>
         /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <param name="depthLimit">The maximum depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
         public static Task<SearchControl<T, C, Q>> BeamSearchAsync<T, C, Q>(
             this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank,
-            int filterWidth = int.MaxValue)
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => BeamSearch(control, beamWidth, rank, filterWidth));
+            return Task.Run(() => BeamSearch(control, beamWidth, rank, filterWidth, depthLimit));
         }
 
         /// <summary>
@@ -77,16 +80,17 @@ namespace TreesearchLib
         /// <param name="beamWidth">The maximum number of parallel traces</param>
         /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <param name="depthLimit">The maximum depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns>The runtime control and tracking instance after the search</returns>
         public static SearchControl<T, C, Q> BeamSearch<T, C, Q>(
             this SearchControl<T, C, Q> control, int beamWidth, Func<T, float> rank,
-            int filterWidth = int.MaxValue)
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            DoBeamSearch<T, C, Q>(control, control.InitialState, beamWidth, rank, filterWidth);
+            DoBeamSearch<T, C, Q>(control, control.InitialState, 0, beamWidth, rank, filterWidth, depthLimit);
             return control;
         }
 
@@ -99,11 +103,12 @@ namespace TreesearchLib
         /// <param name="beamWidth">The maximum number of parallel traces</param>
         /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <param name="depthLimit">The maximum depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
         public static void DoBeamSearch<T, Q>(ISearchControl<T, Q> control, T state,
-            int beamWidth, Func<T, float> rank, int filterWidth)
+            int beamWidth, Func<T, float> rank, int filterWidth, int depthLimit)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -111,9 +116,10 @@ namespace TreesearchLib
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
             if (rank == null) throw new ArgumentNullException(nameof(rank));
             if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} cannot exceed 1 when {nameof(filterWidth)} equals 1.");
+            if (depthLimit <= 0) throw new ArgumentException($"{nameof(depthLimit)} must greater than 0.", nameof(depthLimit));
 
             var searchState = new PriorityBiLevelFIFOCollection<T>(state);
-            DoBeamSearch(control, searchState, beamWidth, rank, filterWidth);
+            DoBeamSearch(control, searchState, 0, beamWidth, rank, filterWidth, depthLimit);
         }
 
         /// <summary>
@@ -124,17 +130,19 @@ namespace TreesearchLib
         /// <param name="searchState">The algorithm's inner state</param>
         /// <param name="beamWidth">The maximum number of parallel traces</param>
         /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
+        /// <param name="depth">The current depth of the search</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <param name="depthLimit">The maximum depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
         public static void DoBeamSearch<T, Q>(ISearchControl<T, Q> control,
-            PriorityBiLevelFIFOCollection<T> searchState, int beamWidth,
-            Func<T, float> rank, int filterWidth)
+            PriorityBiLevelFIFOCollection<T> searchState, int depth, int beamWidth,
+            Func<T, float> rank, int filterWidth, int depthLimit)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            while (!control.ShouldStop() && searchState.CurrentLayerNodes > 0)
+            while (!control.ShouldStop() && searchState.CurrentLayerNodes > 0 && depth < depthLimit)
             {
                 while (!control.ShouldStop() && searchState.TryFromCurrentLayerQueue(out var currentState))
                 {
@@ -151,6 +159,7 @@ namespace TreesearchLib
                 if (searchState.CurrentLayerNodes == 0)
                 {
                     searchState.AdvanceLayer(beamWidth);
+                    depth++;
                 }
             }
         }
@@ -163,12 +172,14 @@ namespace TreesearchLib
         /// <param name="state">The state to start the search from</param>
         /// <param name="beamWidth">The maximum number of parallel traces</param>
         /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
+        /// <param name="depth">The current depth of the search</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <param name="depthLimit">The maximum depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
-        public static void DoBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state,
-            int beamWidth, Func<T, float> rank, int filterWidth)
+        public static void DoBeamSearch<T, C, Q>(ISearchControl<T, Q> control, T state, int depth,
+            int beamWidth, Func<T, float> rank, int filterWidth, int depthLimit)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -176,47 +187,10 @@ namespace TreesearchLib
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
             if (rank == null) throw new ArgumentNullException(nameof(rank));
             if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} cannot exceed 1 when {nameof(filterWidth)} equals 1.");
+            if (depthLimit <= 0) throw new ArgumentException($"{nameof(depthLimit)} must greater than 0.", nameof(depthLimit));
 
-            var currentLayer = new Queue<T>();
-            currentLayer.Enqueue(state);
-            var nextlayer = new List<(float rank, T state)>();
-            while (!control.ShouldStop())
-            {
-                nextlayer.Clear();
-
-                while (currentLayer.Count > 0)
-                {
-                    var currentState = currentLayer.Dequeue();
-                    foreach (var choice in currentState.GetChoices().Take(filterWidth))
-                    {
-                        var next = (T)currentState.Clone();
-                        next.Apply(choice);
-
-                        if (control.VisitNode(next) == VisitResult.Discard || next.IsTerminal)
-                        {
-                            continue;
-                        }
-
-                        nextlayer.Add((rank(next), next));
-                    }
-
-                    if (control.ShouldStop())
-                    {
-                        nextlayer.Clear();
-                        break;
-                    }
-                }
-
-                if (nextlayer.Count == 0)
-                {
-                    break;
-                }
-
-                foreach (var nextState in nextlayer.OrderBy(x => x.rank).Take(beamWidth).Select(x => x.state))
-                {
-                    currentLayer.Enqueue(nextState);
-                }
-            }
+            var searchState = new PriorityBiLevelFIFOCollection<T>(state);
+            DoBeamSearch<T, C, Q>(control, searchState, beamWidth, rank, depth, filterWidth, depthLimit);
         }
 
         /// <summary>
@@ -227,18 +201,20 @@ namespace TreesearchLib
         /// <param name="searchState">The algorithm's inner state</param>
         /// <param name="beamWidth">The maximum number of parallel traces</param>
         /// <param name="rank">The rank function that determines the order of nodes (lower is better)</param>
+        /// <param name="depth">The current depth of the search</param>
         /// <param name="filterWidth">The maximum number of descendents per node</param>
+        /// <param name="depthLimit">The maximum depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The quality type</typeparam>
         /// <returns></returns>
         public static void DoBeamSearch<T, C, Q>(ISearchControl<T, Q> control,
             PriorityBiLevelFIFOCollection<T> searchState, int beamWidth,
-            Func<T, float> rank, int filterWidth)
+            Func<T, float> rank, int depth, int filterWidth, int depthLimit)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            while (!control.ShouldStop() && searchState.CurrentLayerNodes > 0)
+            while (!control.ShouldStop() && searchState.CurrentLayerNodes > 0 && depth < depthLimit)
             {
                 while (!control.ShouldStop() && searchState.TryFromCurrentLayerQueue(out var currentState))
                 {
@@ -257,6 +233,7 @@ namespace TreesearchLib
                 if (searchState.CurrentLayerNodes == 0)
                 {
                     searchState.AdvanceLayer(beamWidth);
+                    depth++;
                 }
             }
         }
@@ -292,11 +269,11 @@ namespace TreesearchLib
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            var (_, rake) = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
+            var (_, rake) = Algorithms.BreadthSearch(control, control.InitialState, 0, filterWidth: int.MaxValue, depthLimit: int.MaxValue, rakeWidth);
             var i = 0;
             while (i < rakeWidth && rake.TryGetNext(out var next) && !control.ShouldStop())
             {
-                Algorithms.DoDepthSearch(control, next, 1);
+                Algorithms.DepthSearch(control, next, depth: 0, backtracks: 0, filterWidth: 1, depthLimit: int.MaxValue, backtrackLimit: long.MaxValue);
                 i++;
             }
             return control;
@@ -335,11 +312,11 @@ namespace TreesearchLib
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            var (_, rake) = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
+            var (_, rake) = Algorithms.BreadthSearch<T, C, Q>(control, control.InitialState, depth: 0, filterWidth: int.MaxValue, depthLimit: int.MaxValue, rakeWidth);
             var i = 0;
             while (i < rakeWidth && rake.TryGetNext(out var next) && !control.ShouldStop())
             {
-                Algorithms.DoDepthSearch<T, C, Q>(control, next, filterWidth: 1);
+                Algorithms.DepthSearch<T, C, Q>(control, next, depth: 0, backtracks: 0, filterWidth: 1, depthLimit: int.MaxValue, backtrackLimit: long.MaxValue);
                 i++;
             }
             return control;
@@ -375,20 +352,21 @@ namespace TreesearchLib
         /// <param name="beamWidth">Used in the beam search to determine the number of beams</param>
         /// <param name="rank">The ranking function used by the beam search (lower is better)</param>
         /// <param name="filterWidth">To limit the number of branches per node</param>
+        /// <param name="depthLimit">To limit the depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, Q> RakeAndBeamSearch<T, Q>(
             this SearchControl<T, Q> control, int rakeWidth, int beamWidth,
-            Func<T, float> rank, int filterWidth = int.MaxValue)
+            Func<T, float> rank, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            var (_, rake) = Algorithms.DoBreadthSearch(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
+            var (_, rake) = Algorithms.BreadthSearch(control, control.InitialState, depth: 0, filterWidth: int.MaxValue, depthLimit: int.MaxValue, rakeWidth);
             var i = 0;
             while (i < rakeWidth && rake.TryGetNext(out var next) && !control.ShouldStop())
             {
-                DoBeamSearch(control, next, beamWidth, rank, filterWidth);
+                DoBeamSearch(control, next, beamWidth, rank, filterWidth, depthLimit);
                 i++;
             }
             return control;
@@ -403,17 +381,18 @@ namespace TreesearchLib
         /// <param name="beamWidth">Used in the beam search to determine the number of beams</param>
         /// <param name="rank">The ranking function used by the beam search (lower is better)</param>
         /// <param name="filterWidth">To limit the number of branches per node</param>
+        /// <param name="depthLimit">To limit the depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, C, Q>> RakeAndBeamSearchAsync<T, C, Q>(
             this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth,
-            Func<T, float> rank, int filterWidth = int.MaxValue)
+            Func<T, float> rank, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, rank, filterWidth));
+            return Task.Run(() => RakeAndBeamSearch(control, rakeWidth, beamWidth, rank, filterWidth, depthLimit));
         }
 
         /// <summary>
@@ -425,21 +404,22 @@ namespace TreesearchLib
         /// <param name="beamWidth">Used in the beam search to determine the number of beams</param>
         /// <param name="rank">The ranking function used by the beam search (lower is better)</param>
         /// <param name="filterWidth">To limit the number of branches per node</param>
+        /// <param name="depthLimit">To limit the depth of the search</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, C, Q> RakeAndBeamSearch<T, C, Q>(
             this SearchControl<T, C, Q> control, int rakeWidth, int beamWidth,
-            Func<T, float> rank, int filterWidth = int.MaxValue)
+            Func<T, float> rank, int filterWidth = int.MaxValue, int depthLimit = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            var (_, rake) = Algorithms.DoBreadthSearch<T, C, Q>(control, control.InitialState, int.MaxValue, int.MaxValue, rakeWidth);
+            var (_, rake) = Algorithms.BreadthSearch<T, C, Q>(control, control.InitialState, depth: 0, filterWidth: int.MaxValue, depthLimit: int.MaxValue, rakeWidth);
             var i = 0;
             while (i < rakeWidth && rake.TryGetNext(out var next) && !control.ShouldStop())
             {
-                DoBeamSearch<T, C, Q>(control, next, beamWidth, rank, filterWidth);
+                DoBeamSearch<T, C, Q>(control, next, 0, beamWidth, rank, filterWidth, depthLimit);
                 i++;
             }
             return control;
@@ -458,16 +438,18 @@ namespace TreesearchLib
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
         /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="depthLimit">The maximum depth for the lookahead.</param>
+        /// <param name="backtrackLimit">The maximum number of backtracks allowed in case depth-first search is used as lookahead.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
         public static Task<SearchControl<T, Q>> PilotMethodAsync<T, Q>(
-            this SearchControl<T, Q> control, int beamWidth = 1,
-            Func<T, float> rank = null, int filterWidth = 1)
+                this SearchControl<T, Q> control, int beamWidth = 1, Func<T, float> rank = null,
+                int filterWidth = 1, int depthLimit = int.MaxValue, int backtrackLimit = 0)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => PilotMethod(control, beamWidth, rank, filterWidth));
+            return Task.Run(() => PilotMethod(control, beamWidth, rank, filterWidth, depthLimit, backtrackLimit));
         }
 
         /// <summary>
@@ -483,17 +465,19 @@ namespace TreesearchLib
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
         /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="depthLimit">The maximum depth for the lookahead.</param>
+        /// <param name="backtrackLimit">The maximum number of backtracks allowed in case depth-first search is used as lookahead.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
         public static SearchControl<T, Q> PilotMethod<T, Q>(
-            this SearchControl<T, Q> control, int beamWidth = 1,
-            Func<T, float> rank = null, int filterWidth = 1)
+                this SearchControl<T, Q> control, int beamWidth = 1, Func<T, float> rank = null,
+                int filterWidth = 1, int depthLimit = int.MaxValue, int backtrackLimit = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             var state = control.InitialState;
-            DoPilotMethod<T, Q>(control, state, beamWidth, rank, filterWidth);
+            DoPilotMethod<T, Q>(control, state, beamWidth, rank, filterWidth, depthLimit, backtrackLimit);
             return control;
         }
 
@@ -511,24 +495,36 @@ namespace TreesearchLib
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
         /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="depthLimit">The maximum depth of the lookahead.</param>
+        /// <param name="backtrackLimit">The maximum number of backtracks allowed in case depth-first search is used as lookahead.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns></returns>
         public static void DoPilotMethod<T, Q>(ISearchControl<T, Q> control, T state,
-        int beamWidth, Func<T, float> rank, int filterWidth)
+            int beamWidth, Func<T, float> rank, int filterWidth, int depthLimit, int backtrackLimit)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             if (rank != null && beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1 when beam search is used ({nameof(rank)} is non-null)", nameof(beamWidth));
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
             if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} parameter has no effect if {nameof(filterWidth)} is equal to 1", nameof(beamWidth));
+            if (rank == null && backtrackLimit < 0) throw new ArgumentException($"{backtrackLimit} needs to be greater or equal than 0 when depth-first search is used ({nameof(rank)} is null)", nameof(backtrackLimit));
+            if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be greater than 0", nameof(depthLimit));
+            if (backtrackLimit < 0) throw new ArgumentException($"{backtrackLimit} needs to be greater or equal than 0", nameof(backtrackLimit));
 
+            var backtracks = 0L;
             while (true)
             {
                 T bestBranch = default(T);
                 Q? bestBranchQuality = null;
+                var first = false;
                 foreach (var next in state.GetBranches())
                 {
+                    if (!first)
+                    {
+                        bestBranch = next; // remember first branch, if all lookahead fail to reach a terminal state
+                        first = true;
+                    }
                     Q? quality;
                     if (next.IsTerminal)
                     {
@@ -540,10 +536,10 @@ namespace TreesearchLib
                         var wrappedControl = new WrappedSearchControl<T, Q>(control);
                         if (rank == null)
                         {
-                            Algorithms.DoDepthSearch(wrappedControl, next, filterWidth: filterWidth);
+                            Algorithms.DepthSearch(wrappedControl, next, depth: 0, backtracks: 0, filterWidth: filterWidth, depthLimit: depthLimit, backtrackLimit: backtrackLimit);
                         } else
                         {
-                            DoBeamSearch(wrappedControl, next, beamWidth: beamWidth, rank: rank, filterWidth: filterWidth);
+                            DoBeamSearch(wrappedControl, next, beamWidth: beamWidth, rank: rank, filterWidth: filterWidth, depthLimit: depthLimit);
                         }
                         quality = wrappedControl.BestQuality;
                     }
@@ -555,7 +551,10 @@ namespace TreesearchLib
                         bestBranchQuality = quality;
                     }
                 }
-                if (!bestBranchQuality.HasValue) return;
+                if (!bestBranchQuality.HasValue && !first)
+                {
+                    return; // no more branch
+                }
                 state = bestBranch;
             }
         }
@@ -573,17 +572,19 @@ namespace TreesearchLib
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
         /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="depthLimit">The maximum depth of the lookahead.</param>
+        /// <param name="backtrackLimit">The maximum number of backtracks allowed in case depth-first search is used as lookahead.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
         public static Task<SearchControl<T, C, Q>> PilotMethodAsync<T, C, Q>(
-            this SearchControl<T, C, Q> control, int beamWidth = 1,
-            Func<T, float> rank = null, int filterWidth = 1)
+                this SearchControl<T, C, Q> control, int beamWidth = 1, Func<T, float> rank = null,
+                int filterWidth = 1, int depthLimit = int.MaxValue, int backtrackLimit = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => PilotMethod(control, beamWidth, rank, filterWidth));
+            return Task.Run(() => PilotMethod(control, beamWidth, rank, filterWidth, depthLimit, backtrackLimit));
         }
 
         /// <summary>
@@ -599,18 +600,20 @@ namespace TreesearchLib
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
         /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="depthLimit">The maximum depth of the lookahead.</param>
+        /// <param name="backtrackLimit">The maximum number of backtracks allowed in case depth-first search is used as lookahead.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
         public static SearchControl<T, C, Q> PilotMethod<T, C, Q>(
-            this SearchControl<T, C, Q> control, int beamWidth = 1,
-            Func<T, float> rank = null, int filterWidth = 1)
+            this SearchControl<T, C, Q> control, int beamWidth = 1, Func<T, float> rank = null,
+            int filterWidth = 1, int depthLimit = int.MaxValue, int backtrackLimit = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             var state = (T)control.InitialState.Clone();
-            DoPilotMethod<T, C, Q>(control, state, beamWidth, rank, filterWidth);
+            DoPilotMethod<T, C, Q>(control, state, beamWidth, rank, filterWidth, depthLimit, backtrackLimit);
             return control;
         }
 
@@ -628,18 +631,23 @@ namespace TreesearchLib
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
         /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
         /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="depthLimit">The maximum depth of the lookahead.</param>
+        /// <param name="backtrackLimit">The maximum number of backtracks allowed in case depth-first search is used as lookahead.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns></returns>
         public static void DoPilotMethod<T, C, Q>(ISearchControl<T, Q> control, T state,
-        int beamWidth, Func<T, float> rank, int filterWidth)
+        int beamWidth, Func<T, float> rank, int filterWidth, int depthLimit, int backtrackLimit)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             if (rank != null && beamWidth <= 0) throw new ArgumentException($"{beamWidth} needs to be greater or equal than 1 when beam search is used ({nameof(rank)} is non-null)", nameof(beamWidth));
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
             if (filterWidth == 1 && beamWidth > 1) throw new ArgumentException($"{nameof(beamWidth)} parameter has no effect if {nameof(filterWidth)} is equal to 1", nameof(beamWidth));
+            if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be greater than 0", nameof(depthLimit));
+            if (backtrackLimit < 0) throw new ArgumentException($"{backtrackLimit} needs to be greater or equal than 0", nameof(backtrackLimit));
+
             while (true)
             {
                 C bestBranch = default(C);
@@ -652,7 +660,7 @@ namespace TreesearchLib
                     {
                         state.Apply(choice);
                         var wrappedControl = new WrappedSearchControl<T, C, Q>(control);
-                        var depth = 1 + Algorithms.DoDepthSearch<T, C, Q>(wrappedControl, state, filterWidth: filterWidth);
+                        var (depth, _) = Algorithms.DepthSearch<T, C, Q>(wrappedControl, state, depth: 1, backtracks: 0, filterWidth: filterWidth, depthLimit: depthLimit, backtrackLimit: backtrackLimit);
                         quality = wrappedControl.BestQuality;
                         while (depth > 0)
                         {
@@ -673,7 +681,7 @@ namespace TreesearchLib
                             // use beam search as greedy lookahead
                             // wrap the search control, to do best quality tracking for this particular beam search run only
                             var wrappedControl = new WrappedSearchControl<T, C, Q>(control);
-                            DoBeamSearch<T, C, Q>(wrappedControl, next, beamWidth: beamWidth, rank: rank, filterWidth: filterWidth);
+                            DoBeamSearch<T, C, Q>(wrappedControl, next, beamWidth: beamWidth, rank: rank, depth: 0, filterWidth: filterWidth, depthLimit: depthLimit);
                             quality = wrappedControl.BestQuality;
                         }
                     }
