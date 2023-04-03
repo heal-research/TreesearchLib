@@ -236,7 +236,7 @@ namespace TreesearchLib
             if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be greater than 0", nameof(depthLimit));
             if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
 
-            while (!control.ShouldStop() && depth <= depthLimit)
+            while (!control.ShouldStop() && depth < depthLimit)
             {
                 T bestBranch = default(T);
                 Q? bestBranchQuality = null;
@@ -305,7 +305,7 @@ namespace TreesearchLib
             if (depthLimit <= 0) throw new ArgumentException($"{depthLimit} needs to be greater than 0", nameof(depthLimit));
             if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
 
-            while (!control.ShouldStop() && depth <= depthLimit)
+            while (!control.ShouldStop() && depth < depthLimit)
             {
                 C bestBranch = default(C);
                 Q? bestBranchQuality = null;

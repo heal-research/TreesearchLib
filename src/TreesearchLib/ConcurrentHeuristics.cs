@@ -6,6 +6,12 @@ using System.Threading.Tasks;
 
 namespace TreesearchLib
 {
+    /// <summary>
+    /// This class contains implementations of many parallel heuristic algorithms.
+    /// Each method is implemented for IState<T, Q> and IMutableState<T, C, Q> separately.
+    /// There are extension methods to ISearchControl<T, Q> and IState<T, Q> resp. IMutableState<T, C, Q> that call these methods
+    /// in the class <see cref="ConcurrentHeuristicExtensions"/>.
+    /// </summary>
     public static class ConcurrentHeuristics {
         /// <summary>
         /// Beam search uses several parallel traces. When called with a rank function, all nodes of the next layer are gathered
@@ -287,25 +293,29 @@ namespace TreesearchLib
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
         /// <param name="state">The state from which the pilot method should start operating</param>
+        /// <param name="depth">The depth of the current state</param>
         /// <param name="lookahead">The lookahead method to use</param>
-        /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="filterWidth">How many descendents will be considered for lookahead</param>
+        /// <param name="depthLimit">The depth limit for the pilot search</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns></returns>
         public static void ParallelPilotMethod<T, Q>(ISearchControl<T, Q> control,
-                T state, Lookahead<T, Q> lookahead, int filterWidth, int maxDegreeOfParallelism)
+                T state, int depth, Lookahead<T, Q> lookahead,
+                int filterWidth, int depthLimit, int maxDegreeOfParallelism)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
+            if (depthLimit < 0) throw new ArgumentException($"{nameof(depthLimit)} needs to be greater or equal to 0", nameof(depthLimit));
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} is not a valid value for {nameof(maxDegreeOfParallelism)}", nameof(maxDegreeOfParallelism));
             if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
 
             var remainingTime = control.Runtime - control.Elapsed;
             var remainingNodes = control.NodeLimit - control.VisitedNodes;
             var locker = new object();
-            while (true)
+            while (depth < depthLimit)
             {
                 var branches = state.GetBranches().ToList();
                 if (branches.Count == 0) return;
@@ -351,6 +361,7 @@ namespace TreesearchLib
                     }
                 );
                 state = bestBranch;
+                depth++;
                 if (state.IsTerminal) return;
             }
         }
@@ -366,26 +377,30 @@ namespace TreesearchLib
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
         /// <param name="state">The state from which the pilot method should start operating</param>
+        /// <param name="depth">The depth of the current state</param>
         /// <param name="lookahead">The lookahead method to use</param>
-        /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="filterWidth">How many descendents will be considered for lookahead</param>
+        /// <param name="depthLimit">The depth limit for the pilot search</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns></returns>
         public static void ParallelPilotMethod<T, C, Q>(ISearchControl<T, Q> control,
-                T state, Lookahead<T, C, Q> lookahead, int filterWidth, int maxDegreeOfParallelism)
+                T state, int depth, Lookahead<T, C, Q> lookahead,
+                int filterWidth, int depthLimit, int maxDegreeOfParallelism)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             if (filterWidth <= 0) throw new ArgumentException($"{filterWidth} needs to be greater or equal than 1", nameof(filterWidth));
+            if (depthLimit < 0) throw new ArgumentException($"{nameof(depthLimit)} needs to be greater or equal to 0", nameof(depthLimit));
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{nameof(maxDegreeOfParallelism)} needs to be -1 or greater or equal to 1", nameof(maxDegreeOfParallelism));
             if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
 
             var remainingTime = control.Runtime - control.Elapsed;
             var remainingNodes = control.NodeLimit - control.VisitedNodes;
             var locker = new object();
-            while (true)
+            while (depth < depthLimit)
             {
                 var branches = state.GetChoices().Select(c => { var clone = (T)state.Clone(); clone.Apply(c); return clone; }).ToList();
                 if (branches.Count == 0) return;
@@ -431,6 +446,7 @@ namespace TreesearchLib
                     }
                 );
                 state = bestBranch;
+                depth++;
                 if (state.IsTerminal) return;
             }
         }
@@ -799,18 +815,19 @@ namespace TreesearchLib
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
         /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
-        /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="filterWidth">How many descendents will be considered for lookahead</param>
+        /// <param name="depthLimit">The maximum depth of the pilot search</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use for the lookahead.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
         public static Task<SearchControl<T, Q>> ParallelPilotMethodAsync<T, Q>(
             this SearchControl<T, Q> control, Lookahead<T, Q> lookahead = null,
-            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => ParallelPilotMethod(control, lookahead, filterWidth,
+            return Task.Run(() => ParallelPilotMethod(control, lookahead, filterWidth, depthLimit,
                 maxDegreeOfParallelism));
         }
 
@@ -825,14 +842,15 @@ namespace TreesearchLib
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
         /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
-        /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="filterWidth">How many descendents will be considered for lookahead</param>
+        /// <param name="depthLimit">The maximum depth of the pilot search</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use for the search.</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of the objective</typeparam>
         /// <returns>The control object with the tracking.</returns>
         public static SearchControl<T, Q> ParallelPilotMethod<T, Q>(
             this SearchControl<T, Q> control, Lookahead<T, Q> lookahead = null,
-            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
@@ -841,8 +859,8 @@ namespace TreesearchLib
             if (lookahead == null) lookahead = LA.DFSLookahead<T, Q>(filterWidth: 1);
 
             var state = control.InitialState;
-            ConcurrentHeuristics.ParallelPilotMethod<T, Q>(control, state, lookahead, filterWidth,
-                maxDegreeOfParallelism);
+            ConcurrentHeuristics.ParallelPilotMethod<T, Q>(control, state, depth: 0, lookahead,
+                filterWidth, depthLimit, maxDegreeOfParallelism);
             return control;
         }
 
@@ -857,7 +875,8 @@ namespace TreesearchLib
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
         /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
-        /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="filterWidth">How many descendents will be considered for lookahead</param>
+        /// <param name="depthLimit">The maximum depth of the pilot search</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
@@ -865,11 +884,11 @@ namespace TreesearchLib
         /// <returns>The control object with the tracking.</returns>
         public static Task<SearchControl<T, C, Q>> ParallelPilotMethodAsync<T, C, Q>(
             this SearchControl<T, C, Q> control, Lookahead<T, C, Q> lookahead = null,
-            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => ParallelPilotMethod(control, lookahead, filterWidth,
+            return Task.Run(() => ParallelPilotMethod(control, lookahead, filterWidth, depthLimit,
                 maxDegreeOfParallelism));
         }
 
@@ -885,7 +904,8 @@ namespace TreesearchLib
         /// <param name="control">Runtime control and best solution tracking.</param>
         /// <param name="beamWidth">The parameter that governs how many parallel lines through the search tree should be considered during lookahead. For values > 1, rank must be defined as BeamSearch will be used.</param>
         /// <param name="rank">A function that ranks states (lower is better), if it is null the rank is implicit by the order in which the branches are generated.</param>
-        /// <param name="filterWidth">How many descendents will be considered per node (in case beamWidth > 1)</param>
+        /// <param name="filterWidth">How many descendents will be considered for lookahead</param>
+        /// <param name="depthLimit">The maximum depth of the pilot search</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
@@ -893,7 +913,7 @@ namespace TreesearchLib
         /// <returns>The control object with the tracking.</returns>
         public static SearchControl<T, C, Q> ParallelPilotMethod<T, C, Q>(
             this SearchControl<T, C, Q> control, Lookahead<T, C, Q> lookahead = null,
-            int filterWidth = int.MaxValue, int maxDegreeOfParallelism = -1)
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
@@ -902,8 +922,8 @@ namespace TreesearchLib
             if (lookahead == null) lookahead = LA.DFSLookahead<T, C, Q>(filterWidth: 1);
             
             var state = (T)control.InitialState.Clone();
-            ConcurrentHeuristics.ParallelPilotMethod<T, C, Q>(control, state, lookahead, filterWidth,
-                maxDegreeOfParallelism);
+            ConcurrentHeuristics.ParallelPilotMethod<T, C, Q>(control, state, depth: 0, lookahead,
+                filterWidth, depthLimit, maxDegreeOfParallelism);
             return control;
         }
 
@@ -1116,7 +1136,7 @@ namespace TreesearchLib
 
         public static Task<TState> ParallelPilotMethodAsync<TState, TQuality>(
             this IState<TState, TQuality> state, Lookahead<TState, TQuality> lookahead = null,
-            int filterWidth = 1,
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1124,14 +1144,14 @@ namespace TreesearchLib
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => ParallelPilotMethod((TState)state, lookahead,
-                filterWidth, runtime, nodelimit, callback, token, maxDegreeOfParallelism)
+            return Task.Run(() => ParallelPilotMethod((TState)state, lookahead, filterWidth, depthLimit,
+                runtime, nodelimit, callback, token, maxDegreeOfParallelism)
             );
         }
 
         public static TState ParallelPilotMethod<TState, TQuality>(
             this IState<TState, TQuality> state, Lookahead<TState, TQuality> lookahead = null,
-            int filterWidth = int.MaxValue,
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1145,13 +1165,14 @@ namespace TreesearchLib
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             if (lookahead == null) lookahead = LA.DFSLookahead<TState, TQuality>(filterWidth: 1);
-            return control.ParallelPilotMethod(lookahead, filterWidth,
+            return control.ParallelPilotMethod(lookahead, filterWidth, depthLimit,
                 maxDegreeOfParallelism).BestQualityState;
         }
 
         public static Task<TState> ParallelPilotMethodAsync<TState, TChoice, TQuality>(
             this IMutableState<TState, TChoice, TQuality> state,
-            Lookahead<TState, TChoice, TQuality> lookahead = null, int filterWidth = int.MaxValue,
+            Lookahead<TState, TChoice, TQuality> lookahead = null,
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1160,14 +1181,15 @@ namespace TreesearchLib
             where TQuality : struct, IQuality<TQuality>
         {
             return Task.Run(() => ParallelPilotMethod<TState, TChoice, TQuality>(
-                (TState)state, lookahead, filterWidth, runtime, nodelimit,
+                (TState)state, lookahead, filterWidth, depthLimit, runtime, nodelimit,
                 callback, token, maxDegreeOfParallelism)
             );
         }
 
         public static TState ParallelPilotMethod<TState, TChoice, TQuality>(
             this IMutableState<TState, TChoice, TQuality> state,
-            Lookahead<TState, TChoice, TQuality> lookahead = null, int filterWidth = int.MaxValue,
+            Lookahead<TState, TChoice, TQuality> lookahead = null,
+            int filterWidth = int.MaxValue, int depthLimit = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1181,7 +1203,7 @@ namespace TreesearchLib
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
             if (lookahead == null) lookahead = LA.DFSLookahead<TState, TChoice, TQuality>(filterWidth: 1);
-            return control.ParallelPilotMethod(lookahead, filterWidth,
+            return control.ParallelPilotMethod(lookahead, filterWidth, depthLimit,
                 maxDegreeOfParallelism).BestQualityState;
         }
     }

@@ -4,21 +4,18 @@
     <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>TreesearchLib.snk</AssemblyOriginatorKeyFile>
-    <Version>1.1.2</Version>
+    <Version>1.2.0</Version>
     <Authors>Sebastian Leitner, Andreas Beham</Authors>
     <Description>TreesearchLib is a framework for modeling optimization problems that are to be solved by constructive heuristics.
-    It includes a number of algorithms: exhaustive depth-first and breadth-first search, limited discrepancy search, the PILOT method, Beam search, Monotonic beam search, Rake search, and Monte Carlo Tree Search.</Description>
+    It includes a number of algorithms: exhaustive depth-first and breadth-first search, limited discrepancy search, the PILOT method, beam search, monotonic beam search, rake search, and Monte Carlo tree search.</Description>
     <Product>TreesearchLib</Product>
     <Company>HEAL, FH Upper Austria</Company>
     <Copyright>Sebastian Leitner, Andreas Beham</Copyright>
     <PackageProjectUrl>https://github.com/heal-research/TreesearchLib</PackageProjectUrl>
     <PackageReleaseNotes>
-    Feature release: Adds a new Validator class that can be used to check whether a given state is implemented correctly.
+    Feature release: Adds a generic lookahead delegate to use in pilot method and rake search.
 
-    Sometimes subtle errors in Clone(), GetBranches(), GetChoices(), Apply(), and UndoLast() lead to unexpected and inexplicable results.
-    A `Test` extension method has been added to the IMutableState and IState interface. This can be called as part of a unit test to
-    check whether there is a potential problem in the implementation. Of course, this test does not guarantee correctness of the
-    implementation, but several potential problems can be detected.
+    Also several APIs have been changed and parameters have been added, changed. You may have breaking changes in your code which are however easy to fix.
     </PackageReleaseNotes>
     <NeutralLanguage />
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
