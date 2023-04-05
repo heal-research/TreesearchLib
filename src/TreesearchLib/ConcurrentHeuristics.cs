@@ -288,7 +288,7 @@ namespace TreesearchLib
         /// The lookahead depth is not configurable, instead a full solution must be achieved.
         /// </summary>
         /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// Voß, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
@@ -372,7 +372,7 @@ namespace TreesearchLib
         /// The lookahead depth is not configurable, instead a full solution must be achieved.
         /// </summary>
         /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// Voß, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
@@ -810,7 +810,7 @@ namespace TreesearchLib
         /// The lookahead depth is not configurable, instead a full solution must be achieved.
         /// </summary>
         /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// Voß, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
@@ -837,7 +837,7 @@ namespace TreesearchLib
         /// The lookahead depth is not configurable, instead a full solution must be achieved.
         /// </summary>
         /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// Voß, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
@@ -870,7 +870,7 @@ namespace TreesearchLib
         /// The lookahead depth is not configurable, instead a full solution must be achieved.
         /// </summary>
         /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// Voß, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
@@ -898,7 +898,7 @@ namespace TreesearchLib
         /// The lookahead depth is not configurable, instead a full solution must be achieved.
         /// </summary>
         /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// Voß, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>

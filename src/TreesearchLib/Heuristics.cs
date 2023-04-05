@@ -215,7 +215,7 @@ namespace TreesearchLib
         /// a quality must be achieved to identify the better branch.
         /// </summary>
         /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// Voß, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
@@ -283,7 +283,7 @@ namespace TreesearchLib
         /// a quality must be achieved to identify the better branch.
         /// </summary>
         /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// Voß, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
@@ -1094,7 +1094,7 @@ namespace TreesearchLib
         /// a quality must be achieved to identify the better branch.
         /// </summary>
         /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// Voß, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
@@ -1119,7 +1119,7 @@ namespace TreesearchLib
         /// a quality must be achieved to identify the better branch.
         /// </summary>
         /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// Voß, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
@@ -1146,7 +1146,7 @@ namespace TreesearchLib
         /// a quality must be achieved to identify the better branch.
         /// </summary>
         /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// Voß, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
@@ -1172,7 +1172,7 @@ namespace TreesearchLib
         /// a quality must be achieved to identify the better branch.
         /// </summary>
         /// <remarks>
-        /// Voßs, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
+        /// Voß, S., Fink, A. & Duin, C. Looking Ahead with the Pilot Method. Ann Oper Res 136, 285–302 (2005).
         /// https://doi.org/10.1007/s10479-005-2060-2
         /// </remarks>
         /// <param name="control">Runtime control and best solution tracking.</param>
