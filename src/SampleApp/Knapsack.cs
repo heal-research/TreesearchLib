@@ -7,7 +7,7 @@ using TreesearchLib;
 namespace SampleApp
 {
     /// <summary>
-    /// Provides an implementatino of the {0,1}-Knapsack problem that
+    /// Provides an implementation of the {0,1}-Knapsack problem that
     /// supports undo, i.e., moves can be applied and reversed. It is
     /// less efficient to clone this state, than <seealso cref="KnapsackNoUndo"/>,
     /// because the Decision vector is always full length.
