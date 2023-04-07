@@ -204,12 +204,19 @@ namespace TreesearchLib
             Parallel.ForEach(rake.AsEnumerable().Take(rakeWidth), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
             next =>
             {
-                var localControl = SearchControl<T, Q>.Start(next)
-                    .WithCancellationToken(control.Cancellation)
-                    .WithRuntimeLimit(remainingTime);
+                SearchControl<T, Q> localControl = null;
                 lock (locker)
                 {
-                    localControl = localControl.WithNodeLimit(remainingNodes);
+                    remainingTime = control.Runtime - control.Elapsed;
+                    remainingNodes = control.NodeLimit - control.VisitedNodes;
+                    if (remainingTime < TimeSpan.Zero || remainingNodes <= 0 || control.ShouldStop())
+                    {
+                        return;
+                    }
+                    localControl = SearchControl<T, Q>.Start(next)
+                        .WithCancellationToken(control.Cancellation)
+                        .WithRuntimeLimit(remainingTime)
+                        .WithNodeLimit(remainingNodes);
                     if (control.BestQuality.HasValue)
                     {
                         localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
@@ -220,7 +227,6 @@ namespace TreesearchLib
                 lock (locker)
                 {
                     control.Merge(localControl);
-                    remainingNodes = control.NodeLimit - control.VisitedNodes;
                 }
             });
             return control;
@@ -260,12 +266,19 @@ namespace TreesearchLib
             Parallel.ForEach(rake.AsEnumerable().Take(rakeWidth), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
             next =>
             {
-                var localControl = SearchControl<T, C, Q>.Start(next)
-                    .WithCancellationToken(control.Cancellation)
-                    .WithRuntimeLimit(remainingTime); // each thread gets the same time
+                SearchControl<T, C, Q> localControl = null;
                 lock (locker)
                 {
-                    localControl = localControl.WithNodeLimit(remainingNodes);
+                    remainingTime = control.Runtime - control.Elapsed;
+                    remainingNodes = control.NodeLimit - control.VisitedNodes;
+                    if (remainingTime < TimeSpan.Zero || remainingNodes <= 0 || control.ShouldStop())
+                    {
+                        return;
+                    }
+                    localControl = SearchControl<T, C, Q>.Start(next)
+                        .WithCancellationToken(control.Cancellation)
+                        .WithRuntimeLimit(remainingTime)
+                        .WithNodeLimit(remainingNodes);
                     if (control.BestQuality.HasValue)
                     {
                         localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
@@ -276,7 +289,6 @@ namespace TreesearchLib
                 lock (locker)
                 {
                     control.Merge(localControl);
-                    remainingNodes = control.NodeLimit - control.VisitedNodes;
                 }
             });
             return control;
@@ -312,8 +324,6 @@ namespace TreesearchLib
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} is not a valid value for {nameof(maxDegreeOfParallelism)}", nameof(maxDegreeOfParallelism));
             if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
 
-            var remainingTime = control.Runtime - control.Elapsed;
-            var remainingNodes = control.NodeLimit - control.VisitedNodes;
             var locker = new object();
             while (depth < depthLimit)
             {
@@ -332,12 +342,19 @@ namespace TreesearchLib
                             quality = next.Quality;
                         } else
                         {
-                            var localControl = SearchControl<T, Q>.Start(next)
-                                .WithCancellationToken(control.Cancellation)
-                                .WithRuntimeLimit(remainingTime); // each thread gets the same time
+                            SearchControl<T, Q> localControl = null;
                             lock (locker)
                             {
-                                localControl = localControl.WithNodeLimit(remainingNodes);
+                                var remainingTime = control.Runtime - control.Elapsed;
+                                var remainingNodes = control.NodeLimit - control.VisitedNodes;
+                                if (remainingTime <= TimeSpan.Zero || remainingNodes <= 0)
+                                {
+                                    return;
+                                }
+                                localControl = SearchControl<T, Q>.Start(next)
+                                  .WithCancellationToken(control.Cancellation)
+                                  .WithRuntimeLimit(remainingTime)
+                                  .WithNodeLimit(remainingNodes);
                             }
                             lookahead(localControl, next);
                             localControl.Finish();
@@ -345,7 +362,6 @@ namespace TreesearchLib
                             lock (locker)
                             {
                                 control.Merge(localControl);
-                                remainingNodes = control.NodeLimit - control.VisitedNodes;
                             }
                         }
 
@@ -397,8 +413,6 @@ namespace TreesearchLib
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{nameof(maxDegreeOfParallelism)} needs to be -1 or greater or equal to 1", nameof(maxDegreeOfParallelism));
             if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
 
-            var remainingTime = control.Runtime - control.Elapsed;
-            var remainingNodes = control.NodeLimit - control.VisitedNodes;
             var locker = new object();
             while (depth < depthLimit)
             {
@@ -417,12 +431,20 @@ namespace TreesearchLib
                             quality = next.Quality;
                         } else
                         {
-                            var localControl = SearchControl<T, C, Q>.Start(next)
-                                .WithCancellationToken(control.Cancellation)
-                                .WithRuntimeLimit(remainingTime); // each thread gets the same time
+                            SearchControl<T, C, Q> localControl = null;
                             lock (locker)
                             {
-                                localControl = localControl.WithNodeLimit(remainingNodes);
+                                
+                                var remainingTime = control.Runtime - control.Elapsed;
+                                var remainingNodes = control.NodeLimit - control.VisitedNodes;
+                                if (remainingTime <= TimeSpan.Zero || remainingNodes <= 0)
+                                {
+                                    return;
+                                }
+                                localControl = SearchControl<T, C, Q>.Start(next)
+                                  .WithCancellationToken(control.Cancellation)
+                                  .WithRuntimeLimit(remainingTime)
+                                  .WithNodeLimit(remainingNodes);
                             }
                             lookahead(localControl, next);
                             localControl.Finish();
@@ -430,7 +452,6 @@ namespace TreesearchLib
                             lock (locker)
                             {
                                 control.Merge(localControl);
-                                remainingNodes = control.NodeLimit - control.VisitedNodes;
                             }
                         }
 

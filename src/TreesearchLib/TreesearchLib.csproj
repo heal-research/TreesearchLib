@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>TreesearchLib.snk</AssemblyOriginatorKeyFile>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <Authors>Sebastian Leitner, Andreas Beham</Authors>
     <Description>TreesearchLib is a framework for modeling optimization problems that are to be solved by constructive heuristics.
     It includes a number of algorithms: exhaustive depth-first and breadth-first search, limited discrepancy search, the PILOT method, beam search, monotonic beam search, rake search, and Monte Carlo tree search.</Description>
@@ -13,9 +13,7 @@
     <Copyright>Sebastian Leitner, Andreas Beham</Copyright>
     <PackageProjectUrl>https://github.com/heal-research/TreesearchLib</PackageProjectUrl>
     <PackageReleaseNotes>
-    Feature release: Adds a generic lookahead delegate to use in pilot method and rake search.
-
-    Also several APIs have been changed and parameters have been added, changed. You may have breaking changes in your code which are however easy to fix.
+    Bug fix release: Runtime limits in parallel pilot method and parallel rake search may be exceeded too much.
     </PackageReleaseNotes>
     <NeutralLanguage />
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
