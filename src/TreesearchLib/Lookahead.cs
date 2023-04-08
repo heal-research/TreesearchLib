@@ -83,7 +83,7 @@ namespace TreesearchLib
         {
             return (control, state) =>
             {
-                Heuristics.RakeSearch<T, Q>(control, state, rakeWidth, innerLookahead);
+                Heuristics.RakeSearch<T, Q>(control, state, rakeWidth, innerLookahead, iterations: 1);
             };
         }
 
@@ -93,7 +93,7 @@ namespace TreesearchLib
         {
             return (control, state) =>
             {
-                Heuristics.RakeSearch<T, C, Q>(control, state, rakeWidth, innerLookahead);
+                Heuristics.RakeSearch<T, C, Q>(control, state, rakeWidth, innerLookahead, iterations: 1);
             };
         }
 

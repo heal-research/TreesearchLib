@@ -25,6 +25,11 @@ namespace TreesearchLib
         /// <param name="state">The node to store</param>
         void Store(T state);
         /// <summary>
+        /// Peeks into the next node, without removing it from the collection
+        /// </summary>
+        /// <returns>The next node</returns>
+        T PeekOrDefault();
+        /// <summary>
         /// Returns all stored states as an enumerable in no particular order
         /// </summary>
         /// <returns>The stored states</returns>
@@ -60,6 +65,8 @@ namespace TreesearchLib
             next = states.Pop();
             return true;
         }
+
+        public T PeekOrDefault() => states.Count > 0 ? states.Peek() : default(T);
 
         public void Store(T state) => states.Push(state);
 
@@ -105,6 +112,8 @@ namespace TreesearchLib
             next = states.Dequeue();
             return true;
         }
+
+        public T PeekOrDefault() => states.Count > 0 ? states.Peek() : default(T);
 
         public void Store(T state) => states.Enqueue(state);
 

@@ -179,56 +179,94 @@ namespace TreesearchLib
         /// <param name="state">The state to start the search from</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="lookahead">The lookahead method to use</param>
+        /// <param name="iterations">The number of iterations to perform</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, Q> ParallelRakeSearch<T, Q>(
                 this SearchControl<T, Q> control, T state, int rakeWidth,
-                Lookahead<T, Q> lookahead, int maxDegreeOfParallelism = -1)
+                Lookahead<T, Q> lookahead, int iterations, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             if (rakeWidth <= 0) throw new ArgumentException($"{rakeWidth} needs to be greater or equal than 1", nameof(rakeWidth));
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
+            if (iterations <= 0) throw new ArgumentException($"{iterations} needs to be greater or equal than 1", nameof(iterations));
 
-            var (_, rake) = Algorithms.BreadthSearch(control, state, depth: 0, int.MaxValue, int.MaxValue, rakeWidth);
-            var remainingTime = control.Runtime - control.Elapsed;
-            var remainingNodes = control.NodeLimit - control.VisitedNodes;
-            if (control.ShouldStop() || remainingTime < TimeSpan.Zero || remainingNodes <= 0)
+            for (var iter = 0; iter < iterations && !control.ShouldStop(); iter++)
             {
-                return control;
+                var (_, rake) = Algorithms.BreadthSearch(control, state, depth: 0, int.MaxValue, int.MaxValue, rakeWidth);
+                if (control.ShouldStop() || rake.Nodes == 0 || control.Runtime <= control.Elapsed || control.NodeLimit <= control.VisitedNodes)
+                {
+                    return control;
+                }
+                var locker = new object();
+                T bestBranch = rake.PeekOrDefault();
+                Q? bestBranchQuality = null;
+                var i = 0;
+                Parallel.ForEach(rake.AsEnumerable().Take(rakeWidth), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
+                next =>
+                {
+                    Q? quality = default;
+                    if (next.IsTerminal)
+                    {
+                        // no lookahead required
+                        quality = next.Quality;
+                    } else
+                    {
+                        SearchControl<T, Q> localControl = null;
+                        lock (locker)
+                        {
+                            var remainingTime = control.Runtime - control.Elapsed;
+                            var remainingNodes = control.NodeLimit - control.VisitedNodes;
+                            if (remainingTime <= TimeSpan.Zero || remainingNodes <= 0)
+                            {
+                                i++;
+                                return;
+                            }
+                            localControl = SearchControl<T, Q>.Start(next)
+                                .WithCancellationToken(control.Cancellation)
+                                .WithRuntimeLimit(remainingTime)
+                                .WithNodeLimit(remainingNodes);
+                        }
+                        lookahead(localControl, next);
+                        localControl.Finish();
+                        lock (locker)
+                        {
+                            control.Merge(localControl);
+                        }
+                    }
+
+                    if (!quality.HasValue)
+                    {
+                        lock (locker)
+                        {
+                            i++;
+                        }
+                        return; // no solution achieved
+                    }
+                    lock (locker)
+                    {
+                        i++;
+                        if (!bestBranchQuality.HasValue || quality.Value.IsBetter(bestBranchQuality.Value))
+                        {
+                            bestBranch = next;
+                            bestBranchQuality = quality;
+                        }
+                    }
+                });
+                if (i == 0)
+                {
+                    break; // no more branches
+                }
+                state = bestBranch;
+                if (state.IsTerminal)
+                {
+                    break;
+                }
             }
-            var locker = new object();
-            Parallel.ForEach(rake.AsEnumerable().Take(rakeWidth), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
-            next =>
-            {
-                SearchControl<T, Q> localControl = null;
-                lock (locker)
-                {
-                    remainingTime = control.Runtime - control.Elapsed;
-                    remainingNodes = control.NodeLimit - control.VisitedNodes;
-                    if (remainingTime < TimeSpan.Zero || remainingNodes <= 0 || control.ShouldStop())
-                    {
-                        return;
-                    }
-                    localControl = SearchControl<T, Q>.Start(next)
-                        .WithCancellationToken(control.Cancellation)
-                        .WithRuntimeLimit(remainingTime)
-                        .WithNodeLimit(remainingNodes);
-                    if (control.BestQuality.HasValue)
-                    {
-                        localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
-                    }
-                }
-                lookahead(localControl, next);
-                localControl.Finish();
-                lock (locker)
-                {
-                    control.Merge(localControl);
-                }
-            });
             return control;
         }
 
@@ -240,6 +278,7 @@ namespace TreesearchLib
         /// <param name="state">The state to start the search from</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="lookahead">The lookahead method to use</param>
+        /// <param name="iterations">The number of iterations to perform</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
@@ -247,50 +286,87 @@ namespace TreesearchLib
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, C, Q> ParallelRakeSearch<T, C, Q>(
                 this SearchControl<T, C, Q> control, T state, int rakeWidth,
-                Lookahead<T, C, Q> lookahead, int maxDegreeOfParallelism = -1)
+                Lookahead<T, C, Q> lookahead, int iterations, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             if (rakeWidth <= 0) throw new ArgumentException($"{rakeWidth} needs to be greater or equal than 1", nameof(rakeWidth));
             if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
+            if (iterations <= 0) throw new ArgumentException($"{iterations} needs to be greater or equal than 1", nameof(iterations));
 
-            var (_, rake) = Algorithms.BreadthSearch<T, C, Q>(control, state, depth: 0, int.MaxValue, int.MaxValue, rakeWidth);
-            var remainingTime = control.Runtime - control.Elapsed;
-            var remainingNodes = control.NodeLimit - control.VisitedNodes;
-            if (control.ShouldStop() || remainingTime < TimeSpan.Zero || remainingNodes <= 0) // the last two are just safety checks, control.ShouldStop() should terminate in these cases too
+            for (var iter = 0; iter < iterations && !control.ShouldStop(); iter++)
             {
-                return control;
+                var (_, rake) = Algorithms.BreadthSearch<T, C, Q>(control, state, depth: 0, int.MaxValue, int.MaxValue, rakeWidth);
+                if (control.ShouldStop() || control.Runtime <= control.Elapsed || control.NodeLimit <= control.VisitedNodes) // the last two are just safety checks, control.ShouldStop() should terminate in these cases too
+                {
+                    return control;
+                }
+                var locker = new object();
+                T bestBranch = rake.PeekOrDefault();
+                Q? bestBranchQuality = null;
+                var i = 0;
+                Parallel.ForEach(rake.AsEnumerable().Take(rakeWidth), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
+                next =>
+                {
+                    Q? quality = default;
+                    if (next.IsTerminal)
+                    {
+                        // no lookahead required
+                        quality = next.Quality;
+                    } else
+                    {
+                        SearchControl<T, C, Q> localControl = null;
+                        lock (locker)
+                        {
+                            var remainingTime = control.Runtime - control.Elapsed;
+                            var remainingNodes = control.NodeLimit - control.VisitedNodes;
+                            if (remainingTime <= TimeSpan.Zero || remainingNodes <= 0)
+                            {
+                                i++;
+                                return;
+                            }
+                            localControl = SearchControl<T, C, Q>.Start(next)
+                                .WithCancellationToken(control.Cancellation)
+                                .WithRuntimeLimit(remainingTime)
+                                .WithNodeLimit(remainingNodes);
+                        }
+                        lookahead(localControl, next);
+                        localControl.Finish();
+                        lock (locker)
+                        {
+                            control.Merge(localControl);
+                        }
+                    }
+
+                    if (!quality.HasValue)
+                    {
+                        lock (locker)
+                        {
+                            i++;
+                        }
+                        return; // no solution achieved
+                    }
+                    lock (locker)
+                    {
+                        i++;
+                        if (!bestBranchQuality.HasValue || quality.Value.IsBetter(bestBranchQuality.Value))
+                        {
+                            bestBranch = next;
+                            bestBranchQuality = quality;
+                        }
+                    }
+                });
+                if (i == 0)
+                {
+                    break; // no more branches
+                }
+                state = bestBranch;
+                if (state.IsTerminal)
+                {
+                    break;
+                }
             }
-            var locker = new object();
-            Parallel.ForEach(rake.AsEnumerable().Take(rakeWidth), new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
-            next =>
-            {
-                SearchControl<T, C, Q> localControl = null;
-                lock (locker)
-                {
-                    remainingTime = control.Runtime - control.Elapsed;
-                    remainingNodes = control.NodeLimit - control.VisitedNodes;
-                    if (remainingTime < TimeSpan.Zero || remainingNodes <= 0 || control.ShouldStop())
-                    {
-                        return;
-                    }
-                    localControl = SearchControl<T, C, Q>.Start(next)
-                        .WithCancellationToken(control.Cancellation)
-                        .WithRuntimeLimit(remainingTime)
-                        .WithNodeLimit(remainingNodes);
-                    if (control.BestQuality.HasValue)
-                    {
-                        localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
-                    }
-                }
-                lookahead(localControl, next);
-                localControl.Finish();
-                lock (locker)
-                {
-                    control.Merge(localControl);
-                }
-            });
             return control;
         }
 
@@ -576,17 +652,18 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
+        /// <param name="iterations">The maximum number of iterations to perform</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, Q>> ParallelRakeSearchAsync<T, Q>(
             this SearchControl<T, Q> control, int rakeWidth,
-            Lookahead<T, Q> lookahead = null, int maxDegreeOfParallelism = -1)
+            Lookahead<T, Q> lookahead = null, int iterations = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => ParallelRakeSearch(control, rakeWidth, lookahead, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelRakeSearch(control, rakeWidth, lookahead, iterations, maxDegreeOfParallelism));
         }
 
         /// <summary>
@@ -596,21 +673,19 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
+        /// <param name="iterations">The maximum number of iterations to perform</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, Q> ParallelRakeSearch<T, Q>(
             this SearchControl<T, Q> control, int rakeWidth, 
-            Lookahead<T, Q> lookahead = null, int maxDegreeOfParallelism = -1)
+            Lookahead<T, Q> lookahead = null, int iterations = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            if (rakeWidth <= 0) throw new ArgumentException($"{rakeWidth} needs to be greater or equal than 1", nameof(rakeWidth));
-            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             if (lookahead == null) lookahead = LA.DFSLookahead<T, Q>(filterWidth: 1);
-
-            ConcurrentHeuristics.ParallelRakeSearch(control, control.InitialState, rakeWidth, lookahead, maxDegreeOfParallelism);
+            ConcurrentHeuristics.ParallelRakeSearch(control, control.InitialState, rakeWidth, lookahead, iterations, maxDegreeOfParallelism);
             return control;
         }
 
@@ -621,6 +696,7 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
+        /// <param name="iterations">The maximum number of iterations to perform</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
@@ -628,11 +704,11 @@ namespace TreesearchLib
         /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, C, Q>> ParallelRakeSearchAsync<T, C, Q>(
             this SearchControl<T, C, Q> control, int rakeWidth,
-            Lookahead<T, C, Q> lookahead = null, int maxDegreeOfParallelism = -1)
+            Lookahead<T, C, Q> lookahead = null, int iterations = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => ParallelRakeSearch(control, rakeWidth, lookahead, maxDegreeOfParallelism));
+            return Task.Run(() => ParallelRakeSearch(control, rakeWidth, lookahead, iterations, maxDegreeOfParallelism));
         }
 
         /// <summary>
@@ -642,6 +718,7 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
+        /// <param name="iterations">The maximum number of iterations to perform</param>
         /// <param name="maxDegreeOfParallelism">The maximum number of threads to use</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
@@ -649,15 +726,12 @@ namespace TreesearchLib
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, C, Q> ParallelRakeSearch<T, C, Q>(
             this SearchControl<T, C, Q> control, int rakeWidth,
-            Lookahead<T, C, Q> lookahead = null, int maxDegreeOfParallelism = -1)
+            Lookahead<T, C, Q> lookahead = null, int iterations = int.MaxValue, int maxDegreeOfParallelism = -1)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            if (rakeWidth <= 0) throw new ArgumentException($"{rakeWidth} needs to be greater or equal than 1", nameof(rakeWidth));
-            if (maxDegreeOfParallelism == 0 || maxDegreeOfParallelism < -1) throw new ArgumentException($"{maxDegreeOfParallelism} needs to be -1 or greater or equal than 0", nameof(maxDegreeOfParallelism));
             if (lookahead == null) lookahead = LA.DFSLookahead<T, C, Q>(filterWidth: 1);
-
-            ConcurrentHeuristics.ParallelRakeSearch(control, (T)control.InitialState.Clone(), rakeWidth, lookahead, maxDegreeOfParallelism);
+            ConcurrentHeuristics.ParallelRakeSearch(control, (T)control.InitialState.Clone(), rakeWidth, lookahead, iterations, maxDegreeOfParallelism);
             return control;
         }
 
@@ -1015,7 +1089,7 @@ namespace TreesearchLib
 
         public static Task<TState> ParallelRakeSearchAsync<TState, TQuality>(
             this IState<TState, TQuality> state, int rakeWidth,
-            Lookahead<TState, TQuality> lookahead = null,
+            Lookahead<TState, TQuality> lookahead = null, int iterations = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1023,13 +1097,13 @@ namespace TreesearchLib
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => ParallelRakeSearch((TState)state, rakeWidth, lookahead,
+            return Task.Run(() => ParallelRakeSearch((TState)state, rakeWidth, lookahead, iterations,
                 runtime, nodelimit, callback, token, maxDegreeOfParallelism));
         }
 
         public static TState ParallelRakeSearch<TState, TQuality>(
             this IState<TState, TQuality> state, int rakeWidth,
-            Lookahead<TState, TQuality> lookahead = null,
+            Lookahead<TState, TQuality> lookahead = null, int iterations = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1042,13 +1116,13 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelRakeSearch(rakeWidth, lookahead,
+            return control.ParallelRakeSearch(rakeWidth, lookahead, iterations,
                 maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
         }
 
         public static Task<TState> ParallelRakeSearchAsync<TState, TChoice, TQuality>(
             this IMutableState<TState, TChoice, TQuality> state, int rakeWidth,
-            Lookahead<TState, TChoice, TQuality> lookahead = null,
+            Lookahead<TState, TChoice, TQuality> lookahead = null, int iterations = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1057,14 +1131,14 @@ namespace TreesearchLib
             where TQuality : struct, IQuality<TQuality>
         {
             return Task.Run(() => ParallelRakeSearch<TState, TChoice, TQuality>(
-                (TState)state, rakeWidth, lookahead, runtime, nodelimit, callback, token,
+                (TState)state, rakeWidth, lookahead, iterations, runtime, nodelimit, callback, token,
                 maxDegreeOfParallelism)
             );
         }
 
         public static TState ParallelRakeSearch<TState, TChoice, TQuality>(
             this IMutableState<TState, TChoice, TQuality> state, int rakeWidth,
-            Lookahead<TState, TChoice, TQuality> lookahead = null,
+            Lookahead<TState, TChoice, TQuality> lookahead = null, int iterations = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken),
@@ -1077,7 +1151,7 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.ParallelRakeSearch(rakeWidth, lookahead,
+            return control.ParallelRakeSearch(rakeWidth, lookahead, iterations,
                 maxDegreeOfParallelism: maxDegreeOfParallelism).BestQualityState;
         }
 

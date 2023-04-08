@@ -160,23 +160,57 @@ namespace TreesearchLib
         /// <param name="state">The state to start the search from</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="lookahead">The lookahead method to use</param>
+        /// <param name="iterations">The number of iterations to perform</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static void RakeSearch<T, Q>(
-            ISearchControl<T, Q> control, T state, int rakeWidth, Lookahead<T, Q> lookahead)
+            ISearchControl<T, Q> control, T state, int rakeWidth, Lookahead<T, Q> lookahead, int iterations)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
             if (rakeWidth <= 0) throw new ArgumentException($"{nameof(rakeWidth)} must be greater than 0", nameof(rakeWidth));
             if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
-
-            var (_, rake) = Algorithms.BreadthSearch(control, state, 0, filterWidth: int.MaxValue, depthLimit: int.MaxValue, rakeWidth);
-            var i = 0;
-            while (i < rakeWidth && !control.ShouldStop() && rake.TryGetNext(out var next))
+            if (iterations <= 0) throw new ArgumentException($"{nameof(iterations)} must be greater than 0", nameof(iterations));
+            
+            for (var iter = 0; iter < iterations && !control.ShouldStop(); iter++)
             {
-                lookahead(control, next);
-                i++;
+                var (_, rake) = Algorithms.BreadthSearch(control, state, 0, filterWidth: int.MaxValue, depthLimit: int.MaxValue, rakeWidth);
+                var i = 0;
+                T bestBranch = rake.PeekOrDefault();
+                Q? bestQuality = null;
+                while (i < rakeWidth && !control.ShouldStop() && rake.TryGetNext(out var next))
+                {
+                    i++;
+                    Q? quality;
+                    if (next.IsTerminal)
+                    {
+                        // no lookahead required
+                        quality = next.Quality;
+                    } else
+                    {
+                        // wrap the search control, to do best quality tracking for this particular lookahead run only
+                        var wrappedControl = new WrappedSearchControl<T, Q>(control);
+                        lookahead(wrappedControl, next);
+                        quality = wrappedControl.BestQuality;
+                    }
+
+                    if (!quality.HasValue) continue; // no solution achieved
+                    if (!bestQuality.HasValue || quality.Value.IsBetter(bestQuality.Value))
+                    {
+                        bestQuality = quality;
+                        bestBranch = next;
+                    }
+                }
+                if (i == 0)
+                {
+                    break; // no more branches
+                }
+                state = bestBranch;
+                if (state.IsTerminal)
+                {
+                    break;
+                }
             }
         }
 
@@ -188,24 +222,58 @@ namespace TreesearchLib
         /// <param name="state">The state to start the search from</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="lookahead">The lookahead method to use</param>
+        /// <param name="iterations">The number of iterations to perform</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static void RakeSearch<T, C, Q>(
-            ISearchControl<T, Q> control, T state, int rakeWidth, Lookahead<T, C, Q> lookahead)
+            ISearchControl<T, Q> control, T state, int rakeWidth, Lookahead<T, C, Q> lookahead, int iterations)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
             if (rakeWidth <= 0) throw new ArgumentException($"{nameof(rakeWidth)} must be greater than 0", nameof(rakeWidth));
             if (lookahead == null) throw new ArgumentNullException(nameof(lookahead));
+            if (iterations <= 0) throw new ArgumentException($"{nameof(iterations)} must be greater than 0", nameof(iterations));
 
-            var (_, rake) = Algorithms.BreadthSearch<T, C, Q>(control, state, depth: 0, filterWidth: int.MaxValue, depthLimit: int.MaxValue, rakeWidth);
-            var i = 0;
-            while (i < rakeWidth && !control.ShouldStop() && rake.TryGetNext(out var next))
+            for (var iter = 0; iter < iterations && !control.ShouldStop(); iter++)
             {
-                lookahead(control, next);
-                i++;
+                var (_, rake) = Algorithms.BreadthSearch<T, C, Q>(control, state, depth: 0, filterWidth: int.MaxValue, depthLimit: int.MaxValue, rakeWidth);
+                var i = 0;
+                T bestBranch = rake.PeekOrDefault();
+                Q? bestQuality = null;
+                while (i < rakeWidth && !control.ShouldStop() && rake.TryGetNext(out var next))
+                {
+                    i++;
+                    Q? quality;
+                    if (next.IsTerminal)
+                    {
+                        // no lookahead required
+                        quality = next.Quality;
+                    } else
+                    {
+                        // wrap the search control, to do best quality tracking for this particular lookahead run only
+                        var wrappedControl = new WrappedSearchControl<T, C, Q>(control);
+                        lookahead(wrappedControl, next);
+                        quality = wrappedControl.BestQuality;
+                    }
+
+                    if (!quality.HasValue) continue; // no solution achieved
+                    if (!bestQuality.HasValue || quality.Value.IsBetter(bestQuality.Value))
+                    {
+                        bestQuality = quality;
+                        bestBranch = next;
+                    }
+                }
+                if (i == 0)
+                {
+                    break; // no more branches
+                }
+                state = bestBranch;
+                if (state.IsTerminal)
+                {
+                    break;
+                }
             }
         }
 
@@ -908,15 +976,16 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
+        /// <param name="iterations">The maximum number of iterations to perform</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, Q>> RakeSearchAsync<T, Q>(
-            this SearchControl<T, Q> control, int rakeWidth, Lookahead<T, Q> lookahead = null)
+            this SearchControl<T, Q> control, int rakeWidth, Lookahead<T, Q> lookahead = null, int iterations = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => RakeSearch(control, rakeWidth, lookahead));
+            return Task.Run(() => RakeSearch(control, rakeWidth, lookahead, iterations));
         }
 
         /// <summary>
@@ -926,17 +995,17 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
+        /// <param name="iterations">The maximum number of iterations to perform</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, Q> RakeSearch<T, Q>(
-            this SearchControl<T, Q> control, int rakeWidth, Lookahead<T, Q> lookahead = null)
+            this SearchControl<T, Q> control, int rakeWidth, Lookahead<T, Q> lookahead = null, int iterations = int.MaxValue)
             where T : IState<T, Q>
             where Q : struct, IQuality<Q>
         {
-            if (rakeWidth <= 0) throw new ArgumentOutOfRangeException(nameof(rakeWidth), "rakeWidth must be greater than 0");
             if (lookahead == null) lookahead = LA.DFSLookahead<T, Q>(filterWidth: 1);
-            Heuristics.RakeSearch(control, control.InitialState, rakeWidth, lookahead);
+            Heuristics.RakeSearch(control, control.InitialState, rakeWidth, lookahead, iterations);
             return control;
         }
 
@@ -947,16 +1016,17 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
+        /// <param name="iterations">The maximum number of iterations to perform</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static Task<SearchControl<T, C, Q>> RakeSearchAsync<T, C, Q>(
-            this SearchControl<T, C, Q> control, int rakeWidth, Lookahead<T, C, Q> lookahead = null)
+            this SearchControl<T, C, Q> control, int rakeWidth, Lookahead<T, C, Q> lookahead = null, int iterations = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            return Task.Run(() => RakeSearch(control, rakeWidth, lookahead));
+            return Task.Run(() => RakeSearch(control, rakeWidth, lookahead, iterations));
         }
 
         /// <summary>
@@ -966,18 +1036,18 @@ namespace TreesearchLib
         /// <param name="control">The runtime control and tracking</param>
         /// <param name="rakeWidth">The number of nodes to reach, before proceeding with a simple greedy heuristic</param>
         /// <param name="lookahead">The lookahead method to use, <see cref="LA.DFSLookahead"/> with filterWidth = 1, will be used if null</param>
+        /// <param name="iterations">The maximum number of iterations to perform</param>
         /// <typeparam name="T">The state type</typeparam>
         /// <typeparam name="C">The choice type</typeparam>
         /// <typeparam name="Q">The type of quality (Minimize, Maximize)</typeparam>
         /// <returns>The runtime control instance</returns>
         public static SearchControl<T, C, Q> RakeSearch<T, C, Q>(
-            this SearchControl<T, C, Q> control, int rakeWidth, Lookahead<T, C, Q> lookahead = null)
+            this SearchControl<T, C, Q> control, int rakeWidth, Lookahead<T, C, Q> lookahead = null, int iterations = int.MaxValue)
             where T : class, IMutableState<T, C, Q>
             where Q : struct, IQuality<Q>
         {
-            if (rakeWidth <= 0) throw new ArgumentOutOfRangeException(nameof(rakeWidth), "rakeWidth must be greater than 0");
             if (lookahead == null) lookahead = LA.DFSLookahead<T, C, Q>(filterWidth: 1);
-            Heuristics.RakeSearch(control, (T)control.InitialState.Clone(), rakeWidth, lookahead);
+            Heuristics.RakeSearch(control, (T)control.InitialState.Clone(), rakeWidth, lookahead, iterations);
             return control;
         }
 
@@ -1661,21 +1731,21 @@ namespace TreesearchLib
 
         public static Task<TState> RakeSearchAsync<TState, TQuality>(
             this IState<TState, TQuality> state, int rakeWidth,
-            Lookahead<TState, TQuality> lookahead = null,
+            Lookahead<TState, TQuality> lookahead = null, int iterations = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken))
             where TState : IState<TState, TQuality>
             where TQuality : struct, IQuality<TQuality>
         {
-            return Task.Run(() => RakeSearch((TState)state, rakeWidth, lookahead, runtime,
+            return Task.Run(() => RakeSearch((TState)state, rakeWidth, lookahead, iterations, runtime,
                 nodelimit, callback, token)
             );
         }
 
         public static TState RakeSearch<TState, TQuality>(
             this IState<TState, TQuality> state, int rakeWidth,
-            Lookahead<TState, TQuality> lookahead = null,
+            Lookahead<TState, TQuality> lookahead = null, int iterations = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken))
@@ -1687,12 +1757,12 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.RakeSearch(rakeWidth, lookahead).BestQualityState;
+            return control.RakeSearch(rakeWidth, lookahead, iterations).BestQualityState;
         }
 
         public static Task<TState> RakeSearchAsync<TState, TChoice, TQuality>(
             this IMutableState<TState, TChoice, TQuality> state, int rakeWidth,
-            Lookahead<TState, TChoice, TQuality> lookahead = null,
+            Lookahead<TState, TChoice, TQuality> lookahead = null, int iterations = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken))
@@ -1700,13 +1770,13 @@ namespace TreesearchLib
             where TQuality : struct, IQuality<TQuality>
         {
             return Task.Run(() => RakeSearch<TState, TChoice, TQuality>(
-                (TState)state, rakeWidth, lookahead, runtime, nodelimit, callback, token)
+                (TState)state, rakeWidth, lookahead, iterations, runtime, nodelimit, callback, token)
             );
         }
 
         public static TState RakeSearch<TState, TChoice, TQuality>(
             this IMutableState<TState, TChoice, TQuality> state, int rakeWidth,
-            Lookahead<TState, TChoice, TQuality> lookahead = null,
+            Lookahead<TState, TChoice, TQuality> lookahead = null, int iterations = int.MaxValue,
             TimeSpan? runtime = null, long? nodelimit = null,
             QualityCallback<TState, TQuality> callback = null,
             CancellationToken token = default(CancellationToken))
@@ -1718,7 +1788,7 @@ namespace TreesearchLib
             if (runtime.HasValue) control = control.WithRuntimeLimit(runtime.Value);
             if (nodelimit.HasValue) control = control.WithNodeLimit(nodelimit.Value);
             if (callback != null) control = control.WithImprovementCallback(callback);
-            return control.RakeSearch(rakeWidth, lookahead).BestQualityState;
+            return control.RakeSearch(rakeWidth, lookahead, iterations).BestQualityState;
         }
 
         [Obsolete("Use RakeSearchAsync with BeamSearchLookahead instead.")]
