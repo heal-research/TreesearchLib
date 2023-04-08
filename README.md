@@ -89,7 +89,7 @@ This means you consider the first two branches at each depth for expansion, but 
 
 #### Algorithm parameters
 
-An overview of selveral parameters that the algorithms support:
+An overview of several parameters that the algorithms support:
 
  * filterWidth - when set considers only the first filterWidth branches from a state for expansion
  * depthLimit - search up to a specific depth only, useful, e.g., when states would be able to expand infinitely
