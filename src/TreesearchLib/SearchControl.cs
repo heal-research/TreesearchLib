@@ -71,6 +71,16 @@ namespace TreesearchLib
         /// <returns>Whether the node is ok, or whether it should be discarded, because the lower bound is already worse than the best upper bound</returns>
         VisitResult VisitNode(TState state);
         /// <summary>
+        /// This creates a search control taking into account the remaining time/node limits, but independent of the current.
+        /// It can be used to fork the search into multiple concurrent branches that proceed independent and which will be merged later
+        /// (<see cref="Merge"/>).
+        /// </summary>
+        /// <param name="state">The state at which to fork the control.</param>
+        /// <param name="withBestQuality">Whether the best quality and state should be copied to the new control. This information may be used to discard nodes</param>
+        /// <param name="maxTimeLimit">The maximum time limit for the new control, which may be lower than the current.</param>
+        /// <returns></returns>
+        ISearchControl<TState, TQuality> Fork(TState state, bool withBestQuality, TimeSpan? maxTimeLimit = default);
+        /// <summary>
         /// This operation merges the information in the other search control into this one.
         /// </summary>
         /// <param name="other">The search control with the information to be merged.</param>
@@ -115,12 +125,6 @@ namespace TreesearchLib
 
         public bool IsFinished => !stopwatch.IsRunning;
 
-        public SearchControl<TState, TChoice, TQuality> Finish()
-        {
-            stopwatch.Stop();
-            return this;
-        }
-
         public bool ShouldStop()
         {
             if (IsFinished || Cancellation.IsCancellationRequested || stopwatch.Elapsed > Runtime
@@ -149,6 +153,24 @@ namespace TreesearchLib
                 }
             }
             return result;
+        }
+
+        public ISearchControl<TState, TQuality> Fork(TState state, bool withBestQuality, TimeSpan? maxTimeLimit = default)
+        {
+            var fork = new SearchControl<TState, TChoice, TQuality>(state);
+            fork.NodeLimit = NodeLimit - VisitedNodes;
+            fork.Cancellation = Cancellation;
+            fork.Runtime = Runtime - stopwatch.Elapsed;
+            if (maxTimeLimit.HasValue && maxTimeLimit < fork.Runtime)
+            {
+                fork.Runtime = maxTimeLimit.Value;
+            }
+            if (withBestQuality)
+            {
+                fork.BestQuality = BestQuality;
+                fork.BestQualityState = BestQualityState;
+            }
+            return fork;
         }
 
         public void Merge(ISearchControl<TState, TQuality> other)
@@ -208,12 +230,6 @@ namespace TreesearchLib
 
         public bool IsFinished => !stopwatch.IsRunning;
 
-        public SearchControl<TState, TQuality> Finish()
-        {
-            stopwatch.Stop();
-            return this;
-        }
-
         public bool ShouldStop()
         {
             if (IsFinished || Cancellation.IsCancellationRequested || stopwatch.Elapsed > Runtime
@@ -242,6 +258,24 @@ namespace TreesearchLib
                 }
             }
             return result;
+        }
+
+        public ISearchControl<TState, TQuality> Fork(TState state, bool withBestQuality, TimeSpan? maxTimeLimit = default)
+        {
+            var fork = new SearchControl<TState, TQuality>(state);
+            fork.NodeLimit = NodeLimit - VisitedNodes;
+            fork.Cancellation = Cancellation;
+            fork.Runtime = Runtime - stopwatch.Elapsed;
+            if (maxTimeLimit.HasValue && maxTimeLimit < fork.Runtime)
+            {
+                fork.Runtime = maxTimeLimit.Value;
+            }
+            if (withBestQuality)
+            {
+                fork.BestQuality = BestQuality;
+                fork.BestQualityState = BestQualityState;
+            }
+            return fork;
         }
 
         public void Merge(ISearchControl<TState, TQuality> other)
@@ -312,6 +346,11 @@ namespace TreesearchLib
             return control.VisitNode(state);
         }
 
+        public ISearchControl<TState, TQuality> Fork(TState state, bool withBestQuality, TimeSpan? maxTimeLimit = default)
+        {
+            return control.Fork(state, withBestQuality, maxTimeLimit);
+        }
+
         public void Merge(ISearchControl<TState, TQuality> other)
         {
             control.Merge(other);
@@ -364,6 +403,11 @@ namespace TreesearchLib
                 }
             }
             return control.VisitNode(state);
+        }
+
+        public ISearchControl<TState, TQuality> Fork(TState state, bool withBestQuality, TimeSpan? maxTimeLimit = default)
+        {
+            return control.Fork(state, withBestQuality, maxTimeLimit);
         }
 
         public void Merge(ISearchControl<TState, TQuality> other)

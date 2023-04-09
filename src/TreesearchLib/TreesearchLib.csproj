@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>TreesearchLib.snk</AssemblyOriginatorKeyFile>
-    <Version>1.2.1</Version>
+    <Version>1.3.0</Version>
     <Authors>Sebastian Leitner, Andreas Beham</Authors>
     <Description>TreesearchLib is a framework for modeling optimization problems that are to be solved by constructive heuristics.
     It includes a number of algorithms: exhaustive depth-first and breadth-first search, limited discrepancy search, the PILOT method, beam search, monotonic beam search, rake search, and Monte Carlo tree search.</Description>
@@ -13,7 +13,13 @@
     <Copyright>Sebastian Leitner, Andreas Beham</Copyright>
     <PackageProjectUrl>https://github.com/heal-research/TreesearchLib</PackageProjectUrl>
     <PackageReleaseNotes>
-    Bug fix release: Runtime limits in parallel pilot method and parallel rake search may be exceeded too much.
+    Features: Extend rake search to support multiple iterations. Similar to the pilot, it continues to rake from the node with the best lookahead.
+    Improvements: ISearchControl was extended with a Fork method to simplify the implementation of the concurrent algorithms.
+
+    Some breaking changes in this release:
+    - The ISearchControl interface was extended
+    - The SearchControl classes lost the Finish method (it is neither necessary nor needed anymore)
+    - Rake search received an additional parameter iterations
     </PackageReleaseNotes>
     <NeutralLanguage />
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>

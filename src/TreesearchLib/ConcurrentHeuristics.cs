@@ -55,16 +55,13 @@ namespace TreesearchLib
                 (currentState) =>
                 {
                     var localNextLayer = new Queue<(float rank, T state)>();
-                    var localControl = SearchControl<T, Q>.Start(currentState)
-                        .WithCancellationToken(control.Cancellation)
-                        .WithRuntimeLimit(reaminingTime);
+                    ISearchControl<T, Q> localControl;
                     lock (locker)
                     {
-                        localControl = localControl.WithNodeLimit(remainingNodes);
-                        if (control.BestQuality.HasValue)
+                        localControl = control.Fork(currentState, withBestQuality: true);
+                        if (localControl.ShouldStop())
                         {
-                            // to discard certain nodes
-                            localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
+                            return;
                         }
                     }
                     foreach (var next in currentState.GetBranches().Take(filterWidth))
@@ -76,7 +73,6 @@ namespace TreesearchLib
 
                         localNextLayer.Enqueue((rank(next), next));
                     }
-                    localControl.Finish();
                     lock (locker)
                     {
                         control.Merge(localControl);
@@ -131,15 +127,13 @@ namespace TreesearchLib
                 (currentState) =>
                 {
                     var localNextLayer = new Queue<(float rank, T state)>();
-                    var localControl = SearchControl<T, C, Q>.Start(currentState)
-                            .WithCancellationToken(control.Cancellation)
-                            .WithRuntimeLimit(remainingRuntime);
+                    ISearchControl<T, Q> localControl;
                     lock (locker)
                     {
-                        localControl = localControl.WithNodeLimit(remainingNodes);
-                        if (control.BestQuality.HasValue)
+                        localControl = control.Fork(currentState, withBestQuality: true);
+                        if (localControl.ShouldStop())
                         {
-                            localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
+                            return;
                         }
                     }
                     foreach (var choice in currentState.GetChoices().Take(filterWidth))
@@ -154,7 +148,6 @@ namespace TreesearchLib
 
                         localNextLayer.Enqueue((rank(next), next));
                     }
-                    localControl.Finish();
                     lock (locker)
                     {
                         control.Merge(localControl);
@@ -216,23 +209,17 @@ namespace TreesearchLib
                         quality = next.Quality;
                     } else
                     {
-                        SearchControl<T, Q> localControl = null;
+                        ISearchControl<T, Q> localControl;
                         lock (locker)
                         {
-                            var remainingTime = control.Runtime - control.Elapsed;
-                            var remainingNodes = control.NodeLimit - control.VisitedNodes;
-                            if (remainingTime <= TimeSpan.Zero || remainingNodes <= 0)
+                            localControl = control.Fork(next, withBestQuality: false);
+                            if (localControl.ShouldStop())
                             {
                                 i++;
                                 return;
                             }
-                            localControl = SearchControl<T, Q>.Start(next)
-                                .WithCancellationToken(control.Cancellation)
-                                .WithRuntimeLimit(remainingTime)
-                                .WithNodeLimit(remainingNodes);
                         }
                         lookahead(localControl, next);
-                        localControl.Finish();
                         lock (locker)
                         {
                             control.Merge(localControl);
@@ -316,23 +303,17 @@ namespace TreesearchLib
                         quality = next.Quality;
                     } else
                     {
-                        SearchControl<T, C, Q> localControl = null;
+                        ISearchControl<T, Q> localControl;
                         lock (locker)
                         {
-                            var remainingTime = control.Runtime - control.Elapsed;
-                            var remainingNodes = control.NodeLimit - control.VisitedNodes;
-                            if (remainingTime <= TimeSpan.Zero || remainingNodes <= 0)
+                            localControl = control.Fork(next, withBestQuality: false);
+                            if (localControl.ShouldStop())
                             {
                                 i++;
                                 return;
                             }
-                            localControl = SearchControl<T, C, Q>.Start(next)
-                                .WithCancellationToken(control.Cancellation)
-                                .WithRuntimeLimit(remainingTime)
-                                .WithNodeLimit(remainingNodes);
                         }
                         lookahead(localControl, next);
-                        localControl.Finish();
                         lock (locker)
                         {
                             control.Merge(localControl);
@@ -418,22 +399,16 @@ namespace TreesearchLib
                             quality = next.Quality;
                         } else
                         {
-                            SearchControl<T, Q> localControl = null;
+                            ISearchControl<T, Q> localControl;
                             lock (locker)
                             {
-                                var remainingTime = control.Runtime - control.Elapsed;
-                                var remainingNodes = control.NodeLimit - control.VisitedNodes;
-                                if (remainingTime <= TimeSpan.Zero || remainingNodes <= 0)
+                                localControl = control.Fork(next, withBestQuality: false);
+                                if (localControl.ShouldStop())
                                 {
                                     return;
                                 }
-                                localControl = SearchControl<T, Q>.Start(next)
-                                  .WithCancellationToken(control.Cancellation)
-                                  .WithRuntimeLimit(remainingTime)
-                                  .WithNodeLimit(remainingNodes);
                             }
                             lookahead(localControl, next);
-                            localControl.Finish();
                             if (localControl.BestQuality.HasValue) quality = localControl.BestQuality;
                             lock (locker)
                             {
@@ -507,23 +482,16 @@ namespace TreesearchLib
                             quality = next.Quality;
                         } else
                         {
-                            SearchControl<T, C, Q> localControl = null;
+                            ISearchControl<T, Q> localControl;
                             lock (locker)
                             {
-                                
-                                var remainingTime = control.Runtime - control.Elapsed;
-                                var remainingNodes = control.NodeLimit - control.VisitedNodes;
-                                if (remainingTime <= TimeSpan.Zero || remainingNodes <= 0)
+                                localControl = control.Fork(next, withBestQuality: false);
+                                if (localControl.ShouldStop())
                                 {
                                     return;
                                 }
-                                localControl = SearchControl<T, C, Q>.Start(next)
-                                  .WithCancellationToken(control.Cancellation)
-                                  .WithRuntimeLimit(remainingTime)
-                                  .WithNodeLimit(remainingNodes);
                             }
                             lookahead(localControl, next);
-                            localControl.Finish();
                             if (localControl.BestQuality.HasValue) quality = localControl.BestQuality;
                             lock (locker)
                             {

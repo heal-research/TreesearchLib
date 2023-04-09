@@ -35,8 +35,7 @@ namespace TreesearchLib
             
             var (d, states) = Algorithms.BreadthSearch(control, state, depth: depth, filterWidth, depthLimit, maxDegreeOfParallelism < 0 ? Environment.ProcessorCount : maxDegreeOfParallelism);
             depth = d;
-            var remainingNodes = control.NodeLimit - control.VisitedNodes;
-            if (depth >= depthLimit || states.Nodes == 0 || remainingNodes <= 0)
+            if (control.ShouldStop() || depth >= depthLimit || states.Nodes == 0 || control.NodeLimit <= control.VisitedNodes)
             {
                 return;
             }
@@ -57,31 +56,21 @@ namespace TreesearchLib
                     var searchState = new LIFOCollection<(int, T)>((localDepth, s));
                     while (true)
                     {
-                        var localControl = SearchControl<T, Q>.Start(s)
-                            .WithRuntimeLimit(TimeSpan.FromSeconds(1))
-                            .WithCancellationToken(control.Cancellation);
+                        ISearchControl<T, Q> localControl;
                         lock (locker)
                         {
-                            if (control.ShouldStop() || backtracks >= backtrackLimit)
+                            localControl = control.Fork(s, withBestQuality: true, maxTimeLimit: TimeSpan.FromSeconds(1));
+                            if (localControl.ShouldStop() || backtracks >= backtrackLimit)
                             {
-                                localControl.Finish();
                                 break;
                             }
                             backtracksMem = backtracks;
-
-                            localControl = localControl.WithNodeLimit(remainingNodes);
-                            if (control.BestQuality.HasValue)
-                            {
-                                localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
-                            }
                         }
                         var localbacktracks = Algorithms.DepthSearch<T, Q>(localControl, searchState, backtracksMem, filterWidth, depthLimit, backtracksPerThread);
-                        localControl.Finish();
-
+                        
                         lock (locker)
                         {
                             control.Merge(localControl);
-                            remainingNodes = control.NodeLimit - control.VisitedNodes;
                             backtracks += localbacktracks - backtracksMem;
                         }
                         if (searchState.Nodes == 0)
@@ -124,8 +113,7 @@ namespace TreesearchLib
 
             var (d, states) = Algorithms.BreadthSearch<T, C, Q>(control, (T)state.Clone(), depth, filterWidth, depthLimit, maxDegreeOfParallelism < 0 ? Environment.ProcessorCount : maxDegreeOfParallelism);
             depth = d;
-            var remainingnodes = control.NodeLimit - control.VisitedNodes;
-            if (depth >= depthLimit || states.Nodes == 0 || remainingnodes <= 0)
+            if (control.ShouldStop() || depth >= depthLimit || states.Nodes == 0 || control.NodeLimit <= control.VisitedNodes)
             {
                 return;
             }
@@ -151,33 +139,23 @@ namespace TreesearchLib
                     
                     while (true)
                     {
-                        var localControl = SearchControl<T, C, Q>.Start(s)
-                            .WithRuntimeLimit(TimeSpan.FromSeconds(1))
-                            .WithCancellationToken(control.Cancellation);
+                        ISearchControl<T, Q> localControl;
                         lock (locker)
                         {
-                            if (control.ShouldStop() || backtracks >= backtrackLimit)
+                            localControl = control.Fork(s, withBestQuality: true, maxTimeLimit: TimeSpan.FromSeconds(1));
+                            if (localControl.ShouldStop() || backtracks >= backtrackLimit)
                             {
-                                localControl.Finish();
                                 break;
                             }
                             backtracksMem = backtracks;
-
-                            localControl = localControl.WithNodeLimit(remainingnodes);
-                            if (control.BestQuality.HasValue)
-                            {
-                                localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
-                            }
                         }
                         
                         var (dd, localbacktracks) = Algorithms.DepthSearch<T, C, Q>(localControl, s, searchState, localDepth, backtracksMem, filterWidth, depthLimit, backtracksPerThread);
                         localDepth = dd;
-                        localControl.Finish();
 
                         lock (locker)
                         {
                             control.Merge(localControl);
-                            remainingnodes = control.NodeLimit - control.VisitedNodes;
                             backtracks += localbacktracks - backtracksMem;
                         }
                         if (searchState.Nodes == 0)
@@ -214,8 +192,7 @@ namespace TreesearchLib
 
             var (d, states) = Algorithms.BreadthSearch(control, state, depth, filterWidth, depthLimit, maxDegreeOfParallelism < 0 ? Environment.ProcessorCount : maxDegreeOfParallelism);
             depth = d;
-            var remainingnodes = control.NodeLimit - control.VisitedNodes;
-            if (depth >= depthLimit || states.Nodes == 0 || remainingnodes <= 0)
+            if (control.ShouldStop() || depth >= depthLimit || states.Nodes == 0 || control.NodeLimit <= control.VisitedNodes)
             {
                 return states;
             }
@@ -230,25 +207,21 @@ namespace TreesearchLib
                     var searchState = new BiLevelFIFOCollection<T>(s);
                     while (!control.ShouldStop())
                     {
-                        var localControl = SearchControl<T, Q>.Start(s)
-                            .WithRuntimeLimit(TimeSpan.FromSeconds(1))
-                            .WithCancellationToken(control.Cancellation);
+                        ISearchControl<T, Q> localControl;
                         lock (locker)
                         {
-                            localControl = localControl.WithNodeLimit(remainingnodes);
-                            if (control.BestQuality.HasValue)
+                            localControl = control.Fork(s, withBestQuality: true, maxTimeLimit: TimeSpan.FromSeconds(1));
+                            if (localControl.ShouldStop())
                             {
-                                localControl = localControl.WithUpperBound<T, Q>(control.BestQuality.Value);
+                                break;
                             }
                         }
 
                         localDepth = Algorithms.BreadthSearch<T, Q>(localControl, searchState, localDepth, filterWidth, depthLimit, int.MaxValue);
-                        localControl.Finish();
 
                         lock (locker)
                         {
                             control.Merge(localControl);
-                            remainingnodes = control.NodeLimit - control.VisitedNodes;
                         }
 
                         if (searchState.GetQueueNodes + searchState.PutQueueNodes == 0
@@ -287,8 +260,7 @@ namespace TreesearchLib
 
             var (d, states) = Algorithms.BreadthSearch<T, C, Q>(control, (T)state.Clone(), depth, filterWidth, depthLimit, maxDegreeOfParallelism < 0 ? Environment.ProcessorCount : maxDegreeOfParallelism);
             depth = d;
-            var remainingnodes = control.NodeLimit - control.VisitedNodes;
-            if (depth >= depthLimit || states.Nodes == 0 || remainingnodes <= 0)
+            if (control.ShouldStop() || depth >= depthLimit || states.Nodes == 0 || control.NodeLimit <= control.VisitedNodes)
             {
                 return states;
             }
@@ -302,25 +274,17 @@ namespace TreesearchLib
                     var searchState = new BiLevelFIFOCollection<T>(s);
                     while (!control.ShouldStop())
                     {
-                        var localControl = SearchControl<T, C, Q>.Start(s)
-                            .WithRuntimeLimit<T, C, Q>(TimeSpan.FromSeconds(1))
-                            .WithCancellationToken(control.Cancellation);
+                        ISearchControl<T, Q> localControl;
                         lock (locker)
                         {
-                            localControl = localControl.WithNodeLimit(remainingnodes);
-                            if (control.BestQuality.HasValue)
-                            {
-                                localControl = localControl.WithUpperBound<T, C, Q>(control.BestQuality.Value);
-                            }
+                            localControl = control.Fork(s, withBestQuality: true, maxTimeLimit: TimeSpan.FromSeconds(1));
                         }
 
                         localDepth = Algorithms.BreadthSearch<T, C, Q>(localControl, searchState, localDepth, filterWidth, depthLimit, int.MaxValue);
-                        localControl.Finish();
 
                         lock (locker)
                         {
                             control.Merge(localControl);
-                            remainingnodes = control.NodeLimit - control.VisitedNodes;
                         }
 
                         if (searchState.GetQueueNodes + searchState.PutQueueNodes == 0
