@@ -49,7 +49,6 @@ namespace TreesearchLib
                 {
                     break;
                 }
-                var remainingNodes = control.NodeLimit - control.VisitedNodes;
                 var locker = new object();
                 Parallel.ForEach(currentLayer, new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
                 (currentState) =>
@@ -77,7 +76,6 @@ namespace TreesearchLib
                     {
                         control.Merge(localControl);
                         nextlayer.AddRange(localNextLayer);
-                        remainingNodes = control.NodeLimit - control.VisitedNodes;
                     }
                 });
 
@@ -121,8 +119,6 @@ namespace TreesearchLib
                 var nextlayer = new List<(float rank, T state)>();
                 
                 var locker = new object();
-                var remainingNodes = control.NodeLimit - control.VisitedNodes;
-                var remainingRuntime = control.Runtime - control.Elapsed;
                 Parallel.ForEach(currentLayer, new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism },
                 (currentState) =>
                 {
@@ -152,7 +148,6 @@ namespace TreesearchLib
                     {
                         control.Merge(localControl);
                         nextlayer.AddRange(localNextLayer);
-                        remainingNodes = control.NodeLimit - control.VisitedNodes;
                     }
                 });
 

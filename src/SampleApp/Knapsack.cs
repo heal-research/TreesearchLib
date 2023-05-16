@@ -12,15 +12,13 @@ namespace SampleApp
     /// less efficient to clone this state, than <seealso cref="KnapsackNoUndo"/>,
     /// because the Decision vector is always full length.
     /// </summary>
-    public class Knapsack : IMutableState<Knapsack, bool, Maximize>
+    public class Knapsack : IMutableState<Knapsack, (bool, int), Maximize>
     {
         public IReadOnlyList<int> Profits { get; set; }
         public IReadOnlyList<int> Weights { get; set; }
         public int Capacity { get; set; }
 
-        public int Item = 0;
-
-        public bool[] Decision { get; private set; }
+        public Stack<(bool, int)> Decision { get; private set; }
 
         public int TotalWeight { get; set; }
         public int TotalProfit { get; set; }
@@ -29,21 +27,20 @@ namespace SampleApp
             Profits = profits;
             Weights = weights;
             Capacity = capcity;
-            Decision = new bool[Profits.Count];
+            Decision = new Stack<(bool, int)>();
         }
         public Knapsack(Knapsack other)
         {
             Profits = other.Profits;
             Weights = other.Weights;
             Capacity = other.Capacity;
-            Item = other.Item;
-            Decision = new bool[other.Decision.Length];
-            Array.Copy(other.Decision, Decision, other.Decision.Length);
+            Decision = new Stack<(bool, int)>(other.Decision.Reverse());
             TotalWeight = other.TotalWeight;
             TotalProfit = other.TotalProfit;
+            IsTerminal = other.IsTerminal;
         }
 
-        public bool IsTerminal => Item == Profits.Count;
+        public bool IsTerminal { get; set; }
 
         // Caching the bound improves performance a lot when e.g., using it
         // as sorting criteria in beam search
@@ -60,7 +57,8 @@ namespace SampleApp
                         // This simple bound assumes all remaining items that may
                         // fit (without considering the others) can be added
                         var profit = TotalProfit;
-                        for (var i = Item; i < Profits.Count; i++)
+                        var item = Decision.Count > 0 ? Decision.Peek().Item2 : -1;
+                        for (var i = item + 1; i < Profits.Count; i++)
                         {
                             if (TotalWeight + Weights[i] <= Capacity)
                             {
@@ -85,16 +83,39 @@ namespace SampleApp
             }
         }
 
-        public void Apply(bool choice)
+        public void Apply((bool, int) choice)
         {
             cachedbound = null;
-            if (choice)
+            var (take, item) = choice;
+            if (take)
             {
-                TotalWeight += Weights[Item];
-                TotalProfit += Profits[Item];
+                TotalWeight += Weights[item];
+                TotalProfit += Profits[item];
             }
-            Decision[Item] = choice;
-            Item++;
+            
+            var isTerminal = true;
+            for (var i = item + 1; i < Profits.Count; i++)
+            {
+                if (TotalWeight + Weights[i] <= Capacity)
+                {
+                    isTerminal = false;
+                    break;
+                }
+            }
+            IsTerminal = isTerminal;
+            Decision.Push(choice);
+        }
+
+        public void UndoLast()
+        {
+            cachedbound = null;
+            var (take, item) = Decision.Pop();
+            if (take)
+            {
+                TotalWeight -= Weights[item];
+                TotalProfit -= Profits[item];
+            }
+            IsTerminal = false;
         }
 
         public object Clone()
@@ -102,31 +123,24 @@ namespace SampleApp
             return new Knapsack(this);
         }
 
-        public IEnumerable<bool> GetChoices()
+        public IEnumerable<(bool, int)> GetChoices()
         {
             if (IsTerminal) yield break;
-            if (Weights[Item] + TotalWeight <= Capacity) // Capacity constraint
+            var item = Decision.Count > 0 ? Decision.Peek().Item2 : -1;
+            for (var i = item + 1; i < Profits.Count; i++)
             {
-                yield return true;
-            }
-            yield return false;
-        }
-
-        public void UndoLast()
-        {
-            cachedbound = null;
-            Item--;
-            var choice = Decision[Item];
-            if (choice)
-            {
-                TotalWeight -= Weights[Item];
-                TotalProfit -= Profits[Item];
+                if (Weights[i] + TotalWeight <= Capacity)
+                {
+                    yield return (true, i);
+                    yield return (false, i);
+                    yield break;
+                }
             }
         }
 
         public override string ToString()
         {
-            return $"Items: {string.Join(", ", Decision.Select((v, i) => (i, v)).Where(x => x.v).Select(x => x.i))}";
+            return $"Items: {string.Join(", ", Decision.Where(x => x.Item1).Select(x => x.Item2))}";
         }
     }
 
@@ -163,17 +177,16 @@ namespace SampleApp
             TotalWeight = other.TotalWeight;
             TotalProfit = other.TotalProfit;
         }
-        public KnapsackNoUndo(KnapsackNoUndo other, bool choice) : this(other)
+        public KnapsackNoUndo(KnapsackNoUndo other, bool choice, int item) : this(other)
         {
             if (choice)
             {
-                var item = Decision.Length;
                 TotalWeight += Weights[item];
                 TotalProfit += Profits[item];
             }
-            var decision = new bool[other.Decision.Length + 1];
+            var decision = new bool[item + 1];
             Array.Copy(other.Decision, decision, other.Decision.Length);
-            decision[other.Decision.Length] = choice;
+            decision[item] = choice;
             Decision = decision;
         }
 
@@ -223,12 +236,15 @@ namespace SampleApp
         public IEnumerable<KnapsackNoUndo> GetBranches()
         {
             if (IsTerminal) yield break;
-            var item = Decision.Length;
-            if (Weights[item] + TotalWeight <= Capacity) // Capacity constraint
+            for (var i = Decision.Length; i < Profits.Count; i++)
             {
-                yield return new KnapsackNoUndo(this, true);
+                if (Weights[i] + TotalWeight <= Capacity)
+                {
+                    yield return new KnapsackNoUndo(this, true, i);
+                    yield return new KnapsackNoUndo(this, false, i);
+                    yield break;
+                }
             }
-            yield return new KnapsackNoUndo(this, false);
         }
 
         public override string ToString()
